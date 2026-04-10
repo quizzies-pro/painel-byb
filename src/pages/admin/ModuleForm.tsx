@@ -10,13 +10,75 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Lesson = Tables<"lessons">;
 
 const typeLabel: Record<string, string> = { video: "Vídeo", text: "Texto", audio: "Áudio", download: "Download", hybrid: "Híbrido" };
+
+function SortableLessonRow({
+  lesson,
+  courseId,
+  moduleId,
+  onDelete,
+}: {
+  lesson: Lesson;
+  courseId: string;
+  moduleId: string;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lesson.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors bg-background">
+      <td className="px-2 py-2.5 w-8">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground touch-none">
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </td>
+      <td className="px-4 py-2.5 font-medium text-foreground">{lesson.title}</td>
+      <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs font-mono">{typeLabel[lesson.lesson_type] || lesson.lesson_type}</Badge></td>
+      <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{lesson.status}</Badge></td>
+      <td className="px-4 py-2.5">
+        <div className="flex justify-end gap-1">
+          <Link to={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}`}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(lesson.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
 
 export default function ModuleForm() {
   const { courseId, id } = useParams();
@@ -41,6 +103,11 @@ export default function ModuleForm() {
   });
 
   const backUrl = `/admin/courses/${courseId}`;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const fetchLessons = async () => {
     if (!id) return;
@@ -94,6 +161,29 @@ export default function ModuleForm() {
     const { error } = await supabase.from("lessons").delete().eq("id", lessonId);
     if (error) toast.error("Erro ao excluir aula");
     else { toast.success("Aula excluída"); fetchLessons(); }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = lessons.findIndex((l) => l.id === active.id);
+    const newIndex = lessons.findIndex((l) => l.id === over.id);
+    const reordered = arrayMove(lessons, oldIndex, newIndex);
+
+    setLessons(reordered);
+
+    const updates = reordered.map((l, i) =>
+      supabase.from("lessons").update({ sort_order: i }).eq("id", l.id)
+    );
+    const results = await Promise.all(updates);
+    const hasError = results.some((r) => r.error);
+    if (hasError) {
+      toast.error("Erro ao salvar ordem");
+      fetchLessons();
+    } else {
+      toast.success("Ordem atualizada");
+    }
   };
 
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
@@ -199,7 +289,7 @@ export default function ModuleForm() {
         {isEdit && (
           <TabsContent value="lessons" className="mt-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[13px] text-muted-foreground">Gerencie as aulas deste módulo</p>
+              <p className="text-[13px] text-muted-foreground">Arraste para reordenar as aulas</p>
               <Link to={`/admin/courses/${courseId}/modules/${id}/lessons/new`}>
                 <Button size="sm" variant="outline" className="gap-2 h-8 text-xs">
                   <Plus className="h-3.5 w-3.5" /> Nova Aula
@@ -213,39 +303,32 @@ export default function ModuleForm() {
               </div>
             ) : (
               <div className="border border-border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Ordem</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Tipo</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
-                      <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lessons.map((l) => (
-                      <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{l.sort_order}</td>
-                        <td className="px-4 py-2.5 font-medium text-foreground">{l.title}</td>
-                        <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs font-mono">{typeLabel[l.lesson_type] || l.lesson_type}</Badge></td>
-                        <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{l.status}</Badge></td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex justify-end gap-1">
-                            <Link to={`/admin/courses/${courseId}/modules/${id}/lessons/${l.id}`}>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                            </Link>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteLesson(l.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </td>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="w-8 px-2 py-2.5" />
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Tipo</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <SortableContext items={lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+                      <tbody>
+                        {lessons.map((l) => (
+                          <SortableLessonRow
+                            key={l.id}
+                            lesson={l}
+                            courseId={courseId!}
+                            moduleId={id!}
+                            onDelete={handleDeleteLesson}
+                          />
+                        ))}
+                      </tbody>
+                    </SortableContext>
+                  </table>
+                </DndContext>
               </div>
             )}
           </TabsContent>
