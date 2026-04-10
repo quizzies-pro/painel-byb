@@ -665,6 +665,48 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_endpoints: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_mapping: Json | null
+          headers_config: Json | null
+          id: string
+          is_active: boolean
+          name: string
+          secret_token: string | null
+          slug: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_mapping?: Json | null
+          headers_config?: Json | null
+          id?: string
+          is_active?: boolean
+          name: string
+          secret_token?: string | null
+          slug: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_mapping?: Json | null
+          headers_config?: Json | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          secret_token?: string | null
+          slug?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           created_at: string
@@ -675,6 +717,7 @@ export type Database = {
           processed_at: string | null
           source: string
           status: string
+          webhook_endpoint_id: string | null
         }
         Insert: {
           created_at?: string
@@ -685,6 +728,7 @@ export type Database = {
           processed_at?: string | null
           source?: string
           status?: string
+          webhook_endpoint_id?: string | null
         }
         Update: {
           created_at?: string
@@ -695,8 +739,17 @@ export type Database = {
           processed_at?: string | null
           source?: string
           status?: string
+          webhook_endpoint_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
