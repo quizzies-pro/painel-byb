@@ -4,10 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Save, Copy, Shield } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Save, Copy, Shield, Settings2, Globe, FileText, Lock, Webhook, User, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface Setting {
@@ -17,12 +17,24 @@ interface Setting {
   description: string | null;
 }
 
+type Tab = "general" | "content" | "access" | "integration" | "account";
+
+const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "general", label: "Geral", icon: <Settings2 className="h-4 w-4" /> },
+  { id: "content", label: "Conteúdo", icon: <FileText className="h-4 w-4" /> },
+  { id: "access", label: "Acesso", icon: <Lock className="h-4 w-4" /> },
+  { id: "integration", label: "Integrações", icon: <Webhook className="h-4 w-4" /> },
+  { id: "account", label: "Conta", icon: <User className="h-4 w-4" /> },
+];
+
 export default function SettingsPage() {
   const { user, role } = useAuth();
   const isSuperAdmin = role === "super_admin";
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("general");
+  const [copied, setCopied] = useState(false);
 
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ticto-webhook`;
 
@@ -35,10 +47,11 @@ export default function SettingsPage() {
   }, []);
 
   const updateSetting = (key: string, value: string) => {
-    setSettings((prev) => prev.map((s) => s.key === key ? { ...s, value } : s));
+    setSettings((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)));
   };
 
   const getBoolValue = (key: string) => settings.find((s) => s.key === key)?.value === "true";
+  const getStringValue = (key: string) => settings.find((s) => s.key === key)?.value || "";
 
   const handleSave = async () => {
     setSaving(true);
@@ -46,139 +59,269 @@ export default function SettingsPage() {
       await supabase.from("platform_settings").update({ value: s.value, updated_by: user?.id }).eq("key", s.key);
     }
     setSaving(false);
-    toast.success("Configurações salvas");
+    toast.success("Configurações salvas com sucesso");
   };
 
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
-    toast.success("URL copiada");
+    setCopied(true);
+    toast.success("URL copiada para a área de transferência");
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+      </div>
+    );
+  }
 
   if (!isSuperAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Shield className="h-10 w-10 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-medium">Acesso Restrito</h2>
-        <p className="text-sm text-muted-foreground mt-1">Apenas Super Admins podem acessar as configurações</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+          <Shield className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <h2 className="text-base font-medium">Acesso Restrito</h2>
+        <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+          Apenas Super Admins podem acessar as configurações da plataforma
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
-          <p className="text-sm text-muted-foreground mt-1">Configurações gerais da plataforma</p>
+          <h1 className="text-lg font-semibold tracking-tight">Configurações</h1>
+          <p className="text-sm text-muted-foreground">Gerencie as configurações gerais da plataforma</p>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
-          {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : <Save className="h-4 w-4" />}
-          Salvar
+        <Button onClick={handleSave} disabled={saving} size="sm" className="gap-2">
+          {saving ? (
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          Salvar alterações
         </Button>
       </div>
 
-      {/* General */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Geral</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm">Nome da Plataforma</Label>
-            <Input value={settings.find((s) => s.key === "platform_name")?.value || ""} onChange={(e) => updateSetting("platform_name", e.target.value)} className="bg-background border-border" />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm">Fuso Horário</Label>
-            <Input value={settings.find((s) => s.key === "timezone")?.value || ""} onChange={(e) => updateSetting("timezone", e.target.value)} className="bg-background border-border" />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs + Content */}
+      <div className="flex gap-8">
+        {/* Sidebar Tabs */}
+        <nav className="w-48 shrink-0 space-y-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${
+                activeTab === tab.id
+                  ? "bg-accent text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
-      {/* Content */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Conteúdo</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-           <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm">Comentários</Label>
-              <p className="text-xs text-muted-foreground">Permitir comentários nos produtos</p>
-            </div>
-            <Switch checked={getBoolValue("allow_comments")} onCheckedChange={(v) => updateSetting("allow_comments", String(v))} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm">Certificados</Label>
-              <p className="text-xs text-muted-foreground">Emitir certificados por padrão</p>
-            </div>
-            <Switch checked={getBoolValue("has_certificate")} onCheckedChange={(v) => updateSetting("has_certificate", String(v))} />
-          </div>
-        </CardContent>
-      </Card>
+        {/* Content */}
+        <div className="flex-1 min-w-0 max-w-xl">
+          {activeTab === "general" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-sm font-medium mb-1">Informações Gerais</h2>
+                <p className="text-xs text-muted-foreground mb-5">Dados básicos da sua plataforma</p>
+                <Separator className="mb-5" />
+              </div>
 
-      {/* Access */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Acesso</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm">Bloquear em Reembolso</Label>
-              <p className="text-xs text-muted-foreground">Revogar acesso automaticamente</p>
-            </div>
-            <Switch checked={getBoolValue("block_on_refund")} onCheckedChange={(v) => updateSetting("block_on_refund", String(v))} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm">Bloquear em Chargeback</Label>
-              <p className="text-xs text-muted-foreground">Revogar acesso automaticamente</p>
-            </div>
-            <Switch checked={getBoolValue("block_on_chargeback")} onCheckedChange={(v) => updateSetting("block_on_chargeback", String(v))} />
-          </div>
-        </CardContent>
-      </Card>
+              <SettingField label="Nome da Plataforma" description="O nome exibido para os alunos">
+                <Input
+                  value={getStringValue("platform_name")}
+                  onChange={(e) => updateSetting("platform_name", e.target.value)}
+                  placeholder="Minha Plataforma"
+                  className="bg-background"
+                />
+              </SettingField>
 
-      {/* Integration */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Integração Ticto</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm">URL do Webhook</Label>
-            <div className="flex gap-2">
-              <Input value={webhookUrl} readOnly className="bg-background border-border font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={copyWebhookUrl}><Copy className="h-4 w-4" /></Button>
+              <SettingField label="Fuso Horário" description="Usado para datas e relatórios">
+                <Input
+                  value={getStringValue("timezone")}
+                  onChange={(e) => updateSetting("timezone", e.target.value)}
+                  placeholder="America/Sao_Paulo"
+                  className="bg-background"
+                />
+              </SettingField>
             </div>
-            <p className="text-xs text-muted-foreground">Configure esta URL no painel da Ticto</p>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm">Token de Segurança</Label>
-            <Input value={settings.find((s) => s.key === "ticto_webhook_token")?.value || ""} onChange={(e) => updateSetting("ticto_webhook_token", e.target.value)} className="bg-background border-border font-mono text-xs" placeholder="Token secreto para validar webhooks" />
-          </div>
-        </CardContent>
-      </Card>
+          )}
 
-      {/* Admin Info */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Sua Conta</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Email</span>
-            <span className="text-sm font-mono">{user?.email}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Papel</span>
-            <Badge variant="outline">{role}</Badge>
-          </div>
-        </CardContent>
-      </Card>
+          {activeTab === "content" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-sm font-medium mb-1">Conteúdo</h2>
+                <p className="text-xs text-muted-foreground mb-5">Configurações padrão para cursos e aulas</p>
+                <Separator className="mb-5" />
+              </div>
+
+              <ToggleField
+                label="Comentários"
+                description="Permitir que alunos comentem nos produtos"
+                checked={getBoolValue("allow_comments")}
+                onCheckedChange={(v) => updateSetting("allow_comments", String(v))}
+              />
+
+              <Separator />
+
+              <ToggleField
+                label="Certificados"
+                description="Emitir certificados de conclusão automaticamente"
+                checked={getBoolValue("has_certificate")}
+                onCheckedChange={(v) => updateSetting("has_certificate", String(v))}
+              />
+            </div>
+          )}
+
+          {activeTab === "access" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-sm font-medium mb-1">Controle de Acesso</h2>
+                <p className="text-xs text-muted-foreground mb-5">Regras automáticas de bloqueio de acesso</p>
+                <Separator className="mb-5" />
+              </div>
+
+              <ToggleField
+                label="Bloquear em Reembolso"
+                description="Revogar acesso do aluno automaticamente quando houver reembolso"
+                checked={getBoolValue("block_on_refund")}
+                onCheckedChange={(v) => updateSetting("block_on_refund", String(v))}
+              />
+
+              <Separator />
+
+              <ToggleField
+                label="Bloquear em Chargeback"
+                description="Revogar acesso do aluno automaticamente quando houver chargeback"
+                checked={getBoolValue("block_on_chargeback")}
+                onCheckedChange={(v) => updateSetting("block_on_chargeback", String(v))}
+              />
+            </div>
+          )}
+
+          {activeTab === "integration" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-sm font-medium mb-1">Integração Ticto</h2>
+                <p className="text-xs text-muted-foreground mb-5">Configurações do webhook para receber pagamentos da Ticto</p>
+                <Separator className="mb-5" />
+              </div>
+
+              <SettingField label="URL do Webhook" description="Configure esta URL no painel da Ticto para receber notificações">
+                <div className="flex gap-2">
+                  <Input
+                    value={webhookUrl}
+                    readOnly
+                    className="bg-muted/50 font-mono text-xs cursor-default"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={copyWebhookUrl}
+                    className="shrink-0 h-9 w-9"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+              </SettingField>
+
+              <SettingField label="Token de Segurança" description="Token secreto para validar a autenticidade dos webhooks recebidos">
+                <Input
+                  value={getStringValue("ticto_webhook_token")}
+                  onChange={(e) => updateSetting("ticto_webhook_token", e.target.value)}
+                  placeholder="Insira o token secreto"
+                  className="bg-background font-mono text-xs"
+                />
+              </SettingField>
+            </div>
+          )}
+
+          {activeTab === "account" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-sm font-medium mb-1">Sua Conta</h2>
+                <p className="text-xs text-muted-foreground mb-5">Informações do administrador logado</p>
+                <Separator className="mb-5" />
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Email</span>
+                  <span className="text-sm font-mono">{user?.email}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Papel</span>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {role}
+                  </Badge>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">ID</span>
+                  <span className="text-xs font-mono text-muted-foreground">{user?.id}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Reusable sub-components ---------- */
+
+function SettingField({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label className="text-sm font-medium">{label}</Label>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ToggleField({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="space-y-0.5">
+        <Label className="text-sm font-medium">{label}</Label>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }
