@@ -184,6 +184,78 @@ export type Database = {
         }
         Relationships: []
       }
+      enrollment_lessons: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          lesson_id: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          lesson_id: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          lesson_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_lessons_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_lessons_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_modules: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          module_id: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          module_id: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          module_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_modules_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           course_id: string
