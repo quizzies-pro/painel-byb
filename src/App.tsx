@@ -14,6 +14,12 @@ import ModulesPage from "./pages/admin/ModulesPage";
 import ModuleForm from "./pages/admin/ModuleForm";
 import LessonsPage from "./pages/admin/LessonsPage";
 import LessonForm from "./pages/admin/LessonForm";
+import StudentsPage from "./pages/admin/StudentsPage";
+import StudentForm from "./pages/admin/StudentForm";
+import StudentDetail from "./pages/admin/StudentDetail";
+import PaymentsPage from "./pages/admin/PaymentsPage";
+import EnrollmentsPage from "./pages/admin/EnrollmentsPage";
+import EnrollmentForm from "./pages/admin/EnrollmentForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +45,14 @@ const App = () => (
             <Route path="/admin/lessons" element={<AdminLayout><LessonsPage /></AdminLayout>} />
             <Route path="/admin/lessons/new" element={<AdminLayout><LessonForm /></AdminLayout>} />
             <Route path="/admin/lessons/:id" element={<AdminLayout><LessonForm /></AdminLayout>} />
+            <Route path="/admin/students" element={<AdminLayout><StudentsPage /></AdminLayout>} />
+            <Route path="/admin/students/new" element={<AdminLayout><StudentForm /></AdminLayout>} />
+            <Route path="/admin/students/:id" element={<AdminLayout><StudentForm /></AdminLayout>} />
+            <Route path="/admin/students/:id/view" element={<AdminLayout><StudentDetail /></AdminLayout>} />
+            <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
+            <Route path="/admin/enrollments" element={<AdminLayout><EnrollmentsPage /></AdminLayout>} />
+            <Route path="/admin/enrollments/new" element={<AdminLayout><EnrollmentForm /></AdminLayout>} />
+            <Route path="/admin/enrollments/:id" element={<AdminLayout><EnrollmentForm /></AdminLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
