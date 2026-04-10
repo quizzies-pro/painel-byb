@@ -34,6 +34,44 @@ import CoverUpload from "@/components/CoverUpload";
 type CourseInsert = TablesInsert<"courses">;
 type Module = Tables<"course_modules">;
 
+function SortableModuleRow({
+  module: m,
+  courseId,
+  onDelete,
+}: {
+  module: Module;
+  courseId: string;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: m.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors bg-background">
+      <td className="px-2 py-2.5 w-8">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground touch-none">
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </td>
+      <td className="px-4 py-2.5 font-medium text-foreground">{m.title}</td>
+      <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{m.status}</Badge></td>
+      <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">{m.release_type}{m.release_days ? ` (${m.release_days}d)` : ""}</td>
+      <td className="px-4 py-2.5">
+        <div className="flex justify-end gap-1">
+          <Link to={`/admin/courses/${courseId}/modules/${m.id}`}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(m.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -131,6 +169,30 @@ export default function CourseForm() {
     const { error } = await supabase.from("course_modules").delete().eq("id", moduleId);
     if (error) toast.error("Erro ao excluir módulo");
     else { toast.success("Módulo excluído"); fetchModules(); }
+  };
+
+  const moduleSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleModuleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = modules.findIndex((m) => m.id === active.id);
+    const newIndex = modules.findIndex((m) => m.id === over.id);
+    const reordered = arrayMove(modules, oldIndex, newIndex);
+    setModules(reordered);
+    const updates = reordered.map((m, i) =>
+      supabase.from("course_modules").update({ sort_order: i }).eq("id", m.id)
+    );
+    const results = await Promise.all(updates);
+    if (results.some((r) => r.error)) {
+      toast.error("Erro ao salvar ordem");
+      fetchModules();
+    } else {
+      toast.success("Ordem atualizada");
+    }
   };
 
   if (loading) {
