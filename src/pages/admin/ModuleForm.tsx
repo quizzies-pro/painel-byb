@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const typeLabel: Record<string, string> = { video: "Vídeo", text: "Texto", audi
 
 export default function ModuleForm() {
   const { courseId, id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
   const [courseName, setCourseName] = useState("");
@@ -116,7 +117,7 @@ export default function ModuleForm() {
         </div>
       </div>
 
-      <Tabs defaultValue="info" className="w-full">
+      <Tabs defaultValue={searchParams.get("tab") || "info"} className="w-full">
         <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
           <TabsTrigger value="info" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Informações
