@@ -537,6 +537,52 @@ export default function SettingsPage() {
           {activeTab === "account" && (
             <div className="space-y-6">
               <SectionHeader title="Sua Conta" description="Informações do administrador logado" />
+
+              {/* Avatar */}
+              <div className="flex items-center gap-5">
+                <div className="relative group">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="h-16 w-16 rounded-full object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center border border-border">
+                      <span className="text-lg font-semibold text-foreground uppercase">
+                        {(user?.email?.charAt(0) ?? "U")}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    {uploadingAvatar ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-white" />
+                    )}
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Foto de perfil</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    JPG, PNG ou WebP. Máximo 2MB.
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Email</span>
