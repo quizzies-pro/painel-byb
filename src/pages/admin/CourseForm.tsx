@@ -151,9 +151,6 @@ export default function CourseForm() {
           <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Configurações
           </TabsTrigger>
-          <TabsTrigger value="seo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
-            SEO
-          </TabsTrigger>
           {isEdit && (
             <TabsTrigger value="modules" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
               Módulos
@@ -272,18 +269,6 @@ export default function CourseForm() {
           </div>
         </TabsContent>
 
-        <TabsContent value="seo" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Título SEO</Label>
-              <Input value={form.seo_title || ""} onChange={(e) => update("seo_title", e.target.value)} className="bg-background border-border" />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Descrição SEO</Label>
-              <Textarea value={form.seo_description || ""} onChange={(e) => update("seo_description", e.target.value)} className="bg-background border-border" rows={3} />
-            </div>
-          </div>
-        </TabsContent>
 
         {isEdit && (
           <TabsContent value="modules" className="mt-6">
