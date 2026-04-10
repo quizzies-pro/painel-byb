@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert } from "@/integrations/supabase/types";
@@ -9,10 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Trash2, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const slugify = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+interface Material {
+  id: string;
+  title: string;
+  file_url: string | null;
+  cover_url: string | null;
+  material_type: string;
+  sort_order: number;
+}
 
 export default function LessonForm() {
   const { courseId, moduleId, id } = useParams();
@@ -22,6 +31,11 @@ export default function LessonForm() {
   const [moduleName, setModuleName] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState<string | null>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [form, setForm] = useState<TablesInsert<"lessons">>({
     course_id: courseId || "",
@@ -50,6 +64,17 @@ export default function LessonForm() {
 
   const backUrl = `/admin/courses/${courseId}/modules/${moduleId}`;
 
+  const fetchMaterials = async () => {
+    if (!id) return;
+    const { data } = await supabase
+      .from("lesson_materials")
+      .select("id, title, file_url, cover_url, material_type, sort_order")
+      .eq("lesson_id", id)
+      .eq("material_type", "pdf")
+      .order("sort_order");
+    setMaterials(data ?? []);
+  };
+
   useEffect(() => {
     if (courseId) {
       supabase.from("courses").select("title").eq("id", courseId).single().then(({ data }) => setCourseName(data?.title || ""));
@@ -65,6 +90,7 @@ export default function LessonForm() {
         else setForm(data as unknown as TablesInsert<"lessons">);
         setLoading(false);
       });
+      fetchMaterials();
     }
   }, [id, courseId, moduleId, navigate]);
 
@@ -75,8 +101,8 @@ export default function LessonForm() {
     if (!isEdit) update("slug", slugify(title));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!form.title || !form.slug) {
       toast.error("Título e slug são obrigatórios");
       return;
@@ -95,6 +121,99 @@ export default function LessonForm() {
     setSaving(false);
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    if (file.type !== "application/pdf") {
+      toast.error("Apenas arquivos PDF são permitidos");
+      return;
+    }
+
+    setUploadingPdf(true);
+    const filePath = `${courseId}/${moduleId}/${id}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("materials")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast.error("Erro ao enviar PDF: " + uploadError.message);
+      setUploadingPdf(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("materials").getPublicUrl(filePath);
+
+    const { error: insertError } = await supabase.from("lesson_materials").insert({
+      lesson_id: id,
+      course_id: courseId!,
+      module_id: moduleId!,
+      title: file.name.replace(".pdf", ""),
+      file_url: urlData.publicUrl,
+      material_type: "pdf" as const,
+      sort_order: materials.length,
+    });
+
+    if (insertError) {
+      toast.error("Erro ao salvar material: " + insertError.message);
+    } else {
+      toast.success("PDF adicionado");
+      fetchMaterials();
+    }
+    setUploadingPdf(false);
+    if (pdfInputRef.current) pdfInputRef.current.value = "";
+  };
+
+  const handleCoverUpload = async (materialId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Apenas imagens são permitidas para capa");
+      return;
+    }
+
+    setUploadingCover(materialId);
+    const filePath = `covers/${courseId}/${moduleId}/${id}/${materialId}_${Date.now()}.${file.name.split(".").pop()}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("materials")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast.error("Erro ao enviar capa: " + uploadError.message);
+      setUploadingCover(null);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("materials").getPublicUrl(filePath);
+
+    const { error: updateError } = await supabase
+      .from("lesson_materials")
+      .update({ cover_url: urlData.publicUrl } as any)
+      .eq("id", materialId);
+
+    if (updateError) {
+      toast.error("Erro ao salvar capa: " + updateError.message);
+    } else {
+      toast.success("Capa adicionada");
+      fetchMaterials();
+    }
+    setUploadingCover(null);
+  };
+
+  const handleDeleteMaterial = async (materialId: string, fileUrl: string | null) => {
+    if (!confirm("Excluir este material?")) return;
+
+    if (fileUrl) {
+      const path = fileUrl.split("/materials/")[1];
+      if (path) await supabase.storage.from("materials").remove([path]);
+    }
+
+    const { error } = await supabase.from("lesson_materials").delete().eq("id", materialId);
+    if (error) toast.error("Erro ao excluir");
+    else { toast.success("Material excluído"); fetchMaterials(); }
+  };
+
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
 
   return (
@@ -111,7 +230,7 @@ export default function LessonForm() {
         </div>
         <div className="flex gap-3">
           <Button type="button" variant="outline" onClick={() => navigate(backUrl)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button onClick={() => handleSubmit()} disabled={saving}>
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar" : "Criar Aula"}
           </Button>
         </div>
@@ -125,6 +244,11 @@ export default function LessonForm() {
           <TabsTrigger value="media" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Mídia
           </TabsTrigger>
+          {isEdit && (
+            <TabsTrigger value="materials" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+              Materiais
+            </TabsTrigger>
+          )}
           <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Configurações
           </TabsTrigger>
@@ -184,6 +308,114 @@ export default function LessonForm() {
             </div>
           </div>
         </TabsContent>
+
+        {isEdit && (
+          <TabsContent value="materials" className="mt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-[13px] font-medium">Materiais PDF</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Faça upload de PDFs e adicione capas para cada material</p>
+                </div>
+                <div>
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handlePdfUpload}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 h-8 text-xs"
+                    disabled={uploadingPdf}
+                    onClick={() => pdfInputRef.current?.click()}
+                  >
+                    {uploadingPdf ? (
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5" />
+                    )}
+                    Enviar PDF
+                  </Button>
+                </div>
+              </div>
+
+              {materials.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border py-12 text-center">
+                  <FileText className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum material cadastrado</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Clique em "Enviar PDF" para adicionar</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {materials.map((mat) => (
+                    <div key={mat.id} className="rounded-lg border border-border overflow-hidden group">
+                      {/* Cover area */}
+                      <div className="relative aspect-[16/10] bg-muted/30 flex items-center justify-center">
+                        {mat.cover_url ? (
+                          <img
+                            src={mat.cover_url}
+                            alt={mat.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1.5 text-muted-foreground/40">
+                            <ImageIcon className="h-8 w-8" />
+                            <span className="text-[11px]">Sem capa</span>
+                          </div>
+                        )}
+                        {/* Overlay actions */}
+                        <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            ref={(el) => { coverInputRefs.current[mat.id] = el; }}
+                            onChange={(e) => handleCoverUpload(mat.id, e)}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 text-xs gap-1.5"
+                            disabled={uploadingCover === mat.id}
+                            onClick={() => coverInputRefs.current[mat.id]?.click()}
+                          >
+                            {uploadingCover === mat.id ? (
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                            ) : (
+                              <ImageIcon className="h-3 w-3" />
+                            )}
+                            {mat.cover_url ? "Trocar Capa" : "Adicionar Capa"}
+                          </Button>
+                        </div>
+                      </div>
+                      {/* Info */}
+                      <div className="p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-[13px] font-medium truncate">{mat.title}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => handleDeleteMaterial(mat.id, mat.file_url)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="settings" className="mt-6">
           <div className="grid grid-cols-2 gap-6">
