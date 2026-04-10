@@ -646,6 +646,7 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           id: string
           permissions: Json
@@ -653,6 +654,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           id?: string
           permissions?: Json
@@ -660,6 +662,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           id?: string
           permissions?: Json
