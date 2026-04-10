@@ -92,6 +92,8 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState("admin_operacional");
   const [invitePermissions, setInvitePermissions] = useState<Permissions>(DEFAULT_PERMISSIONS);
   const [inviting, setInviting] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase
