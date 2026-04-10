@@ -1,6 +1,7 @@
-import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings } from "lucide-react";
+import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings, LogOut, ChevronsUpDown } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +11,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const contentItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -30,22 +39,19 @@ const systemItems = [
   { title: "Configurações", url: "/admin/settings", icon: Settings },
 ];
 
+const roleLabels: Record<string, string> = {
+  super_admin: "Super Admin",
+  admin_operacional: "Operacional",
+};
+
 function LogoSection({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="px-3 pb-4">
       <NavLink to="/admin" end className="block">
         {collapsed ? (
-          <img
-            src="/logo-icon.png"
-            alt="BYB"
-            className="h-9 w-9 object-contain rounded-lg"
-          />
+          <img src="/logo-icon.png" alt="BYB" className="h-9 w-9 object-contain rounded-lg" />
         ) : (
-          <img
-            src="/logo-full.png"
-            alt="The BYB"
-            className="h-9 object-contain"
-          />
+          <img src="/logo-full.png" alt="The BYB" className="h-9 object-contain" />
         )}
       </NavLink>
     </div>
@@ -56,6 +62,10 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user, role, signOut } = useAuth();
+
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuário";
+  const displayEmail = user?.email || "";
 
   const isActive = (path: string) =>
     path === "/admin"
@@ -97,6 +107,40 @@ export function AdminSidebar() {
         {renderGroup("Gestão", managementItems)}
         {renderGroup("Sistema", systemItems)}
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-border bg-sidebar p-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent transition-colors outline-none">
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-semibold text-foreground uppercase">
+                {displayName.charAt(0)}
+              </div>
+              {!collapsed && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate text-foreground">{displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {roleLabels[role ?? ""] ?? role}
+                    </p>
+                  </div>
+                  <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                </>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium">{displayName}</p>
+              <p className="text-xs text-muted-foreground">{displayEmail}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive gap-2">
+              <LogOut className="h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
