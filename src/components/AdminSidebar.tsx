@@ -98,14 +98,14 @@ export function AdminSidebar() {
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className={collapsed ? "items-center" : undefined}>
           {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.title} className={collapsed ? "flex justify-center" : undefined}>
               <SidebarMenuButton asChild>
                 <NavLink
                   to={item.url}
                   end={item.url === "/admin"}
-                  className={`flex items-center gap-3 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${collapsed ? "justify-center px-2 py-2" : "px-3 py-2 gap-3"}`}
+                  className={`flex items-center rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${collapsed ? "justify-center px-0 py-0" : "gap-3 px-3 py-2"}`}
                   activeClassName="text-foreground bg-accent"
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
