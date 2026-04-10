@@ -145,8 +145,53 @@ export default function SettingsPage() {
     setSaving(false);
     toast.success("Configurações salvas com sucesso");
   };
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-  const handleInvite = async () => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Use uma imagem JPG, PNG ou WebP");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("admin-avatars")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("admin-avatars")
+        .getPublicUrl(path);
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Save avatar_url to user_roles
+      await supabase
+        .from("user_roles")
+        .update({ avatar_url: publicUrl } as any)
+        .eq("user_id", user.id);
+
+      await refreshProfile();
+      toast.success("Avatar atualizado com sucesso");
+    } catch {
+      toast.error("Erro ao fazer upload do avatar");
+    }
+    setUploadingAvatar(false);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  };
+
+
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
