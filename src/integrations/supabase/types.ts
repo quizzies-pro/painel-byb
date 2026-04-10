@@ -14,16 +14,362 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      course_modules: {
+        Row: {
+          course_id: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_required: boolean
+          release_days: number | null
+          release_type: Database["public"]["Enums"]["release_type"]
+          sort_order: number
+          status: Database["public"]["Enums"]["module_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          release_days?: number | null
+          release_type?: Database["public"]["Enums"]["release_type"]
+          sort_order?: number
+          status?: Database["public"]["Enums"]["module_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          release_days?: number | null
+          release_type?: Database["public"]["Enums"]["release_type"]
+          sort_order?: number
+          status?: Database["public"]["Enums"]["module_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          access_days: number | null
+          access_type: Database["public"]["Enums"]["access_type"]
+          allow_comments: boolean
+          banner_url: string | null
+          category: string | null
+          cover_url: string | null
+          created_at: string
+          display_order: number
+          featured: boolean
+          full_description: string | null
+          has_certificate: boolean
+          id: string
+          instructor_name: string | null
+          is_free: boolean
+          language: string
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          status: Database["public"]["Enums"]["course_status"]
+          tags: string[] | null
+          ticto_product_id: string | null
+          title: string
+          trailer_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_days?: number | null
+          access_type?: Database["public"]["Enums"]["access_type"]
+          allow_comments?: boolean
+          banner_url?: string | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          display_order?: number
+          featured?: boolean
+          full_description?: string | null
+          has_certificate?: boolean
+          id?: string
+          instructor_name?: string | null
+          is_free?: boolean
+          language?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["course_status"]
+          tags?: string[] | null
+          ticto_product_id?: string | null
+          title: string
+          trailer_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_days?: number | null
+          access_type?: Database["public"]["Enums"]["access_type"]
+          allow_comments?: boolean
+          banner_url?: string | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          display_order?: number
+          featured?: boolean
+          full_description?: string | null
+          has_certificate?: boolean
+          id?: string
+          instructor_name?: string | null
+          is_free?: boolean
+          language?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["course_status"]
+          tags?: string[] | null
+          ticto_product_id?: string | null
+          title?: string
+          trailer_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lesson_materials: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          external_link: string | null
+          file_url: string | null
+          id: string
+          is_visible: boolean
+          lesson_id: string
+          material_type: Database["public"]["Enums"]["material_type"]
+          module_id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          is_visible?: boolean
+          lesson_id: string
+          material_type?: Database["public"]["Enums"]["material_type"]
+          module_id: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          is_visible?: boolean
+          lesson_id?: string
+          material_type?: Database["public"]["Enums"]["material_type"]
+          module_id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_materials_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_materials_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_materials_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          allow_comments: boolean
+          allow_download: boolean
+          audio_url: string | null
+          author: string | null
+          content_html: string | null
+          course_id: string
+          created_at: string
+          duration_seconds: number | null
+          estimated_time: string | null
+          id: string
+          is_preview: boolean
+          is_required: boolean
+          lesson_type: Database["public"]["Enums"]["lesson_type"]
+          module_id: string
+          published_at: string | null
+          release_days: number | null
+          release_type: Database["public"]["Enums"]["release_type"]
+          short_description: string | null
+          slug: string
+          sort_order: number
+          status: Database["public"]["Enums"]["lesson_status"]
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          allow_comments?: boolean
+          allow_download?: boolean
+          audio_url?: string | null
+          author?: string | null
+          content_html?: string | null
+          course_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          estimated_time?: string | null
+          id?: string
+          is_preview?: boolean
+          is_required?: boolean
+          lesson_type?: Database["public"]["Enums"]["lesson_type"]
+          module_id: string
+          published_at?: string | null
+          release_days?: number | null
+          release_type?: Database["public"]["Enums"]["release_type"]
+          short_description?: string | null
+          slug: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["lesson_status"]
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          allow_comments?: boolean
+          allow_download?: boolean
+          audio_url?: string | null
+          author?: string | null
+          content_html?: string | null
+          course_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          estimated_time?: string | null
+          id?: string
+          is_preview?: boolean
+          is_required?: boolean
+          lesson_type?: Database["public"]["Enums"]["lesson_type"]
+          module_id?: string
+          published_at?: string | null
+          release_days?: number | null
+          release_type?: Database["public"]["Enums"]["release_type"]
+          short_description?: string | null
+          slug?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["lesson_status"]
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      access_type: "lifetime" | "limited"
+      app_role: "super_admin" | "admin_operacional"
+      course_status: "draft" | "published" | "hidden" | "archived"
+      lesson_status: "draft" | "published" | "hidden"
+      lesson_type: "video" | "text" | "audio" | "download" | "hybrid"
+      material_type:
+        | "pdf"
+        | "spreadsheet"
+        | "document"
+        | "image"
+        | "link"
+        | "other"
+      module_status: "draft" | "published" | "hidden"
+      release_type: "immediate" | "manual" | "drip"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +496,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      access_type: ["lifetime", "limited"],
+      app_role: ["super_admin", "admin_operacional"],
+      course_status: ["draft", "published", "hidden", "archived"],
+      lesson_status: ["draft", "published", "hidden"],
+      lesson_type: ["video", "text", "audio", "download", "hybrid"],
+      material_type: [
+        "pdf",
+        "spreadsheet",
+        "document",
+        "image",
+        "link",
+        "other",
+      ],
+      module_status: ["draft", "published", "hidden"],
+      release_type: ["immediate", "manual", "drip"],
+    },
   },
 } as const
