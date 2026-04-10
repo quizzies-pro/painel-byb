@@ -34,6 +34,7 @@ import {
   Mail,
   ChevronRight,
   ArrowLeft,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionsEditor, DEFAULT_PERMISSIONS, type Permissions } from "@/components/PermissionsEditor";
