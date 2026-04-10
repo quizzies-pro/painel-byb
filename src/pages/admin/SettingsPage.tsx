@@ -191,7 +191,7 @@ export default function SettingsPage() {
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   };
 
-
+  const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
