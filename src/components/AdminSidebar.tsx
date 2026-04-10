@@ -1,4 +1,4 @@
-import { BookOpen, Layers, FileText, LayoutDashboard, Users, CreditCard, GraduationCap } from "lucide-react";
+import { BookOpen, Layers, FileText, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const contentItems = [
-  { title: "Visão Geral", url: "/admin", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Cursos", url: "/admin/courses", icon: BookOpen },
   { title: "Módulos", url: "/admin/modules", icon: Layers },
   { title: "Aulas", url: "/admin/lessons", icon: FileText },
@@ -24,6 +24,12 @@ const managementItems = [
   { title: "Alunos", url: "/admin/students", icon: Users },
   { title: "Pagamentos", url: "/admin/payments", icon: CreditCard },
   { title: "Matrículas", url: "/admin/enrollments", icon: GraduationCap },
+];
+
+const systemItems = [
+  { title: "Logs", url: "/admin/logs", icon: Activity },
+  { title: "Webhooks", url: "/admin/webhooks", icon: Webhook },
+  { title: "Configurações", url: "/admin/settings", icon: Settings },
 ];
 
 export function AdminSidebar() {
@@ -37,7 +43,7 @@ export function AdminSidebar() {
       : location.pathname.startsWith(path);
 
   const renderGroup = (label: string, items: typeof contentItems) => (
-    <SidebarGroup>
+    <SidebarGroup key={label}>
       <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-2">
         {label}
       </SidebarGroupLabel>
@@ -68,6 +74,7 @@ export function AdminSidebar() {
       <SidebarContent className="bg-sidebar pt-4">
         {renderGroup("Conteúdo", contentItems)}
         {renderGroup("Gestão", managementItems)}
+        {renderGroup("Sistema", systemItems)}
       </SidebarContent>
     </Sidebar>
   );
