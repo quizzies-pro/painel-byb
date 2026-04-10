@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Save, Copy, Shield, Settings2, Globe, FileText, Lock, Webhook, User, Check } from "lucide-react";
+import { Save, Shield, Settings2, FileText, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 
 interface Setting {
