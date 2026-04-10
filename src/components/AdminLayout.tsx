@@ -36,7 +36,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-10">{children}</main>
         </div>
       </div>
     </SidebarProvider>
