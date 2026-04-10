@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import CoverUpload from "@/components/CoverUpload";
 
 export default function StudentForm() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function StudentForm() {
     cpf: "",
     status: "active",
     origin: "",
+    avatar_url: "",
   });
 
   useEffect(() => {
@@ -57,38 +59,58 @@ export default function StudentForm() {
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/students")}><ArrowLeft className="h-4 w-4" /></Button>
-        <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Aluno" : "Novo Aluno"}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/students")} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Aluno" : "Novo Aluno"}</h1>
+        </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" onClick={() => navigate("/admin/students")}>Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar" : "Criar Aluno"}
+          </Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Dados Pessoais</h2>
-          <div className="space-y-2">
-            <Label className="text-sm">Nome *</Label>
-            <Input value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-card border-border" required />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm">Email *</Label>
-            <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} className="bg-card border-border" required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-[280px_1fr] gap-8">
+        <CoverUpload
+          value={form.avatar_url || ""}
+          onChange={(url) => update("avatar_url", url)}
+          storagePath={`avatars/students/${id || "new"}`}
+          label="Avatar"
+          aspectRatio="aspect-square"
+          hint="Foto do aluno. Formato quadrado."
+        />
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-sm">Telefone</Label>
-              <Input value={form.phone || ""} onChange={(e) => update("phone", e.target.value)} placeholder="+55 11 99999-9999" className="bg-card border-border" />
+              <Label className="text-[13px] font-medium">Nome *</Label>
+              <Input value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-background border-border" required />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">CPF</Label>
-              <Input value={form.cpf || ""} onChange={(e) => update("cpf", e.target.value)} placeholder="000.000.000-00" className="bg-card border-border" />
+              <Label className="text-[13px] font-medium">Email *</Label>
+              <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} className="bg-background border-border" required />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-sm">Status</Label>
+              <Label className="text-[13px] font-medium">Telefone</Label>
+              <Input value={form.phone || ""} onChange={(e) => update("phone", e.target.value)} placeholder="+55 11 99999-9999" className="bg-background border-border" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium">CPF</Label>
+              <Input value={form.cpf || ""} onChange={(e) => update("cpf", e.target.value)} placeholder="000.000.000-00" className="bg-background border-border" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium">Status</Label>
               <Select value={form.status || "active"} onValueChange={(v) => update("status", v)}>
-                <SelectTrigger className="bg-card border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Ativo</SelectItem>
                   <SelectItem value="blocked">Bloqueado</SelectItem>
@@ -98,19 +120,12 @@ export default function StudentForm() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Origem</Label>
-              <Input value={form.origin || ""} onChange={(e) => update("origin", e.target.value)} placeholder="Ex: Ticto, Manual" className="bg-card border-border" />
+              <Label className="text-[13px] font-medium">Origem</Label>
+              <Input value={form.origin || ""} onChange={(e) => update("origin", e.target.value)} placeholder="Ex: Ticto, Manual" className="bg-background border-border" />
             </div>
           </div>
         </div>
-
-        <div className="flex gap-3">
-          <Button type="submit" disabled={saving}>
-            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar" : "Criar Aluno"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/students")}>Cancelar</Button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
