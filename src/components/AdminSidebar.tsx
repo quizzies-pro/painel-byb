@@ -58,11 +58,31 @@ function LogoSection({ collapsed }: { collapsed: boolean }) {
   );
 }
 
+function UserAvatar({ src, name, size = "md" }: { src: string | null; name: string; size?: "sm" | "md" }) {
+  const sizeClasses = size === "sm" ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-xs";
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        className={`${sizeClasses} rounded-full object-cover shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses} rounded-full bg-muted flex items-center justify-center shrink-0 font-semibold text-foreground uppercase`}>
+      {name.charAt(0)}
+    </div>
+  );
+}
+
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { user, role, signOut } = useAuth();
+  const { user, role, avatarUrl, signOut } = useAuth();
 
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuário";
   const displayEmail = user?.email || "";
@@ -114,11 +134,7 @@ export function AdminSidebar() {
             <button className={`w-full flex items-center rounded-md text-left hover:bg-accent transition-colors outline-none ${
               collapsed ? "justify-center p-1.5" : "gap-3 px-2 py-2"
             }`}>
-              <div className={`rounded-full bg-muted flex items-center justify-center shrink-0 font-semibold text-foreground uppercase ${
-                collapsed ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-xs"
-              }`}>
-                {displayName.charAt(0)}
-              </div>
+              <UserAvatar src={avatarUrl} name={displayName} size={collapsed ? "sm" : "md"} />
               {!collapsed && (
                 <>
                   <div className="flex-1 min-w-0">
@@ -133,9 +149,12 @@ export function AdminSidebar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align={collapsed ? "center" : "start"} className="w-56">
-            <div className="px-2 py-1.5">
-              <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-xs text-muted-foreground">{displayEmail}</p>
+            <div className="flex items-center gap-3 px-2 py-2">
+              <UserAvatar src={avatarUrl} name={displayName} size="md" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
+              </div>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive gap-2">

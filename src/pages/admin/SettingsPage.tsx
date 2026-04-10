@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import {
   Mail,
   ChevronRight,
   ArrowLeft,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionsEditor, DEFAULT_PERMISSIONS, type Permissions } from "@/components/PermissionsEditor";
@@ -70,7 +71,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function SettingsPage() {
-  const { user, role } = useAuth();
+  const { user, role, avatarUrl, refreshProfile } = useAuth();
   const isSuperAdmin = role === "super_admin";
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,8 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState("admin_operacional");
   const [invitePermissions, setInvitePermissions] = useState<Permissions>(DEFAULT_PERMISSIONS);
   const [inviting, setInviting] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase
@@ -141,6 +144,51 @@ export default function SettingsPage() {
     }
     setSaving(false);
     toast.success("Configurações salvas com sucesso");
+  };
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Use uma imagem JPG, PNG ou WebP");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("admin-avatars")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("admin-avatars")
+        .getPublicUrl(path);
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Save avatar_url to user_roles
+      await supabase
+        .from("user_roles")
+        .update({ avatar_url: publicUrl } as any)
+        .eq("user_id", user.id);
+
+      await refreshProfile();
+      toast.success("Avatar atualizado com sucesso");
+    } catch {
+      toast.error("Erro ao fazer upload do avatar");
+    }
+    setUploadingAvatar(false);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
   };
 
   const handleInvite = async () => {
@@ -489,6 +537,52 @@ export default function SettingsPage() {
           {activeTab === "account" && (
             <div className="space-y-6">
               <SectionHeader title="Sua Conta" description="Informações do administrador logado" />
+
+              {/* Avatar */}
+              <div className="flex items-center gap-5">
+                <div className="relative group">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="h-16 w-16 rounded-full object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center border border-border">
+                      <span className="text-lg font-semibold text-foreground uppercase">
+                        {(user?.email?.charAt(0) ?? "U")}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    {uploadingAvatar ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-white" />
+                    )}
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Foto de perfil</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    JPG, PNG ou WebP. Máximo 2MB.
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Email</span>

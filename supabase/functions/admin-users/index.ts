@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     if (method === "GET") {
       const { data: roles } = await supabaseAdmin
         .from("user_roles")
-        .select("user_id, role, permissions, created_at")
+        .select("user_id, role, permissions, avatar_url, created_at")
         .order("created_at", { ascending: true });
 
       if (!roles || roles.length === 0) return jsonRes([]);
@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
             email: data.user?.email ?? "unknown",
             role: r.role,
             permissions: r.permissions ?? DEFAULT_PERMISSIONS,
+            avatar_url: r.avatar_url ?? null,
             created_at: r.created_at,
             last_sign_in: data.user?.last_sign_in_at ?? null,
           };
@@ -95,7 +96,6 @@ Deno.serve(async (req) => {
         return jsonRes({ error: "Papel inválido" }, 400);
       }
 
-      // Find or invite user
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find(
         (u) => u.email?.toLowerCase() === email.toLowerCase()
@@ -136,9 +136,9 @@ Deno.serve(async (req) => {
       return jsonRes({ success: true, user_id: userId });
     }
 
-    // PATCH — Update role and/or permissions
+    // PATCH — Update role, permissions, and/or avatar
     if (method === "PATCH") {
-      const { user_id, role, permissions } = await req.json();
+      const { user_id, role, permissions, avatar_url } = await req.json();
       if (!user_id) return jsonRes({ error: "user_id é obrigatório" }, 400);
 
       if (user_id === caller.id && role && role !== "super_admin") {
@@ -148,6 +148,7 @@ Deno.serve(async (req) => {
       const updates: Record<string, unknown> = {};
       if (role) updates.role = role;
       if (permissions) updates.permissions = permissions;
+      if (avatar_url !== undefined) updates.avatar_url = avatar_url;
 
       if (Object.keys(updates).length === 0) {
         return jsonRes({ error: "Nenhuma alteração fornecida" }, 400);
