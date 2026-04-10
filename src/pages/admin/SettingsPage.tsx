@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Save, Copy, Shield, Settings2, Globe, FileText, Lock, Webhook, User, Check } from "lucide-react";
+import { Save, Shield, Settings2, FileText, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 
 interface Setting {
@@ -17,13 +17,12 @@ interface Setting {
   description: string | null;
 }
 
-type Tab = "general" | "content" | "access" | "integration" | "account";
+type Tab = "general" | "content" | "access" | "account";
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "general", label: "Geral", icon: <Settings2 className="h-4 w-4" /> },
   { id: "content", label: "Conteúdo", icon: <FileText className="h-4 w-4" /> },
   { id: "access", label: "Acesso", icon: <Lock className="h-4 w-4" /> },
-  { id: "integration", label: "Integrações", icon: <Webhook className="h-4 w-4" /> },
   { id: "account", label: "Conta", icon: <User className="h-4 w-4" /> },
 ];
 
@@ -34,9 +33,6 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("general");
-  const [copied, setCopied] = useState(false);
-
-  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ticto-webhook`;
 
   useEffect(() => {
     supabase.from("platform_settings").select("*").order("key").then(({ data, error }) => {
@@ -60,13 +56,6 @@ export default function SettingsPage() {
     }
     setSaving(false);
     toast.success("Configurações salvas com sucesso");
-  };
-
-  const copyWebhookUrl = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    toast.success("URL copiada para a área de transferência");
-    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) {
@@ -208,43 +197,6 @@ export default function SettingsPage() {
                 checked={getBoolValue("block_on_chargeback")}
                 onCheckedChange={(v) => updateSetting("block_on_chargeback", String(v))}
               />
-            </div>
-          )}
-
-          {activeTab === "integration" && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-sm font-medium mb-1">Integração Ticto</h2>
-                <p className="text-xs text-muted-foreground mb-5">Configurações do webhook para receber pagamentos da Ticto</p>
-                <Separator className="mb-5" />
-              </div>
-
-              <SettingField label="URL do Webhook" description="Configure esta URL no painel da Ticto para receber notificações">
-                <div className="flex gap-2">
-                  <Input
-                    value={webhookUrl}
-                    readOnly
-                    className="bg-muted/50 font-mono text-xs cursor-default"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyWebhookUrl}
-                    className="shrink-0 h-9 w-9"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-              </SettingField>
-
-              <SettingField label="Token de Segurança" description="Token secreto para validar a autenticidade dos webhooks recebidos">
-                <Input
-                  value={getStringValue("ticto_webhook_token")}
-                  onChange={(e) => updateSetting("ticto_webhook_token", e.target.value)}
-                  placeholder="Insira o token secreto"
-                  className="bg-background font-mono text-xs"
-                />
-              </SettingField>
             </div>
           )}
 
