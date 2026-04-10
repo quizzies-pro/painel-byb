@@ -269,18 +269,6 @@ export default function CourseForm() {
           </div>
         </TabsContent>
 
-        <TabsContent value="seo" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Título SEO</Label>
-              <Input value={form.seo_title || ""} onChange={(e) => update("seo_title", e.target.value)} className="bg-background border-border" />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Descrição SEO</Label>
-              <Textarea value={form.seo_description || ""} onChange={(e) => update("seo_description", e.target.value)} className="bg-background border-border" rows={3} />
-            </div>
-          </div>
-        </TabsContent>
 
         {isEdit && (
           <TabsContent value="modules" className="mt-6">
