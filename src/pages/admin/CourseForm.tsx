@@ -53,7 +53,7 @@ export default function CourseForm() {
       setLoading(true);
       supabase.from("courses").select("*").eq("id", id).single().then(({ data, error }) => {
         if (error || !data) {
-          toast.error("Curso não encontrado");
+          toast.error("Produto não encontrado");
           navigate("/admin/courses");
         } else {
           setForm(data as unknown as CourseInsert);
@@ -82,12 +82,12 @@ export default function CourseForm() {
 
     if (isEdit) {
       const { error } = await supabase.from("courses").update(form).eq("id", id!);
-      if (error) toast.error("Erro ao atualizar curso: " + error.message);
-      else { toast.success("Curso atualizado"); navigate("/admin/courses"); }
+      if (error) toast.error("Erro ao atualizar produto: " + error.message);
+      else { toast.success("Produto atualizado"); navigate("/admin/courses"); }
     } else {
       const { error } = await supabase.from("courses").insert(form);
-      if (error) toast.error("Erro ao criar curso: " + error.message);
-      else { toast.success("Curso criado"); navigate("/admin/courses"); }
+      if (error) toast.error("Erro ao criar produto: " + error.message);
+      else { toast.success("Produto criado"); navigate("/admin/courses"); }
     }
     setSaving(false);
   };
@@ -107,7 +107,7 @@ export default function CourseForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Curso" : "Novo Curso"}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Produto" : "Novo Produto"}</h1>
         </div>
       </div>
 
@@ -236,7 +236,7 @@ export default function CourseForm() {
 
         <div className="flex gap-3">
           <Button type="submit" disabled={saving}>
-            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar Alterações" : "Criar Curso"}
+            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar Alterações" : "Criar Produto"}
           </Button>
           <Button type="button" variant="outline" onClick={() => navigate("/admin/courses")}>Cancelar</Button>
         </div>

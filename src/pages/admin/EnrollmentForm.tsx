@@ -58,7 +58,7 @@ export default function EnrollmentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.student_id || !form.course_id) { toast.error("Aluno e curso são obrigatórios"); return; }
+    if (!form.student_id || !form.course_id) { toast.error("Aluno e produto são obrigatórios"); return; }
     setSaving(true);
     const payload = { ...form, created_by: user?.id };
     if (isEdit) {
@@ -97,9 +97,9 @@ export default function EnrollmentForm() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm">Curso *</Label>
+             <Label className="text-sm">Produto *</Label>
             <Select value={form.course_id} onValueChange={(v) => update("course_id", v)}>
-              <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione um curso" /></SelectTrigger>
+              <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
               <SelectContent>
                 {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>

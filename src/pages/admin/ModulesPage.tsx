@@ -63,9 +63,9 @@ export default function ModulesPage() {
           <Input placeholder="Buscar módulos..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
         </div>
         <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-          <SelectTrigger className="w-[200px] bg-card border-border"><SelectValue placeholder="Filtrar por curso" /></SelectTrigger>
+          <SelectTrigger className="w-[200px] bg-card border-border"><SelectValue placeholder="Filtrar por produto" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os cursos</SelectItem>
+            <SelectItem value="all">Todos os produtos</SelectItem>
             {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -81,7 +81,7 @@ export default function ModulesPage() {
             <thead>
               <tr className="border-b border-border bg-card">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Título</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Curso</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produto</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Liberação</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Ações</th>

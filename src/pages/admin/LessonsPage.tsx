@@ -65,9 +65,9 @@ export default function LessonsPage() {
           <Input placeholder="Buscar aulas..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
         </div>
         <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-          <SelectTrigger className="w-[200px] bg-card border-border"><SelectValue placeholder="Filtrar por curso" /></SelectTrigger>
+           <SelectTrigger className="w-[200px] bg-card border-border"><SelectValue placeholder="Filtrar por produto" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os cursos</SelectItem>
+            <SelectItem value="all">Todos os produtos</SelectItem>
             {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
           </SelectContent>
         </Select>

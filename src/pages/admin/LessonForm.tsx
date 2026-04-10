@@ -83,7 +83,7 @@ export default function LessonForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.course_id || !form.module_id || !form.title || !form.slug) {
-      toast.error("Campos obrigatórios: curso, módulo, título e slug");
+      toast.error("Campos obrigatórios: produto, módulo, título e slug");
       return;
     }
     setSaving(true);
@@ -114,7 +114,7 @@ export default function LessonForm() {
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Localização</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm">Curso *</Label>
+              <Label className="text-sm">Produto *</Label>
               <Select value={form.course_id} onValueChange={(v) => { update("course_id", v); update("module_id", ""); }}>
                 <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>{courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
