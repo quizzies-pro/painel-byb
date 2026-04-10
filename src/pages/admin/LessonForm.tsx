@@ -62,7 +62,7 @@ export default function LessonForm() {
     estimated_time: "",
   });
 
-  const backUrl = `/admin/courses/${courseId}/modules/${moduleId}`;
+  const backUrl = `/admin/courses/${courseId}/modules/${moduleId}?tab=lessons`;
 
   const fetchMaterials = async () => {
     if (!id) return;
