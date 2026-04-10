@@ -353,7 +353,7 @@ export default function CourseForm() {
         {isEdit && (
           <TabsContent value="modules" className="mt-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[13px] text-muted-foreground">Gerencie os módulos deste produto</p>
+              <p className="text-[13px] text-muted-foreground">Arraste para reordenar os módulos</p>
               <div className="flex items-center gap-3">
                 <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
                   <Button variant="ghost" size="icon" className={`h-7 w-7 rounded-md ${modulesView === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`} onClick={() => setModulesView("list")}>
@@ -377,39 +377,26 @@ export default function CourseForm() {
               </div>
             ) : modulesView === "list" ? (
               <div className="border border-border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Ordem</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Liberação</th>
-                      <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {modules.map((m) => (
-                      <tr key={m.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{m.sort_order}</td>
-                        <td className="px-4 py-2.5 font-medium text-foreground">{m.title}</td>
-                        <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{m.status}</Badge></td>
-                        <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">{m.release_type}{m.release_days ? ` (${m.release_days}d)` : ""}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex justify-end gap-1">
-                            <Link to={`/admin/courses/${id}/modules/${m.id}`}>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                            </Link>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteModule(m.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </td>
+                <DndContext sensors={moduleSensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="w-8 px-2 py-2.5" />
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Liberação</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <SortableContext items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                      <tbody>
+                        {modules.map((m) => (
+                          <SortableModuleRow key={m.id} module={m} courseId={id!} onDelete={handleDeleteModule} />
+                        ))}
+                      </tbody>
+                    </SortableContext>
+                  </table>
+                </DndContext>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
