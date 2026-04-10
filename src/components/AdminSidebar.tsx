@@ -30,6 +30,28 @@ const systemItems = [
   { title: "Configurações", url: "/admin/settings", icon: Settings },
 ];
 
+function LogoSection({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className="px-3 pb-4">
+      <NavLink to="/admin" end className="block">
+        {collapsed ? (
+          <img
+            src="/logo-icon.png"
+            alt="BYB"
+            className="h-9 w-9 object-contain rounded-lg"
+          />
+        ) : (
+          <img
+            src="/logo-full.png"
+            alt="The BYB"
+            className="h-9 object-contain"
+          />
+        )}
+      </NavLink>
+    </div>
+  );
+}
+
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -70,6 +92,7 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarContent className="bg-sidebar pt-4">
+        <LogoSection collapsed={collapsed} />
         {renderGroup("Conteúdo", contentItems)}
         {renderGroup("Gestão", managementItems)}
         {renderGroup("Sistema", systemItems)}
