@@ -16,8 +16,6 @@ import {
 const contentItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Produtos", url: "/admin/courses", icon: BookOpen },
-  { title: "Módulos", url: "/admin/modules", icon: Layers },
-  { title: "Aulas", url: "/admin/lessons", icon: FileText },
 ];
 
 const managementItems = [
