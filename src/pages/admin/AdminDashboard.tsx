@@ -1,22 +1,24 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Layers, FileText } from "lucide-react";
+import { BookOpen, Layers, FileText, Users, CreditCard, GraduationCap } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [counts, setCounts] = useState({ courses: 0, modules: 0, lessons: 0 });
+  const [counts, setCounts] = useState({ courses: 0, modules: 0, lessons: 0, students: 0, payments: 0, enrollments: 0 });
 
   useEffect(() => {
     const fetchCounts = async () => {
-      const [c, m, l] = await Promise.all([
+      const [c, m, l, s, p, e] = await Promise.all([
         supabase.from("courses").select("id", { count: "exact", head: true }),
         supabase.from("course_modules").select("id", { count: "exact", head: true }),
         supabase.from("lessons").select("id", { count: "exact", head: true }),
+        supabase.from("students").select("id", { count: "exact", head: true }),
+        supabase.from("payments").select("id", { count: "exact", head: true }),
+        supabase.from("enrollments").select("id", { count: "exact", head: true }),
       ]);
       setCounts({
-        courses: c.count ?? 0,
-        modules: m.count ?? 0,
-        lessons: l.count ?? 0,
+        courses: c.count ?? 0, modules: m.count ?? 0, lessons: l.count ?? 0,
+        students: s.count ?? 0, payments: p.count ?? 0, enrollments: e.count ?? 0,
       });
     };
     fetchCounts();
@@ -26,13 +28,16 @@ export default function AdminDashboard() {
     { label: "Cursos", value: counts.courses, icon: BookOpen },
     { label: "Módulos", value: counts.modules, icon: Layers },
     { label: "Aulas", value: counts.lessons, icon: FileText },
+    { label: "Alunos", value: counts.students, icon: Users },
+    { label: "Pagamentos", value: counts.payments, icon: CreditCard },
+    { label: "Matrículas", value: counts.enrollments, icon: GraduationCap },
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Visão Geral</h1>
-        <p className="text-sm text-muted-foreground mt-1">Resumo do conteúdo da plataforma</p>
+        <p className="text-sm text-muted-foreground mt-1">Resumo da plataforma TTS Academy</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

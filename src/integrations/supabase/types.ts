@@ -151,6 +151,63 @@ export type Database = {
         }
         Relationships: []
       }
+      enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          origin: Database["public"]["Enums"]["enrollment_origin"]
+          started_at: string
+          status: Database["public"]["Enums"]["enrollment_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          origin?: Database["public"]["Enums"]["enrollment_origin"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          origin?: Database["public"]["Enums"]["enrollment_origin"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_materials: {
         Row: {
           course_id: string
@@ -320,6 +377,135 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          affiliate_name: string | null
+          amount: number
+          approved_at: string | null
+          canceled_at: string | null
+          coupon_code: string | null
+          course_id: string | null
+          created_at: string
+          currency: string
+          external_order_id: string | null
+          external_payment_id: string | null
+          id: string
+          installments: number | null
+          notes: string | null
+          origin: string | null
+          payment_method: string | null
+          product_id: string | null
+          product_name: string | null
+          purchased_at: string | null
+          raw_payload: Json | null
+          status: Database["public"]["Enums"]["payment_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          affiliate_name?: string | null
+          amount?: number
+          approved_at?: string | null
+          canceled_at?: string | null
+          coupon_code?: string | null
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          external_order_id?: string | null
+          external_payment_id?: string | null
+          id?: string
+          installments?: number | null
+          notes?: string | null
+          origin?: string | null
+          payment_method?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          purchased_at?: string | null
+          raw_payload?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          affiliate_name?: string | null
+          amount?: number
+          approved_at?: string | null
+          canceled_at?: string | null
+          coupon_code?: string | null
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          external_order_id?: string | null
+          external_payment_id?: string | null
+          id?: string
+          installments?: number | null
+          notes?: string | null
+          origin?: string | null
+          payment_method?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          purchased_at?: string | null
+          raw_payload?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          cpf: string | null
+          created_at: string
+          email: string
+          id: string
+          last_login_at: string | null
+          name: string
+          origin: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["student_status"]
+          updated_at: string
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          last_login_at?: string | null
+          name: string
+          origin?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          updated_at?: string
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          last_login_at?: string | null
+          name?: string
+          origin?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -359,6 +545,8 @@ export type Database = {
       access_type: "lifetime" | "limited"
       app_role: "super_admin" | "admin_operacional"
       course_status: "draft" | "published" | "hidden" | "archived"
+      enrollment_origin: "purchase" | "manual" | "bonus" | "test"
+      enrollment_status: "active" | "expired" | "canceled" | "blocked"
       lesson_status: "draft" | "published" | "hidden"
       lesson_type: "video" | "text" | "audio" | "download" | "hybrid"
       material_type:
@@ -369,7 +557,16 @@ export type Database = {
         | "link"
         | "other"
       module_status: "draft" | "published" | "hidden"
+      payment_status:
+        | "pending"
+        | "approved"
+        | "refunded"
+        | "canceled"
+        | "chargeback"
+        | "expired"
+        | "failed"
       release_type: "immediate" | "manual" | "drip"
+      student_status: "active" | "blocked" | "pending" | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -500,6 +697,8 @@ export const Constants = {
       access_type: ["lifetime", "limited"],
       app_role: ["super_admin", "admin_operacional"],
       course_status: ["draft", "published", "hidden", "archived"],
+      enrollment_origin: ["purchase", "manual", "bonus", "test"],
+      enrollment_status: ["active", "expired", "canceled", "blocked"],
       lesson_status: ["draft", "published", "hidden"],
       lesson_type: ["video", "text", "audio", "download", "hybrid"],
       material_type: [
@@ -511,7 +710,17 @@ export const Constants = {
         "other",
       ],
       module_status: ["draft", "published", "hidden"],
+      payment_status: [
+        "pending",
+        "approved",
+        "refunded",
+        "canceled",
+        "chargeback",
+        "expired",
+        "failed",
+      ],
       release_type: ["immediate", "manual", "drip"],
+      student_status: ["active", "blocked", "pending", "canceled"],
     },
   },
 } as const
