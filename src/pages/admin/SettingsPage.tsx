@@ -32,8 +32,11 @@ import {
   Plus,
   Trash2,
   Mail,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PermissionsEditor, DEFAULT_PERMISSIONS, type Permissions } from "@/components/PermissionsEditor";
 
 interface Setting {
   id: string;
@@ -46,6 +49,7 @@ interface AdminUser {
   user_id: string;
   email: string;
   role: string;
+  permissions: Permissions;
   created_at: string;
   last_sign_in: string | null;
 }
@@ -66,19 +70,26 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function SettingsPage() {
-  const { user, role, session } = useAuth();
+  const { user, role } = useAuth();
   const isSuperAdmin = role === "super_admin";
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("general");
 
-  // Users tab state
+  // Users state
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editPermissions, setEditPermissions] = useState<Permissions>(DEFAULT_PERMISSIONS);
+  const [editRole, setEditRole] = useState("admin_operacional");
+  const [savingPermissions, setSavingPermissions] = useState(false);
+
+  // Invite state
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("admin_operacional");
+  const [invitePermissions, setInvitePermissions] = useState<Permissions>(DEFAULT_PERMISSIONS);
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
@@ -114,15 +125,11 @@ export default function SettingsPage() {
   }, [activeTab, isSuperAdmin]);
 
   const updateSetting = (key: string, value: string) => {
-    setSettings((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, value } : s))
-    );
+    setSettings((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)));
   };
 
-  const getBoolValue = (key: string) =>
-    settings.find((s) => s.key === key)?.value === "true";
-  const getStringValue = (key: string) =>
-    settings.find((s) => s.key === key)?.value || "";
+  const getBoolValue = (key: string) => settings.find((s) => s.key === key)?.value === "true";
+  const getStringValue = (key: string) => settings.find((s) => s.key === key)?.value || "";
 
   const handleSave = async () => {
     setSaving(true);
@@ -142,7 +149,11 @@ export default function SettingsPage() {
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
         method: "POST",
-        body: { email: inviteEmail.trim(), role: inviteRole },
+        body: {
+          email: inviteEmail.trim(),
+          role: inviteRole,
+          permissions: inviteRole === "super_admin" ? DEFAULT_PERMISSIONS : invitePermissions,
+        },
       });
       if (error) throw error;
       if (data?.error) {
@@ -152,6 +163,7 @@ export default function SettingsPage() {
         setShowInviteDialog(false);
         setInviteEmail("");
         setInviteRole("admin_operacional");
+        setInvitePermissions(DEFAULT_PERMISSIONS);
         fetchAdminUsers();
       }
     } catch {
@@ -160,22 +172,30 @@ export default function SettingsPage() {
     setInviting(false);
   };
 
-  const handleChangeRole = async (userId: string, newRole: string) => {
+  const handleSavePermissions = async () => {
+    if (!editingUser) return;
+    setSavingPermissions(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
         method: "PATCH",
-        body: { user_id: userId, role: newRole },
+        body: {
+          user_id: editingUser.user_id,
+          role: editRole,
+          permissions: editRole === "super_admin" ? DEFAULT_PERMISSIONS : editPermissions,
+        },
       });
       if (error) throw error;
       if (data?.error) {
         toast.error(data.error);
       } else {
-        toast.success("Papel atualizado");
+        toast.success("Permissões atualizadas");
+        setEditingUser(null);
         fetchAdminUsers();
       }
     } catch {
-      toast.error("Erro ao atualizar papel");
+      toast.error("Erro ao salvar permissões");
     }
+    setSavingPermissions(false);
   };
 
   const handleRemoveUser = async (userId: string, email: string) => {
@@ -197,6 +217,12 @@ export default function SettingsPage() {
     }
   };
 
+  const openEditUser = (u: AdminUser) => {
+    setEditingUser(u);
+    setEditRole(u.role);
+    setEditPermissions(u.permissions ?? DEFAULT_PERMISSIONS);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -215,6 +241,81 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-1 max-w-xs">
           Apenas Super Admins podem acessar as configurações da plataforma
         </p>
+      </div>
+    );
+  }
+
+  // Editing a specific user — show permissions editor full view
+  if (editingUser) {
+    const isSelf = editingUser.user_id === user?.id;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setEditingUser(null)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight">{editingUser.email}</h1>
+              <p className="text-sm text-muted-foreground">Configurar permissões de acesso</p>
+            </div>
+          </div>
+          <Button
+            onClick={handleSavePermissions}
+            disabled={savingPermissions || isSelf}
+            size="sm"
+            className="gap-2"
+          >
+            {savingPermissions ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            Salvar permissões
+          </Button>
+        </div>
+
+        <div className="max-w-xl space-y-6">
+          {/* Role selector */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Papel</Label>
+            <p className="text-xs text-muted-foreground">
+              Super Admins têm acesso total. Permissões customizadas se aplicam a Admin Operacional.
+            </p>
+            <Select value={editRole} onValueChange={setEditRole} disabled={isSelf}>
+              <SelectTrigger className="w-[240px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="super_admin">Super Admin</SelectItem>
+                <SelectItem value="admin_operacional">Admin Operacional</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
+          {editRole === "super_admin" ? (
+            <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
+              <Shield className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm font-medium">Acesso Total</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Super Admins têm todas as permissões ativadas automaticamente
+              </p>
+            </div>
+          ) : (
+            <PermissionsEditor
+              permissions={editPermissions}
+              onChange={setEditPermissions}
+              disabled={isSelf}
+            />
+          )}
+        </div>
       </div>
     );
   }
@@ -243,7 +344,6 @@ export default function SettingsPage() {
 
       {/* Tabs + Content */}
       <div className="flex gap-8">
-        {/* Sidebar Tabs */}
         <nav className="w-48 shrink-0 space-y-1">
           {tabs.map((tab) => (
             <button
@@ -261,14 +361,10 @@ export default function SettingsPage() {
           ))}
         </nav>
 
-        {/* Content */}
         <div className="flex-1 min-w-0 max-w-xl">
           {activeTab === "general" && (
             <div className="space-y-6">
-              <SectionHeader
-                title="Informações Gerais"
-                description="Dados básicos da sua plataforma"
-              />
+              <SectionHeader title="Informações Gerais" description="Dados básicos da sua plataforma" />
               <SettingField label="Nome da Plataforma" description="O nome exibido para os alunos">
                 <Input
                   value={getStringValue("platform_name")}
@@ -290,10 +386,7 @@ export default function SettingsPage() {
 
           {activeTab === "content" && (
             <div className="space-y-6">
-              <SectionHeader
-                title="Conteúdo"
-                description="Configurações padrão para cursos e aulas"
-              />
+              <SectionHeader title="Conteúdo" description="Configurações padrão para cursos e aulas" />
               <ToggleField
                 label="Comentários"
                 description="Permitir que alunos comentem nos produtos"
@@ -312,10 +405,7 @@ export default function SettingsPage() {
 
           {activeTab === "access" && (
             <div className="space-y-6">
-              <SectionHeader
-                title="Controle de Acesso"
-                description="Regras automáticas de bloqueio de acesso"
-              />
+              <SectionHeader title="Controle de Acesso" description="Regras automáticas de bloqueio de acesso" />
               <ToggleField
                 label="Bloquear em Reembolso"
                 description="Revogar acesso do aluno automaticamente quando houver reembolso"
@@ -337,7 +427,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <SectionHeader
                   title="Usuários do Painel"
-                  description="Gerencie quem tem acesso ao painel administrativo"
+                  description="Gerencie quem tem acesso e o que cada pessoa pode fazer"
                 />
                 <Button size="sm" className="gap-2" onClick={() => setShowInviteDialog(true)}>
                   <Plus className="h-3.5 w-3.5" />
@@ -355,57 +445,42 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <div className="rounded-lg border border-border divide-y divide-border">
-                  {adminUsers.map((u) => (
-                    <div
-                      key={u.user_id}
-                      className="flex items-center justify-between px-4 py-3 gap-4"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  {adminUsers.map((u) => {
+                    const isSelf = u.user_id === user?.id;
+                    return (
+                      <button
+                        key={u.user_id}
+                        onClick={() => openEditUser(u)}
+                        className="w-full flex items-center justify-between px-4 py-3 gap-4 hover:bg-accent/50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {u.email}
+                              {isSelf && (
+                                <span className="text-xs text-muted-foreground ml-2">(você)</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {u.last_sign_in
+                                ? `Último login: ${new Date(u.last_sign_in).toLocaleDateString("pt-BR")}`
+                                : "Nunca logou"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{u.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {u.last_sign_in
-                              ? `Último login: ${new Date(u.last_sign_in).toLocaleDateString("pt-BR")}`
-                              : "Nunca logou"}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        {u.user_id === user?.id ? (
+                        <div className="flex items-center gap-2 shrink-0">
                           <Badge variant="outline" className="text-xs font-mono">
                             {roleLabels[u.role] ?? u.role}
                           </Badge>
-                        ) : (
-                          <>
-                            <Select
-                              value={u.role}
-                              onValueChange={(val) => handleChangeRole(u.user_id, val)}
-                            >
-                              <SelectTrigger className="h-8 w-[170px] text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="super_admin">Super Admin</SelectItem>
-                                <SelectItem value="admin_operacional">Admin Operacional</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleRemoveUser(u.user_id, u.email)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -413,10 +488,7 @@ export default function SettingsPage() {
 
           {activeTab === "account" && (
             <div className="space-y-6">
-              <SectionHeader
-                title="Sua Conta"
-                description="Informações do administrador logado"
-              />
+              <SectionHeader title="Sua Conta" description="Informações do administrador logado" />
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Email</span>
@@ -442,7 +514,7 @@ export default function SettingsPage() {
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Convidar Usuário</DialogTitle>
           </DialogHeader>
@@ -455,25 +527,43 @@ export default function SettingsPage() {
                 placeholder="email@exemplo.com"
               />
             </SettingField>
-            <SettingField label="Papel" description="Define as permissões do usuário no painel">
+            <SettingField label="Papel" description="Define as permissões base do usuário">
               <Select value={inviteRole} onValueChange={setInviteRole}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="super_admin">Super Admin — acesso total</SelectItem>
-                  <SelectItem value="admin_operacional">
-                    Admin Operacional — acesso operacional
-                  </SelectItem>
+                  <SelectItem value="admin_operacional">Admin Operacional — acesso customizado</SelectItem>
                 </SelectContent>
               </Select>
             </SettingField>
+
+            {inviteRole === "admin_operacional" && (
+              <>
+                <Separator />
+                <div>
+                  <Label className="text-sm font-medium">Permissões</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5 mb-4">
+                    Defina exatamente o que este usuário poderá ver e fazer
+                  </p>
+                  <PermissionsEditor
+                    permissions={invitePermissions}
+                    onChange={setInvitePermissions}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()} className="gap-2">
+            <Button
+              onClick={handleInvite}
+              disabled={inviting || !inviteEmail.trim()}
+              className="gap-2"
+            >
               {inviting ? (
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
               ) : (
@@ -488,7 +578,7 @@ export default function SettingsPage() {
   );
 }
 
-/* ---------- Reusable sub-components ---------- */
+/* ---------- Sub-components ---------- */
 
 function SectionHeader({ title, description }: { title: string; description: string }) {
   return (
@@ -500,39 +590,19 @@ function SectionHeader({ title, description }: { title: string; description: str
   );
 }
 
-function SettingField({
-  label,
-  description,
-  children,
-}: {
-  label: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
+function SettingField({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
       <div>
         <Label className="text-sm font-medium">{label}</Label>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
       {children}
     </div>
   );
 }
 
-function ToggleField({
-  label,
-  description,
-  checked,
-  onCheckedChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
-}) {
+function ToggleField({ label, description, checked, onCheckedChange }: { label: string; description: string; checked: boolean; onCheckedChange: (v: boolean) => void }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="space-y-0.5">

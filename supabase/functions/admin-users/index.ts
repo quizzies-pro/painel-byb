@@ -6,6 +6,26 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const DEFAULT_PERMISSIONS = {
+  courses: { view: true, manage: true },
+  modules: { view: true, manage: true },
+  lessons: { view: true, manage: true },
+  students: { view: true, manage: true },
+  enrollments: { view: true, manage: true },
+  payments: { view: true },
+  webhooks: { view: true, manage: true },
+  settings: { view: true },
+  logs: { view: true },
+  dashboard: { revenue: true, students: true, enrollments: true, payments: true },
+};
+
+function jsonRes(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -17,27 +37,14 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify caller is super_admin
+    // Verify caller
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!authHeader) return jsonRes({ error: "Não autorizado" }, 401);
 
     const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user: caller },
-    } = await supabaseAdmin.auth.getUser(token);
-    if (!caller) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
+    if (!caller) return jsonRes({ error: "Não autorizado" }, 401);
 
-    // Check super_admin role
     const { data: callerRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -46,29 +53,20 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!callerRole) {
-      return new Response(
-        JSON.stringify({ error: "Apenas Super Admins podem gerenciar usuários" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonRes({ error: "Apenas Super Admins podem gerenciar usuários" }, 403);
     }
 
-    const url = new URL(req.url);
     const method = req.method;
 
-    // GET - List admin users
+    // GET — List admin users
     if (method === "GET") {
       const { data: roles } = await supabaseAdmin
         .from("user_roles")
-        .select("user_id, role, created_at")
+        .select("user_id, role, permissions, created_at")
         .order("created_at", { ascending: true });
 
-      if (!roles || roles.length === 0) {
-        return new Response(JSON.stringify([]), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (!roles || roles.length === 0) return jsonRes([]);
 
-      // Fetch user emails from auth
       const users = await Promise.all(
         roles.map(async (r) => {
           const { data } = await supabaseAdmin.auth.admin.getUserById(r.user_id);
@@ -76,59 +74,45 @@ Deno.serve(async (req) => {
             user_id: r.user_id,
             email: data.user?.email ?? "unknown",
             role: r.role,
+            permissions: r.permissions ?? DEFAULT_PERMISSIONS,
             created_at: r.created_at,
             last_sign_in: data.user?.last_sign_in_at ?? null,
           };
         })
       );
 
-      return new Response(JSON.stringify(users), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonRes(users);
     }
 
-    // POST - Invite new admin
+    // POST — Invite new admin
     if (method === "POST") {
-      const { email, role } = await req.json();
+      const { email, role, permissions } = await req.json();
 
       if (!email || !role) {
-        return new Response(
-          JSON.stringify({ error: "Email e papel são obrigatórios" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ error: "Email e papel são obrigatórios" }, 400);
       }
-
       if (!["super_admin", "admin_operacional"].includes(role)) {
-        return new Response(
-          JSON.stringify({ error: "Papel inválido" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ error: "Papel inválido" }, 400);
       }
 
-      // Check if user already exists in auth
+      // Find or invite user
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find(
         (u) => u.email?.toLowerCase() === email.toLowerCase()
       );
 
       let userId: string;
-
       if (existingUser) {
         userId = existingUser.id;
       } else {
-        // Invite new user
         const { data: invited, error: inviteError } =
           await supabaseAdmin.auth.admin.inviteUserByEmail(email);
         if (inviteError || !invited.user) {
-          return new Response(
-            JSON.stringify({ error: inviteError?.message ?? "Erro ao convidar usuário" }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return jsonRes({ error: inviteError?.message ?? "Erro ao convidar" }, 500);
         }
         userId = invited.user.id;
       }
 
-      // Check if role already exists
       const { data: existingRole } = await supabaseAdmin
         .from("user_roles")
         .select("id")
@@ -136,81 +120,54 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (existingRole) {
-        return new Response(
-          JSON.stringify({ error: "Este usuário já possui um papel atribuído" }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ error: "Este usuário já possui um papel atribuído" }, 409);
       }
+
+      const finalPermissions = role === "super_admin"
+        ? DEFAULT_PERMISSIONS
+        : (permissions ?? DEFAULT_PERMISSIONS);
 
       const { error: insertError } = await supabaseAdmin
         .from("user_roles")
-        .insert({ user_id: userId, role });
+        .insert({ user_id: userId, role, permissions: finalPermissions });
 
-      if (insertError) {
-        return new Response(
-          JSON.stringify({ error: insertError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (insertError) return jsonRes({ error: insertError.message }, 500);
 
-      return new Response(JSON.stringify({ success: true, user_id: userId }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonRes({ success: true, user_id: userId });
     }
 
-    // PATCH - Update role
+    // PATCH — Update role and/or permissions
     if (method === "PATCH") {
-      const { user_id, role } = await req.json();
+      const { user_id, role, permissions } = await req.json();
+      if (!user_id) return jsonRes({ error: "user_id é obrigatório" }, 400);
 
-      if (!user_id || !role) {
-        return new Response(
-          JSON.stringify({ error: "user_id e role são obrigatórios" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (user_id === caller.id && role && role !== "super_admin") {
+        return jsonRes({ error: "Você não pode remover seu próprio papel de Super Admin" }, 400);
       }
 
-      // Prevent removing own super_admin
-      if (user_id === caller.id && role !== "super_admin") {
-        return new Response(
-          JSON.stringify({ error: "Você não pode remover seu próprio papel de Super Admin" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      const updates: Record<string, unknown> = {};
+      if (role) updates.role = role;
+      if (permissions) updates.permissions = permissions;
+
+      if (Object.keys(updates).length === 0) {
+        return jsonRes({ error: "Nenhuma alteração fornecida" }, 400);
       }
 
       const { error } = await supabaseAdmin
         .from("user_roles")
-        .update({ role })
+        .update(updates)
         .eq("user_id", user_id);
 
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (error) return jsonRes({ error: error.message }, 500);
+      return jsonRes({ success: true });
     }
 
-    // DELETE - Remove admin role
+    // DELETE — Remove admin role
     if (method === "DELETE") {
       const { user_id } = await req.json();
-
-      if (!user_id) {
-        return new Response(
-          JSON.stringify({ error: "user_id é obrigatório" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Prevent self-removal
+      if (!user_id) return jsonRes({ error: "user_id é obrigatório" }, 400);
       if (user_id === caller.id) {
-        return new Response(
-          JSON.stringify({ error: "Você não pode remover seu próprio acesso" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ error: "Você não pode remover seu próprio acesso" }, 400);
       }
 
       const { error } = await supabaseAdmin
@@ -218,22 +175,11 @@ Deno.serve(async (req) => {
         .delete()
         .eq("user_id", user_id);
 
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (error) return jsonRes({ error: error.message }, 500);
+      return jsonRes({ success: true });
     }
 
-    return new Response(JSON.stringify({ error: "Método não suportado" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonRes({ error: "Método não suportado" }, 405);
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
