@@ -27,7 +27,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-background sticky top-0 z-10">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-              <span className="text-sm font-medium text-foreground">TTS Academy</span>
+              <span className="text-sm font-medium text-foreground">By'b Admin</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground font-mono">{user.email}</span>
