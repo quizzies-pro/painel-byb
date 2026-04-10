@@ -76,81 +76,81 @@ export default function EnrollmentForm() {
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/enrollments")}><ArrowLeft className="h-4 w-4" /></Button>
-        <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Matrícula" : "Nova Matrícula"}</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/enrollments")} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Matrícula" : "Nova Matrícula"}</h1>
+        </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" onClick={() => navigate("/admin/enrollments")}>Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar" : "Criar Matrícula"}
+          </Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Dados da Matrícula</h2>
-
+      <div className="space-y-6 max-w-3xl">
+        <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label className="text-sm">Aluno *</Label>
+            <Label className="text-[13px] font-medium">Aluno *</Label>
             <Select value={form.student_id} onValueChange={(v) => update("student_id", v)}>
-              <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
+              <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
               <SelectContent>
                 {students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.email})</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-2">
-             <Label className="text-sm">Produto *</Label>
+            <Label className="text-[13px] font-medium">Produto *</Label>
             <Select value={form.course_id} onValueChange={(v) => update("course_id", v)}>
-              <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
+              <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
               <SelectContent>
                 {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Origem</Label>
-              <Select value={form.origin || "manual"} onValueChange={(v) => update("origin", v)}>
-                <SelectTrigger className="bg-card border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="purchase">Compra</SelectItem>
-                  <SelectItem value="manual">Manual</SelectItem>
-                  <SelectItem value="bonus">Bônus</SelectItem>
-                  <SelectItem value="test">Teste</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm">Status</Label>
-              <Select value={form.status || "active"} onValueChange={(v) => update("status", v)}>
-                <SelectTrigger className="bg-card border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Ativa</SelectItem>
-                  <SelectItem value="expired">Expirada</SelectItem>
-                  <SelectItem value="canceled">Cancelada</SelectItem>
-                  <SelectItem value="blocked">Bloqueada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label className="text-sm">Data de Expiração (opcional)</Label>
-            <Input type="date" value={form.expires_at ? new Date(form.expires_at).toISOString().split("T")[0] : ""} onChange={(e) => update("expires_at", e.target.value ? new Date(e.target.value).toISOString() : null)} className="bg-card border-border" />
+            <Label className="text-[13px] font-medium">Origem</Label>
+            <Select value={form.origin || "manual"} onValueChange={(v) => update("origin", v)}>
+              <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="purchase">Compra</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="bonus">Bônus</SelectItem>
+                <SelectItem value="test">Teste</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
           <div className="space-y-2">
-            <Label className="text-sm">Observações</Label>
-            <Textarea value={form.notes || ""} onChange={(e) => update("notes", e.target.value)} className="bg-card border-border" rows={3} placeholder="Notas internas sobre esta matrícula..." />
+            <Label className="text-[13px] font-medium">Status</Label>
+            <Select value={form.status || "active"} onValueChange={(v) => update("status", v)}>
+              <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativa</SelectItem>
+                <SelectItem value="expired">Expirada</SelectItem>
+                <SelectItem value="canceled">Cancelada</SelectItem>
+                <SelectItem value="blocked">Bloqueada</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <Button type="submit" disabled={saving}>
-            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar" : "Criar Matrícula"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/enrollments")}>Cancelar</Button>
+        <div className="space-y-2">
+          <Label className="text-[13px] font-medium">Data de Expiração (opcional)</Label>
+          <Input type="date" value={form.expires_at ? new Date(form.expires_at).toISOString().split("T")[0] : ""} onChange={(e) => update("expires_at", e.target.value ? new Date(e.target.value).toISOString() : null)} className="bg-background border-border max-w-xs" />
         </div>
-      </form>
+
+        <div className="space-y-2">
+          <Label className="text-[13px] font-medium">Observações</Label>
+          <Textarea value={form.notes || ""} onChange={(e) => update("notes", e.target.value)} className="bg-background border-border" rows={4} placeholder="Notas internas sobre esta matrícula..." />
+        </div>
+      </div>
     </div>
   );
 }
