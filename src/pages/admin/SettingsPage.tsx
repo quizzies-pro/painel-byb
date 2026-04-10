@@ -210,43 +210,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab === "integration" && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-sm font-medium mb-1">Integração Ticto</h2>
-                <p className="text-xs text-muted-foreground mb-5">Configurações do webhook para receber pagamentos da Ticto</p>
-                <Separator className="mb-5" />
-              </div>
-
-              <SettingField label="URL do Webhook" description="Configure esta URL no painel da Ticto para receber notificações">
-                <div className="flex gap-2">
-                  <Input
-                    value={webhookUrl}
-                    readOnly
-                    className="bg-muted/50 font-mono text-xs cursor-default"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyWebhookUrl}
-                    className="shrink-0 h-9 w-9"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-              </SettingField>
-
-              <SettingField label="Token de Segurança" description="Token secreto para validar a autenticidade dos webhooks recebidos">
-                <Input
-                  value={getStringValue("ticto_webhook_token")}
-                  onChange={(e) => updateSetting("ticto_webhook_token", e.target.value)}
-                  placeholder="Insira o token secreto"
-                  className="bg-background font-mono text-xs"
-                />
-              </SettingField>
-            </div>
-          )}
-
           {activeTab === "account" && (
             <div className="space-y-6">
               <div>
