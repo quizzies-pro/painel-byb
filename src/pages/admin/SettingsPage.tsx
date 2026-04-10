@@ -102,10 +102,10 @@ export default function SettingsPage() {
           <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Conteúdo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm">Comentários</Label>
-              <p className="text-xs text-muted-foreground">Permitir comentários globalmente</p>
+              <p className="text-xs text-muted-foreground">Permitir comentários nos produtos</p>
             </div>
             <Switch checked={getBoolValue("allow_comments")} onCheckedChange={(v) => updateSetting("allow_comments", String(v))} />
           </div>

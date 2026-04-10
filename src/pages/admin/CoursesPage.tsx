@@ -28,7 +28,7 @@ export default function CoursesPage() {
       .from("courses")
       .select("*")
       .order("display_order", { ascending: true });
-    if (error) toast.error("Erro ao carregar cursos");
+    if (error) toast.error("Erro ao carregar produtos");
     else setCourses(data ?? []);
     setLoading(false);
   };
@@ -36,11 +36,11 @@ export default function CoursesPage() {
   useEffect(() => { fetchCourses(); }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este curso?")) return;
+    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
     const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (error) toast.error("Erro ao excluir curso");
+    if (error) toast.error("Erro ao excluir produto");
     else {
-      toast.success("Curso excluído");
+      toast.success("Produto excluído");
       fetchCourses();
     }
   };
@@ -55,12 +55,12 @@ export default function CoursesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cursos</h1>
-          <p className="text-sm text-muted-foreground mt-1">{courses.length} cursos cadastrados</p>
+         <h1 className="text-2xl font-semibold tracking-tight">Produtos</h1>
+          <p className="text-sm text-muted-foreground mt-1">{courses.length} produtos cadastrados</p>
         </div>
         <Link to="/admin/courses/new">
           <Button size="sm" className="gap-2">
-            <Plus className="h-4 w-4" /> Novo Curso
+            <Plus className="h-4 w-4" /> Novo Produto
           </Button>
         </Link>
       </div>
@@ -68,7 +68,7 @@ export default function CoursesPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar cursos..."
+          placeholder="Buscar produtos..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 bg-card border-border"
@@ -81,7 +81,7 @@ export default function CoursesPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {search ? "Nenhum curso encontrado" : "Nenhum curso cadastrado ainda"}
+          {search ? "Nenhum produto encontrado" : "Nenhum produto cadastrado ainda"}
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">

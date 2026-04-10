@@ -49,7 +49,7 @@ export default function ModuleForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.course_id || !form.title) { toast.error("Curso e título são obrigatórios"); return; }
+    if (!form.course_id || !form.title) { toast.error("Produto e título são obrigatórios"); return; }
     setSaving(true);
     if (isEdit) {
       const { error } = await supabase.from("course_modules").update(form).eq("id", id!);
@@ -77,9 +77,9 @@ export default function ModuleForm() {
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Informações</h2>
 
           <div className="space-y-2">
-            <Label className="text-sm">Curso *</Label>
+             <Label className="text-sm">Produto *</Label>
             <Select value={form.course_id} onValueChange={(v) => update("course_id", v)}>
-              <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione um curso" /></SelectTrigger>
+              <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
               <SelectContent>
                 {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>

@@ -107,7 +107,7 @@ export default function StudentDetail() {
               {enrollments.map((e) => (
                 <div key={e.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
-                    <div className="text-sm font-medium">{e.courses?.title || "Curso removido"}</div>
+                    <div className="text-sm font-medium">{e.courses?.title || "Produto removido"}</div>
                     <div className="text-xs text-muted-foreground">Origem: {e.origin} • Início: {formatDate(e.started_at)}{e.expires_at ? ` • Expira: ${formatDate(e.expires_at)}` : ""}</div>
                   </div>
                   <Badge variant="outline" className={statusColors[e.status] || ""}>{e.status}</Badge>

@@ -70,7 +70,7 @@ export default function EnrollmentsPage() {
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por aluno ou curso..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
+          <Input placeholder="Buscar por aluno ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[160px] bg-card border-border"><SelectValue /></SelectTrigger>
@@ -94,7 +94,7 @@ export default function EnrollmentsPage() {
             <thead>
               <tr className="border-b border-border bg-card">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Aluno</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Curso</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produto</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Origem</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Expira</th>

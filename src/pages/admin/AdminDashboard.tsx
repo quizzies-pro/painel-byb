@@ -61,7 +61,7 @@ export default function AdminDashboard() {
       if (coursesNoModules) {
         for (const course of coursesNoModules) {
           const { count } = await supabase.from("course_modules").select("id", { count: "exact", head: true }).eq("course_id", course.id);
-          if (!count || count === 0) alertList.push(`Curso "${course.title}" não tem módulos`);
+          if (!count || count === 0) alertList.push(`Produto "${course.title}" não tem módulos`);
         }
       }
       const { count: pendingPayments } = await supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending");
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
   }, []);
 
   const stats = [
-    { label: "Cursos", value: counts.courses, icon: BookOpen },
+    { label: "Produtos", value: counts.courses, icon: BookOpen },
     { label: "Módulos", value: counts.modules, icon: Layers },
     { label: "Aulas", value: counts.lessons, icon: FileText },
     { label: "Alunos", value: counts.students, icon: Users },
