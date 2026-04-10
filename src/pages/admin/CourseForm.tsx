@@ -162,42 +162,48 @@ export default function CourseForm() {
         </TabsList>
 
         <TabsContent value="basic" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">Título *</Label>
-              <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-background border-border" required />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">Slug *</Label>
-              <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} className="bg-background border-border font-mono text-xs" required />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Descrição curta</Label>
-              <Textarea value={form.short_description || ""} onChange={(e) => update("short_description", e.target.value)} className="bg-background border-border" rows={2} />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Descrição completa</Label>
-              <Textarea value={form.full_description || ""} onChange={(e) => update("full_description", e.target.value)} className="bg-background border-border" rows={5} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">Categoria</Label>
-              <Input value={form.category || ""} onChange={(e) => update("category", e.target.value)} className="bg-background border-border" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">Instrutor</Label>
-              <Input value={form.instructor_name || ""} onChange={(e) => update("instructor_name", e.target.value)} className="bg-background border-border" />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="media" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-[380px_1fr] gap-8">
             <CoverUpload
               value={form.cover_url || ""}
               onChange={(url) => update("cover_url", url)}
               storagePath={`covers/courses/${id || "new"}`}
               label="Capa do Produto"
             />
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Título *</Label>
+                  <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-background border-border" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Slug *</Label>
+                  <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} className="bg-background border-border font-mono text-xs" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Descrição curta</Label>
+                <Textarea value={form.short_description || ""} onChange={(e) => update("short_description", e.target.value)} className="bg-background border-border" rows={2} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Descrição completa</Label>
+                <Textarea value={form.full_description || ""} onChange={(e) => update("full_description", e.target.value)} className="bg-background border-border" rows={5} />
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Categoria</Label>
+                  <Input value={form.category || ""} onChange={(e) => update("category", e.target.value)} className="bg-background border-border" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Instrutor</Label>
+                  <Input value={form.instructor_name || ""} onChange={(e) => update("instructor_name", e.target.value)} className="bg-background border-border" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="media" className="mt-6">
+          <div className="grid grid-cols-2 gap-6">
             <CoverUpload
               value={form.banner_url || ""}
               onChange={(url) => update("banner_url", url)}
@@ -206,7 +212,7 @@ export default function CourseForm() {
               aspectRatio="aspect-[16/9]"
               hint="Dimensões ideais: 1920×1080 pixels. Tamanho máximo: 10 MB."
             />
-            <div className="col-span-2 space-y-2">
+            <div className="space-y-2">
               <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
               <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
             </div>
