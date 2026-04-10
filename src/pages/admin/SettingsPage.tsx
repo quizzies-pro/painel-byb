@@ -514,11 +514,11 @@ export default function SettingsPage() {
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
             <DialogTitle>Convidar Usuário</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <SettingField label="Email" description="O usuário receberá um convite por email">
               <Input
                 type="email"
@@ -555,7 +555,7 @@ export default function SettingsPage() {
               </>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
             <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
               Cancelar
             </Button>
