@@ -1,4 +1,4 @@
-import { BookOpen, Layers, FileText, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings } from "lucide-react";
+import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
