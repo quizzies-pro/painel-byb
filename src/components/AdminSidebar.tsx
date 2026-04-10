@@ -134,7 +134,7 @@ export function AdminSidebar() {
             <button className={`w-full flex items-center rounded-md text-left hover:bg-accent transition-colors outline-none ${
               collapsed ? "justify-center p-2" : "gap-3 px-2 py-2"
             }`}>
-              <UserAvatar src={avatarUrl} name={displayName} size={collapsed ? "sm" : "md"} />
+              <UserAvatar src={avatarUrl} name={displayName} size={collapsed ? "md" : "md"} />
               {!collapsed && (
                 <>
                   <div className="flex-1 min-w-0">
