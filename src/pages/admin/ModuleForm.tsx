@@ -134,22 +134,23 @@ export default function ModuleForm() {
         </TabsList>
 
         <TabsContent value="info" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Título *</Label>
-              <Input value={form.title} onChange={(e) => update("title", e.target.value)} className="bg-background border-border" required />
+          <div className="grid grid-cols-[380px_1fr] gap-8">
+            <CoverUpload
+              value={form.cover_url || ""}
+              onChange={(url) => update("cover_url", url)}
+              storagePath={`covers/modules/${courseId}/${id || "new"}`}
+            />
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Título *</Label>
+                <Input value={form.title} onChange={(e) => update("title", e.target.value)} className="bg-background border-border" required />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Descrição</Label>
+                <Textarea value={form.description || ""} onChange={(e) => update("description", e.target.value)} className="bg-background border-border" rows={6} />
+              </div>
             </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Descrição</Label>
-              <Textarea value={form.description || ""} onChange={(e) => update("description", e.target.value)} className="bg-background border-border" rows={4} />
-            </div>
-            <div className="col-span-2">
-              <CoverUpload
-                value={form.cover_url || ""}
-                onChange={(url) => update("cover_url", url)}
-                storagePath={`covers/modules/${courseId}/${id || "new"}`}
-              />
-            </div>
+          </div>
           </div>
         </TabsContent>
 
