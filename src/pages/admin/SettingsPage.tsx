@@ -71,7 +71,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function SettingsPage() {
-  const { user, role } = useAuth();
+  const { user, role, avatarUrl, refreshProfile } = useAuth();
   const isSuperAdmin = role === "super_admin";
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
