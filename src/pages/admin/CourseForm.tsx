@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 
@@ -27,6 +27,7 @@ export default function CourseForm() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modules, setModules] = useState<Module[]>([]);
+  const [modulesView, setModulesView] = useState<"list" | "grid">("grid");
 
   const [form, setForm] = useState<CourseInsert>({
     title: "",
@@ -274,18 +275,28 @@ export default function CourseForm() {
           <TabsContent value="modules" className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[13px] text-muted-foreground">Gerencie os módulos deste produto</p>
-              <Link to={`/admin/courses/${id}/modules/new`}>
-                <Button size="sm" variant="outline" className="gap-2 h-8 text-xs">
-                  <Plus className="h-3.5 w-3.5" /> Novo Módulo
-                </Button>
-              </Link>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+                  <Button variant="ghost" size="icon" className={`h-7 w-7 rounded-md ${modulesView === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`} onClick={() => setModulesView("list")}>
+                    <List className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className={`h-7 w-7 rounded-md ${modulesView === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`} onClick={() => setModulesView("grid")}>
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <Link to={`/admin/courses/${id}/modules/new`}>
+                  <Button size="sm" variant="outline" className="gap-2 h-8 text-xs">
+                    <Plus className="h-3.5 w-3.5" /> Novo Módulo
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {modules.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border py-12 text-center">
                 <p className="text-sm text-muted-foreground">Nenhum módulo cadastrado neste produto</p>
               </div>
-            ) : (
+            ) : modulesView === "list" ? (
               <div className="border border-border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
@@ -320,6 +331,36 @@ export default function CourseForm() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {modules.map((m) => (
+                  <div key={m.id} className="group rounded-lg border border-border bg-card overflow-hidden transition-colors hover:border-muted-foreground/30">
+                    <Link to={`/admin/courses/${id}/modules/${m.id}`}>
+                      <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                        {m.cover_url ? (
+                          <img src={m.cover_url} alt={m.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+                            <LayoutGrid className="h-10 w-10" />
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    <div className="p-4 space-y-2">
+                      <Link to={`/admin/courses/${id}/modules/${m.id}`}>
+                        <h3 className="font-medium text-foreground text-sm leading-tight group-hover:underline">{m.title}</h3>
+                      </Link>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[11px]">{m.status}</Badge>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteModule(m.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground font-mono">{m.release_type}{m.release_days ? ` (${m.release_days}d)` : ""}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </TabsContent>
