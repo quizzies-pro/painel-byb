@@ -313,14 +313,6 @@ export default function LessonForm() {
               <Label className="text-[13px] font-medium">URL do Áudio</Label>
               <Input value={form.audio_url || ""} onChange={(e) => update("audio_url", e.target.value)} className="bg-background border-border" />
             </div>
-            <div className="col-span-2">
-              <CoverUpload
-                value={form.thumbnail_url || ""}
-                onChange={(url) => update("thumbnail_url", url)}
-                storagePath={`covers/lessons/${courseId}/${moduleId}/${id || "new"}`}
-                label="Thumbnail da Aula"
-              />
-            </div>
           </div>
         </TabsContent>
 
