@@ -17,13 +17,12 @@ interface Setting {
   description: string | null;
 }
 
-type Tab = "general" | "content" | "access" | "integration" | "account";
+type Tab = "general" | "content" | "access" | "account";
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "general", label: "Geral", icon: <Settings2 className="h-4 w-4" /> },
   { id: "content", label: "Conteúdo", icon: <FileText className="h-4 w-4" /> },
   { id: "access", label: "Acesso", icon: <Lock className="h-4 w-4" /> },
-  { id: "integration", label: "Integrações", icon: <Webhook className="h-4 w-4" /> },
   { id: "account", label: "Conta", icon: <User className="h-4 w-4" /> },
 ];
 
