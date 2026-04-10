@@ -205,12 +205,6 @@ export default function CourseForm() {
         <TabsContent value="media" className="mt-6">
           <div className="grid grid-cols-2 gap-6">
             <CoverUpload
-              value={form.cover_url || ""}
-              onChange={(url) => update("cover_url", url)}
-              storagePath={`covers/courses/${id || "new"}`}
-              label="Capa do Produto"
-            />
-            <CoverUpload
               value={form.banner_url || ""}
               onChange={(url) => update("banner_url", url)}
               storagePath={`banners/courses/${id || "new"}`}
@@ -218,7 +212,7 @@ export default function CourseForm() {
               aspectRatio="aspect-[16/9]"
               hint="Dimensões ideais: 1920×1080 pixels. Tamanho máximo: 10 MB."
             />
-            <div className="col-span-2 space-y-2">
+            <div className="space-y-2">
               <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
               <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
             </div>
