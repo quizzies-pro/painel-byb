@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,23 +11,20 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-type CourseOption = Pick<Tables<"courses">, "id" | "title">;
-type Module = Tables<"course_modules">;
-
 const slugify = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export default function LessonForm() {
-  const { id } = useParams();
+  const { courseId, moduleId, id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const [courses, setCourses] = useState<CourseOption[]>([]);
-  const [modules, setModules] = useState<Module[]>([]);
+  const [courseName, setCourseName] = useState("");
+  const [moduleName, setModuleName] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState<TablesInsert<"lessons">>({
-    course_id: "",
-    module_id: "",
+    course_id: courseId || "",
+    module_id: moduleId || "",
     title: "",
     slug: "",
     short_description: "",
@@ -50,28 +47,26 @@ export default function LessonForm() {
     estimated_time: "",
   });
 
+  const backUrl = `/admin/courses/${courseId}/modules/${moduleId}`;
+
   useEffect(() => {
-    supabase.from("courses").select("id, title").order("title").then(({ data }) => setCourses(data ?? []));
+    // Fetch names for breadcrumb
+    if (courseId) {
+      supabase.from("courses").select("title").eq("id", courseId).single().then(({ data }) => setCourseName(data?.title || ""));
+    }
+    if (moduleId) {
+      supabase.from("course_modules").select("title").eq("id", moduleId).single().then(({ data }) => setModuleName(data?.title || ""));
+    }
+
     if (id) {
       setLoading(true);
       supabase.from("lessons").select("*").eq("id", id).single().then(({ data, error }) => {
-        if (error || !data) { toast.error("Aula não encontrada"); navigate("/admin/lessons"); }
-        else {
-          setForm(data as unknown as TablesInsert<"lessons">);
-          supabase.from("course_modules").select("*").eq("course_id", data.course_id).order("sort_order").then(({ data: m }) => setModules(m ?? []));
-        }
+        if (error || !data) { toast.error("Aula não encontrada"); navigate(backUrl); }
+        else setForm(data as unknown as TablesInsert<"lessons">);
         setLoading(false);
       });
     }
-  }, [id, navigate]);
-
-  useEffect(() => {
-    if (form.course_id) {
-      supabase.from("course_modules").select("*").eq("course_id", form.course_id).order("sort_order").then(({ data }) => setModules(data ?? []));
-    } else {
-      setModules([]);
-    }
-  }, [form.course_id]);
+  }, [id, courseId, moduleId, navigate]);
 
   const update = (key: string, value: unknown) => setForm((p) => ({ ...p, [key]: value }));
 
@@ -82,19 +77,20 @@ export default function LessonForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.course_id || !form.module_id || !form.title || !form.slug) {
-      toast.error("Campos obrigatórios: produto, módulo, título e slug");
+    if (!form.title || !form.slug) {
+      toast.error("Título e slug são obrigatórios");
       return;
     }
     setSaving(true);
+    const payload = { ...form, course_id: courseId!, module_id: moduleId! };
     if (isEdit) {
-      const { error } = await supabase.from("lessons").update(form).eq("id", id!);
+      const { error } = await supabase.from("lessons").update(payload).eq("id", id!);
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Aula atualizada"); navigate("/admin/lessons"); }
+      else { toast.success("Aula atualizada"); navigate(backUrl); }
     } else {
-      const { error } = await supabase.from("lessons").insert(form);
+      const { error } = await supabase.from("lessons").insert(payload);
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Aula criada"); navigate("/admin/lessons"); }
+      else { toast.success("Aula criada"); navigate(backUrl); }
     }
     setSaving(false);
   };
@@ -104,32 +100,14 @@ export default function LessonForm() {
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/lessons")}><ArrowLeft className="h-4 w-4" /></Button>
-        <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Aula" : "Nova Aula"}</h1>
+        <Button variant="ghost" size="icon" onClick={() => navigate(backUrl)}><ArrowLeft className="h-4 w-4" /></Button>
+        <div>
+          <p className="text-xs text-muted-foreground">{courseName} → {moduleName}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Aula" : "Nova Aula"}</h1>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Location */}
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Localização</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Produto *</Label>
-              <Select value={form.course_id} onValueChange={(v) => { update("course_id", v); update("module_id", ""); }}>
-                <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm">Módulo *</Label>
-              <Select value={form.module_id} onValueChange={(v) => update("module_id", v)} disabled={!form.course_id}>
-                <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{modules.map((m) => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
         {/* Basic Info */}
         <div className="space-y-4 rounded-lg border border-border p-4">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Informações</h2>
@@ -227,7 +205,7 @@ export default function LessonForm() {
           <Button type="submit" disabled={saving}>
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar" : "Criar Aula"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/lessons")}>Cancelar</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(backUrl)}>Cancelar</Button>
         </div>
       </form>
     </div>

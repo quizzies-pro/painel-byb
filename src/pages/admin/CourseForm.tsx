@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert } from "@/integrations/supabase/types";
+import { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type CourseInsert = TablesInsert<"courses">;
+type Module = Tables<"course_modules">;
 
 const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -22,6 +24,7 @@ export default function CourseForm() {
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [modules, setModules] = useState<Module[]>([]);
 
   const [form, setForm] = useState<CourseInsert>({
     title: "",
@@ -48,6 +51,16 @@ export default function CourseForm() {
     display_order: 0,
   });
 
+  const fetchModules = async () => {
+    if (!id) return;
+    const { data } = await supabase
+      .from("course_modules")
+      .select("*")
+      .eq("course_id", id)
+      .order("sort_order");
+    setModules(data ?? []);
+  };
+
   useEffect(() => {
     if (id) {
       setLoading(true);
@@ -60,6 +73,7 @@ export default function CourseForm() {
         }
         setLoading(false);
       });
+      fetchModules();
     }
   }, [id, navigate]);
 
@@ -90,6 +104,13 @@ export default function CourseForm() {
       else { toast.success("Produto criado"); navigate("/admin/courses"); }
     }
     setSaving(false);
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    if (!confirm("Excluir este módulo e todas as suas aulas?")) return;
+    const { error } = await supabase.from("course_modules").delete().eq("id", moduleId);
+    if (error) toast.error("Erro ao excluir módulo");
+    else { toast.success("Módulo excluído"); fetchModules(); }
   };
 
   if (loading) {
@@ -241,6 +262,60 @@ export default function CourseForm() {
           <Button type="button" variant="outline" onClick={() => navigate("/admin/courses")}>Cancelar</Button>
         </div>
       </form>
+
+      {/* Modules list - only when editing */}
+      {isEdit && (
+        <div className="space-y-4 rounded-lg border border-border p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Módulos</h2>
+            <Link to={`/admin/courses/${id}/modules/new`}>
+              <Button size="sm" variant="outline" className="gap-2 h-8 text-xs">
+                <Plus className="h-3.5 w-3.5" /> Novo Módulo
+              </Button>
+            </Link>
+          </div>
+
+          {modules.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum módulo cadastrado neste produto</p>
+          ) : (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-card">
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Ordem</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Liberação</th>
+                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {modules.map((m) => (
+                    <tr key={m.id} className="border-b border-border last:border-0 hover:bg-card/50 transition-colors">
+                      <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{m.sort_order}</td>
+                      <td className="px-4 py-2.5 font-medium text-foreground">{m.title}</td>
+                      <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{m.status}</Badge></td>
+                      <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">{m.release_type}{m.release_days ? ` (${m.release_days}d)` : ""}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex justify-end gap-1">
+                          <Link to={`/admin/courses/${id}/modules/${m.id}`}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteModule(m.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

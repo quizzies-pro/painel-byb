@@ -10,9 +10,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CoursesPage from "./pages/admin/CoursesPage";
 import CourseForm from "./pages/admin/CourseForm";
-import ModulesPage from "./pages/admin/ModulesPage";
 import ModuleForm from "./pages/admin/ModuleForm";
-import LessonsPage from "./pages/admin/LessonsPage";
 import LessonForm from "./pages/admin/LessonForm";
 import StudentsPage from "./pages/admin/StudentsPage";
 import StudentForm from "./pages/admin/StudentForm";
@@ -42,12 +40,12 @@ const App = () => (
             <Route path="/admin/courses" element={<AdminLayout><CoursesPage /></AdminLayout>} />
             <Route path="/admin/courses/new" element={<AdminLayout><CourseForm /></AdminLayout>} />
             <Route path="/admin/courses/:id" element={<AdminLayout><CourseForm /></AdminLayout>} />
-            <Route path="/admin/modules" element={<AdminLayout><ModulesPage /></AdminLayout>} />
-            <Route path="/admin/modules/new" element={<AdminLayout><ModuleForm /></AdminLayout>} />
-            <Route path="/admin/modules/:id" element={<AdminLayout><ModuleForm /></AdminLayout>} />
-            <Route path="/admin/lessons" element={<AdminLayout><LessonsPage /></AdminLayout>} />
-            <Route path="/admin/lessons/new" element={<AdminLayout><LessonForm /></AdminLayout>} />
-            <Route path="/admin/lessons/:id" element={<AdminLayout><LessonForm /></AdminLayout>} />
+            {/* Modules nested under courses */}
+            <Route path="/admin/courses/:courseId/modules/new" element={<AdminLayout><ModuleForm /></AdminLayout>} />
+            <Route path="/admin/courses/:courseId/modules/:id" element={<AdminLayout><ModuleForm /></AdminLayout>} />
+            {/* Lessons nested under modules */}
+            <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/new" element={<AdminLayout><LessonForm /></AdminLayout>} />
+            <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:id" element={<AdminLayout><LessonForm /></AdminLayout>} />
             <Route path="/admin/students" element={<AdminLayout><StudentsPage /></AdminLayout>} />
             <Route path="/admin/students/new" element={<AdminLayout><StudentForm /></AdminLayout>} />
             <Route path="/admin/students/:id" element={<AdminLayout><StudentForm /></AdminLayout>} />

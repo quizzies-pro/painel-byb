@@ -1,4 +1,4 @@
-import { BookOpen, Layers, FileText, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings } from "lucide-react";
+import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,8 +16,6 @@ import {
 const contentItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Produtos", url: "/admin/courses", icon: BookOpen },
-  { title: "Módulos", url: "/admin/modules", icon: Layers },
-  { title: "Aulas", url: "/admin/lessons", icon: FileText },
 ];
 
 const managementItems = [
