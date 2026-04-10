@@ -151,7 +151,6 @@ export default function ModuleForm() {
               </div>
             </div>
           </div>
-          </div>
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">

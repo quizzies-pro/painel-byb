@@ -256,22 +256,32 @@ export default function LessonForm() {
         </TabsList>
 
         <TabsContent value="info" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">Título *</Label>
-              <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-background border-border" required />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">Slug *</Label>
-              <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} className="bg-background border-border font-mono text-xs" required />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Descrição curta</Label>
-              <Textarea value={form.short_description || ""} onChange={(e) => update("short_description", e.target.value)} className="bg-background border-border" rows={2} />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">Conteúdo (HTML)</Label>
-              <Textarea value={form.content_html || ""} onChange={(e) => update("content_html", e.target.value)} className="bg-background border-border font-mono text-xs" rows={8} />
+          <div className="grid grid-cols-[380px_1fr] gap-8">
+            <CoverUpload
+              value={form.thumbnail_url || ""}
+              onChange={(url) => update("thumbnail_url", url)}
+              storagePath={`covers/lessons/${courseId}/${moduleId}/${id || "new"}`}
+              label="Thumbnail da Aula"
+            />
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Título *</Label>
+                  <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-background border-border" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Slug *</Label>
+                  <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} className="bg-background border-border font-mono text-xs" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Descrição curta</Label>
+                <Textarea value={form.short_description || ""} onChange={(e) => update("short_description", e.target.value)} className="bg-background border-border" rows={2} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Conteúdo (HTML)</Label>
+                <Textarea value={form.content_html || ""} onChange={(e) => update("content_html", e.target.value)} className="bg-background border-border font-mono text-xs" rows={8} />
+              </div>
             </div>
           </div>
         </TabsContent>
