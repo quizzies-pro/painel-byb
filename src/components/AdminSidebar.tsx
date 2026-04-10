@@ -46,7 +46,7 @@ const roleLabels: Record<string, string> = {
 
 function LogoSection({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className="px-3 pb-4">
+    <div className={`pb-4 ${collapsed ? "px-2 flex justify-center" : "px-3"}`}>
       <NavLink to="/admin" end className="block">
         {collapsed ? (
           <img src="/logo-icon.png" alt="BYB" className="h-9 w-9 object-contain rounded-lg" />
