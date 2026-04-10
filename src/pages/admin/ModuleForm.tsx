@@ -11,13 +11,13 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-type Course = Tables<"courses">;
+type CourseOption = Pick<Tables<"courses">, "id" | "title">;
 
 export default function ModuleForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 

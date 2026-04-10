@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-type Course = Tables<"courses">;
+type CourseOption = Pick<Tables<"courses">, "id" | "title">;
 type Module = Tables<"course_modules">;
 
 const slugify = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -20,7 +20,7 @@ export default function LessonForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);

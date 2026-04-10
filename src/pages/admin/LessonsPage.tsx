@@ -10,11 +10,11 @@ import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Lesson = Tables<"lessons"> & { course_modules?: { title: string } | null; courses?: { title: string } | null };
-type Course = Tables<"courses">;
+type CourseOption = Pick<Tables<"courses">, "id" | "title">;
 
 export default function LessonsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
