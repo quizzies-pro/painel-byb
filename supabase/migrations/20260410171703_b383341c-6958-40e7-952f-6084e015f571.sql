@@ -1,0 +1,1 @@
+ALTER TABLE public.lesson_materials ADD COLUMN cover_url text;

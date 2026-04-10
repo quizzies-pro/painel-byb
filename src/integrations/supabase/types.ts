@@ -244,6 +244,7 @@ export type Database = {
       lesson_materials: {
         Row: {
           course_id: string
+          cover_url: string | null
           created_at: string
           description: string | null
           external_link: string | null
@@ -258,6 +259,7 @@ export type Database = {
         }
         Insert: {
           course_id: string
+          cover_url?: string | null
           created_at?: string
           description?: string | null
           external_link?: string | null
@@ -272,6 +274,7 @@ export type Database = {
         }
         Update: {
           course_id?: string
+          cover_url?: string | null
           created_at?: string
           description?: string | null
           external_link?: string | null
