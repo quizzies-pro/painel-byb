@@ -51,6 +51,8 @@ function LogoSection({ collapsed }: { collapsed: boolean }) {
     </div>
   );
 }
+
+export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
@@ -90,6 +92,7 @@ function LogoSection({ collapsed }: { collapsed: boolean }) {
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarContent className="bg-sidebar pt-4">
+        <LogoSection collapsed={collapsed} />
         {renderGroup("Conteúdo", contentItems)}
         {renderGroup("Gestão", managementItems)}
         {renderGroup("Sistema", systemItems)}
