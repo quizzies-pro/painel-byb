@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Upload, FileText, Trash2, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import CoverUpload from "@/components/CoverUpload";
 
 const slugify = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -302,9 +303,13 @@ export default function LessonForm() {
               <Label className="text-[13px] font-medium">URL do Áudio</Label>
               <Input value={form.audio_url || ""} onChange={(e) => update("audio_url", e.target.value)} className="bg-background border-border" />
             </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">URL da Thumbnail</Label>
-              <Input value={form.thumbnail_url || ""} onChange={(e) => update("thumbnail_url", e.target.value)} placeholder="https://..." className="bg-background border-border" />
+            <div className="col-span-2">
+              <CoverUpload
+                value={form.thumbnail_url || ""}
+                onChange={(url) => update("thumbnail_url", url)}
+                storagePath={`covers/lessons/${courseId}/${moduleId}/${id || "new"}`}
+                label="Thumbnail da Aula"
+              />
             </div>
           </div>
         </TabsContent>

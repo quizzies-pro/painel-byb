@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import CoverUpload from "@/components/CoverUpload";
 
 type Lesson = Tables<"lessons">;
 
@@ -142,9 +143,12 @@ export default function ModuleForm() {
               <Label className="text-[13px] font-medium">Descrição</Label>
               <Textarea value={form.description || ""} onChange={(e) => update("description", e.target.value)} className="bg-background border-border" rows={4} />
             </div>
-            <div className="col-span-2 space-y-2">
-              <Label className="text-[13px] font-medium">URL da Capa</Label>
-              <Input value={form.cover_url || ""} onChange={(e) => update("cover_url", e.target.value)} placeholder="https://..." className="bg-background border-border" />
+            <div className="col-span-2">
+              <CoverUpload
+                value={form.cover_url || ""}
+                onChange={(url) => update("cover_url", url)}
+                storagePath={`covers/modules/${courseId}/${id || "new"}`}
+              />
             </div>
           </div>
         </TabsContent>

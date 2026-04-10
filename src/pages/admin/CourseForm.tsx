@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import CoverUpload from "@/components/CoverUpload";
 
 type CourseInsert = TablesInsert<"courses">;
 type Module = Tables<"course_modules">;
@@ -191,14 +192,20 @@ export default function CourseForm() {
 
         <TabsContent value="media" className="mt-6">
           <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">URL da Capa</Label>
-              <Input value={form.cover_url || ""} onChange={(e) => update("cover_url", e.target.value)} placeholder="https://..." className="bg-background border-border" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">URL do Banner</Label>
-              <Input value={form.banner_url || ""} onChange={(e) => update("banner_url", e.target.value)} placeholder="https://..." className="bg-background border-border" />
-            </div>
+            <CoverUpload
+              value={form.cover_url || ""}
+              onChange={(url) => update("cover_url", url)}
+              storagePath={`covers/courses/${id || "new"}`}
+              label="Capa do Produto"
+            />
+            <CoverUpload
+              value={form.banner_url || ""}
+              onChange={(url) => update("banner_url", url)}
+              storagePath={`banners/courses/${id || "new"}`}
+              label="Banner"
+              aspectRatio="aspect-[16/9]"
+              hint="Dimensões ideais: 1920×1080 pixels. Tamanho máximo: 10 MB."
+            />
             <div className="col-span-2 space-y-2">
               <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
               <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
