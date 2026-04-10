@@ -9,10 +9,23 @@ export default {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1200px",
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', '"Menlo"', '"Monaco"', 'monospace'],
+      },
+      fontSize: {
+        "2xs": ["11px", "16px"],
+        xs: ["12px", "18px"],
+        sm: ["13px", "20px"],
+        base: ["14px", "20px"],
+        lg: ["16px", "24px"],
+        xl: ["20px", "28px"],
+        "2xl": ["24px", "32px"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,28 +70,59 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        brand: {
+          blue: "#0070F3",
+          "blue-hover": "#0061D5",
+          "blue-subtle": "#EFF6FF",
+        },
+        success: {
+          DEFAULT: "#22C55E",
+          subtle: "#F0FDF4",
+          text: "#15803D",
+        },
+        warning: {
+          DEFAULT: "#F97316",
+          subtle: "#FFF7ED",
+          text: "#C2410C",
+        },
+        danger: {
+          DEFAULT: "#EF4444",
+          subtle: "#FEF2F2",
+          text: "#B91C1C",
+        },
+        info: {
+          DEFAULT: "#3B82F6",
+          subtle: "#EFF6FF",
+          text: "#1D4ED8",
+        },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "10px",
+        md: "8px",
+        sm: "6px",
+        xs: "4px",
+      },
+      boxShadow: {
+        card: "0 1px 3px 0 rgba(0,0,0,0.06)",
+        dropdown: "0 4px 16px 0 rgba(0,0,0,0.10)",
+        tooltip: "0 2px 8px 0 rgba(0,0,0,0.08)",
+      },
+      spacing: {
+        "sidebar": "220px",
+      },
+      transitionDuration: {
+        fast: "100ms",
+        base: "150ms",
+        slow: "200ms",
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
