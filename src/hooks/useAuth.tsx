@@ -8,6 +8,8 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   role: string | null;
+  avatarUrl: string | null;
+  refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -21,20 +23,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const checkAdminRole = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, avatar_url")
       .eq("user_id", userId)
       .maybeSingle();
     
     if (data) {
       setIsAdmin(true);
       setRole(data.role);
+      setAvatarUrl((data as any).avatar_url ?? null);
     } else {
       setIsAdmin(false);
       setRole(null);
+      setAvatarUrl(null);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      await checkAdminRole(user.id);
     }
   };
 
@@ -48,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setIsAdmin(false);
           setRole(null);
+          setAvatarUrl(null);
         }
         setLoading(false);
       }
@@ -82,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, role, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, role, avatarUrl, refreshProfile, signIn, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
