@@ -111,8 +111,12 @@ export function AdminSidebar() {
       <SidebarFooter className="border-t border-border bg-sidebar p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent transition-colors outline-none">
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-semibold text-foreground uppercase">
+            <button className={`w-full flex items-center rounded-md text-left hover:bg-accent transition-colors outline-none ${
+              collapsed ? "justify-center p-1.5" : "gap-3 px-2 py-2"
+            }`}>
+              <div className={`rounded-full bg-muted flex items-center justify-center shrink-0 font-semibold text-foreground uppercase ${
+                collapsed ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-xs"
+              }`}>
                 {displayName.charAt(0)}
               </div>
               {!collapsed && (
@@ -128,7 +132,7 @@ export function AdminSidebar() {
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="start" className="w-56">
+          <DropdownMenuContent side="top" align={collapsed ? "center" : "start"} className="w-56">
             <div className="px-2 py-1.5">
               <p className="text-sm font-medium">{displayName}</p>
               <p className="text-xs text-muted-foreground">{displayEmail}</p>
