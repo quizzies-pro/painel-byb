@@ -33,9 +33,6 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("general");
-  const [copied, setCopied] = useState(false);
-
-  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ticto-webhook`;
 
   useEffect(() => {
     supabase.from("platform_settings").select("*").order("key").then(({ data, error }) => {
@@ -59,13 +56,6 @@ export default function SettingsPage() {
     }
     setSaving(false);
     toast.success("Configurações salvas com sucesso");
-  };
-
-  const copyWebhookUrl = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    toast.success("URL copiada para a área de transferência");
-    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) {
