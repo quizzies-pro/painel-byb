@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -122,79 +123,95 @@ export default function CourseForm() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/courses")} className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/courses")} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Produto" : "Novo Produto"}</h1>
+        </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" onClick={() => navigate("/admin/courses")}>Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar Alterações" : "Criar Produto"}
+          </Button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Informações Básicas</h2>
-          
-          <div className="space-y-2">
-            <Label className="text-sm">Título *</Label>
-            <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-card border-border" required />
-          </div>
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
+          <TabsTrigger value="basic" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+            Informações Básicas
+          </TabsTrigger>
+          <TabsTrigger value="media" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+            Mídia
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+            Configurações
+          </TabsTrigger>
+          <TabsTrigger value="seo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+            SEO
+          </TabsTrigger>
+          {isEdit && (
+            <TabsTrigger value="modules" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+              Módulos
+            </TabsTrigger>
+          )}
+        </TabsList>
 
-          <div className="space-y-2">
-            <Label className="text-sm">Slug *</Label>
-            <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} className="bg-card border-border font-mono text-xs" required />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm">Descrição curta</Label>
-            <Textarea value={form.short_description || ""} onChange={(e) => update("short_description", e.target.value)} className="bg-card border-border" rows={2} />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm">Descrição completa</Label>
-            <Textarea value={form.full_description || ""} onChange={(e) => update("full_description", e.target.value)} className="bg-card border-border" rows={4} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <TabsContent value="basic" className="mt-6">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-sm">Categoria</Label>
-              <Input value={form.category || ""} onChange={(e) => update("category", e.target.value)} className="bg-card border-border" />
+              <Label className="text-[13px] font-medium">Título *</Label>
+              <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-background border-border" required />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Instrutor</Label>
-              <Input value={form.instructor_name || ""} onChange={(e) => update("instructor_name", e.target.value)} className="bg-card border-border" />
+              <Label className="text-[13px] font-medium">Slug *</Label>
+              <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} className="bg-background border-border font-mono text-xs" required />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label className="text-[13px] font-medium">Descrição curta</Label>
+              <Textarea value={form.short_description || ""} onChange={(e) => update("short_description", e.target.value)} className="bg-background border-border" rows={2} />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label className="text-[13px] font-medium">Descrição completa</Label>
+              <Textarea value={form.full_description || ""} onChange={(e) => update("full_description", e.target.value)} className="bg-background border-border" rows={5} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium">Categoria</Label>
+              <Input value={form.category || ""} onChange={(e) => update("category", e.target.value)} className="bg-background border-border" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium">Instrutor</Label>
+              <Input value={form.instructor_name || ""} onChange={(e) => update("instructor_name", e.target.value)} className="bg-background border-border" />
             </div>
           </div>
-        </div>
+        </TabsContent>
 
-        {/* Media */}
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Mídia</h2>
-          <div className="space-y-2">
-            <Label className="text-sm">URL da Capa</Label>
-            <Input value={form.cover_url || ""} onChange={(e) => update("cover_url", e.target.value)} placeholder="https://..." className="bg-card border-border" />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm">URL do Banner</Label>
-            <Input value={form.banner_url || ""} onChange={(e) => update("banner_url", e.target.value)} placeholder="https://..." className="bg-card border-border" />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm">URL do Trailer (Vimeo)</Label>
-            <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-card border-border" />
-          </div>
-        </div>
-
-        {/* Settings */}
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Configurações</h2>
-
-          <div className="grid grid-cols-2 gap-4">
+        <TabsContent value="media" className="mt-6">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-sm">Status</Label>
+              <Label className="text-[13px] font-medium">URL da Capa</Label>
+              <Input value={form.cover_url || ""} onChange={(e) => update("cover_url", e.target.value)} placeholder="https://..." className="bg-background border-border" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium">URL do Banner</Label>
+              <Input value={form.banner_url || ""} onChange={(e) => update("banner_url", e.target.value)} placeholder="https://..." className="bg-background border-border" />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
+              <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[13px] font-medium">Status</Label>
               <Select value={form.status || "draft"} onValueChange={(v) => update("status", v)}>
-                <SelectTrigger className="bg-card border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Rascunho</SelectItem>
                   <SelectItem value="published">Publicado</SelectItem>
@@ -204,118 +221,112 @@ export default function CourseForm() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Tipo de Acesso</Label>
+              <Label className="text-[13px] font-medium">Tipo de Acesso</Label>
               <Select value={form.access_type || "lifetime"} onValueChange={(v) => update("access_type", v)}>
-                <SelectTrigger className="bg-card border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="lifetime">Vitalício</SelectItem>
                   <SelectItem value="limited">Limitado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {form.access_type === "limited" && (
-            <div className="space-y-2">
-              <Label className="text-sm">Dias de Acesso</Label>
-              <Input type="number" value={form.access_days ?? ""} onChange={(e) => update("access_days", e.target.value ? Number(e.target.value) : null)} className="bg-card border-border" />
+            {form.access_type === "limited" && (
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Dias de Acesso</Label>
+                <Input type="number" value={form.access_days ?? ""} onChange={(e) => update("access_days", e.target.value ? Number(e.target.value) : null)} className="bg-background border-border" />
+              </div>
+            )}
+
+            <div className="col-span-2 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border border-border p-5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[13px]">Destaque</Label>
+                <Switch checked={form.featured ?? false} onCheckedChange={(v) => update("featured", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-[13px]">Gratuito</Label>
+                <Switch checked={form.is_free ?? false} onCheckedChange={(v) => update("is_free", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-[13px]">Permitir Comentários</Label>
+                <Switch checked={form.allow_comments ?? true} onCheckedChange={(v) => update("allow_comments", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-[13px]">Certificado</Label>
+                <Switch checked={form.has_certificate ?? false} onCheckedChange={(v) => update("has_certificate", v)} />
+              </div>
             </div>
-          )}
+          </div>
+        </TabsContent>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Destaque</Label>
-              <Switch checked={form.featured ?? false} onCheckedChange={(v) => update("featured", v)} />
+        <TabsContent value="seo" className="mt-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="col-span-2 space-y-2">
+              <Label className="text-[13px] font-medium">Título SEO</Label>
+              <Input value={form.seo_title || ""} onChange={(e) => update("seo_title", e.target.value)} className="bg-background border-border" />
             </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Gratuito</Label>
-              <Switch checked={form.is_free ?? false} onCheckedChange={(v) => update("is_free", v)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Permitir Comentários</Label>
-              <Switch checked={form.allow_comments ?? true} onCheckedChange={(v) => update("allow_comments", v)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Certificado</Label>
-              <Switch checked={form.has_certificate ?? false} onCheckedChange={(v) => update("has_certificate", v)} />
+            <div className="col-span-2 space-y-2">
+              <Label className="text-[13px] font-medium">Descrição SEO</Label>
+              <Textarea value={form.seo_description || ""} onChange={(e) => update("seo_description", e.target.value)} className="bg-background border-border" rows={3} />
             </div>
           </div>
-        </div>
+        </TabsContent>
 
-        {/* SEO */}
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">SEO</h2>
-          <div className="space-y-2">
-            <Label className="text-sm">Título SEO</Label>
-            <Input value={form.seo_title || ""} onChange={(e) => update("seo_title", e.target.value)} className="bg-card border-border" />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm">Descrição SEO</Label>
-            <Textarea value={form.seo_description || ""} onChange={(e) => update("seo_description", e.target.value)} className="bg-card border-border" rows={2} />
-          </div>
-        </div>
+        {isEdit && (
+          <TabsContent value="modules" className="mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[13px] text-muted-foreground">Gerencie os módulos deste produto</p>
+              <Link to={`/admin/courses/${id}/modules/new`}>
+                <Button size="sm" variant="outline" className="gap-2 h-8 text-xs">
+                  <Plus className="h-3.5 w-3.5" /> Novo Módulo
+                </Button>
+              </Link>
+            </div>
 
-        <div className="flex gap-3">
-          <Button type="submit" disabled={saving}>
-            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar Alterações" : "Criar Produto"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/courses")}>Cancelar</Button>
-        </div>
-      </form>
-
-      {/* Modules list - only when editing */}
-      {isEdit && (
-        <div className="space-y-4 rounded-lg border border-border p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Módulos</h2>
-            <Link to={`/admin/courses/${id}/modules/new`}>
-              <Button size="sm" variant="outline" className="gap-2 h-8 text-xs">
-                <Plus className="h-3.5 w-3.5" /> Novo Módulo
-              </Button>
-            </Link>
-          </div>
-
-          {modules.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Nenhum módulo cadastrado neste produto</p>
-          ) : (
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-card">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Ordem</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Liberação</th>
-                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modules.map((m) => (
-                    <tr key={m.id} className="border-b border-border last:border-0 hover:bg-card/50 transition-colors">
-                      <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{m.sort_order}</td>
-                      <td className="px-4 py-2.5 font-medium text-foreground">{m.title}</td>
-                      <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{m.status}</Badge></td>
-                      <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">{m.release_type}{m.release_days ? ` (${m.release_days}d)` : ""}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex justify-end gap-1">
-                          <Link to={`/admin/courses/${id}/modules/${m.id}`}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                          </Link>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteModule(m.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
+            {modules.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border py-12 text-center">
+                <p className="text-sm text-muted-foreground">Nenhum módulo cadastrado neste produto</p>
+              </div>
+            ) : (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Ordem</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Título</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Status</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs">Liberação</th>
+                      <th className="text-right px-4 py-2.5 font-medium text-muted-foreground text-xs">Ações</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+                  </thead>
+                  <tbody>
+                    {modules.map((m) => (
+                      <tr key={m.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{m.sort_order}</td>
+                        <td className="px-4 py-2.5 font-medium text-foreground">{m.title}</td>
+                        <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{m.status}</Badge></td>
+                        <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">{m.release_type}{m.release_days ? ` (${m.release_days}d)` : ""}</td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex justify-end gap-1">
+                            <Link to={`/admin/courses/${id}/modules/${m.id}`}>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                            </Link>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteModule(m.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
