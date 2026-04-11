@@ -66,10 +66,10 @@ export default function CoverUpload({
 
       <div className="rounded-md border border-border overflow-hidden">
         {/* Preview area */}
-        <div className={`relative ${aspectRatio} max-h-40 bg-muted/20 flex items-center justify-center group`}>
+        <div className={`relative ${aspectRatio} bg-muted/20 flex items-center justify-center group overflow-hidden`}>
           {value ? (
             <>
-              <img src={value} alt="Capa" className="w-full h-full object-cover" />
+              <img src={value} alt="Capa" className="w-full h-full object-cover object-center" />
               <div className="absolute inset-0 bg-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                 <Button
                   type="button"
