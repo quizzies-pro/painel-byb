@@ -1,0 +1,1 @@
+ALTER TABLE public.course_modules ADD COLUMN tags text[] DEFAULT '{}'::text[];

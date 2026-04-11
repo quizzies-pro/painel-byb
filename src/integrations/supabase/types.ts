@@ -59,6 +59,7 @@ export type Database = {
           release_type: Database["public"]["Enums"]["release_type"]
           sort_order: number
           status: Database["public"]["Enums"]["module_status"]
+          tags: string[] | null
           title: string
           updated_at: string
         }
@@ -73,6 +74,7 @@ export type Database = {
           release_type?: Database["public"]["Enums"]["release_type"]
           sort_order?: number
           status?: Database["public"]["Enums"]["module_status"]
+          tags?: string[] | null
           title: string
           updated_at?: string
         }
@@ -87,6 +89,7 @@ export type Database = {
           release_type?: Database["public"]["Enums"]["release_type"]
           sort_order?: number
           status?: Database["public"]["Enums"]["module_status"]
+          tags?: string[] | null
           title?: string
           updated_at?: string
         }
