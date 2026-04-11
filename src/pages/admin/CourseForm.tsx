@@ -284,14 +284,14 @@ export default function CourseForm() {
         </TabsContent>
 
         <TabsContent value="media" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-3 gap-4">
             <CoverUpload
               value={form.logo_url || ""}
               onChange={(url) => update("logo_url", url)}
               storagePath={`logos/courses/${id || "new"}`}
               label="Logo do Produto"
               aspectRatio="aspect-square"
-              hint="Dimensões ideais: 512×512 pixels. PNG com fundo transparente."
+              hint="512×512px, PNG transparente."
             />
             <CoverUpload
               value={form.banner_url || ""}
@@ -299,7 +299,7 @@ export default function CourseForm() {
               storagePath={`banners/courses/${id || "new"}`}
               label="Banner"
               aspectRatio="aspect-[16/9]"
-              hint="Dimensões ideais: 1920×1080 pixels. Tamanho máximo: 10 MB."
+              hint="1920×1080px. Máx 10 MB."
             />
             <CoverUpload
               value={(form as any).login_cover_url || ""}
@@ -307,12 +307,12 @@ export default function CourseForm() {
               storagePath={`login-covers/courses/${id || "new"}`}
               label="Capa do Login"
               aspectRatio="aspect-[9/16]"
-              hint="Imagem exibida na tela de login. Dimensões ideais: 1080×1920 pixels."
+              hint="1080×1920px, vertical."
             />
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
-              <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
-            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
+            <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border h-8 text-xs" />
           </div>
         </TabsContent>
 
