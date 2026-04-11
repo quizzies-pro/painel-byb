@@ -91,6 +91,7 @@ export default function CourseForm() {
     full_description: "",
     cover_url: "",
     logo_url: "",
+    login_cover_url: "",
     banner_url: "",
     trailer_url: "",
     category: "",
