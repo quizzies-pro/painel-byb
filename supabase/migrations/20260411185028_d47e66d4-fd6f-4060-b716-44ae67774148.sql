@@ -1,0 +1,1 @@
+ALTER TABLE public.courses ADD COLUMN login_cover_url text DEFAULT NULL;

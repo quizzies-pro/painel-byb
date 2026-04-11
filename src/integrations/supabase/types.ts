@@ -120,6 +120,7 @@ export type Database = {
           instructor_name: string | null
           is_free: boolean
           language: string
+          login_cover_url: string | null
           logo_url: string | null
           seo_description: string | null
           seo_title: string | null
@@ -148,6 +149,7 @@ export type Database = {
           instructor_name?: string | null
           is_free?: boolean
           language?: string
+          login_cover_url?: string | null
           logo_url?: string | null
           seo_description?: string | null
           seo_title?: string | null
@@ -176,6 +178,7 @@ export type Database = {
           instructor_name?: string | null
           is_free?: boolean
           language?: string
+          login_cover_url?: string | null
           logo_url?: string | null
           seo_description?: string | null
           seo_title?: string | null
