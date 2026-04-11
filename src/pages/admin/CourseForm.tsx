@@ -90,6 +90,7 @@ export default function CourseForm() {
     short_description: "",
     full_description: "",
     cover_url: "",
+    logo_url: "",
     banner_url: "",
     trailer_url: "",
     category: "",
