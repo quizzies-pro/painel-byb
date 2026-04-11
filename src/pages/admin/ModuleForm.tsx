@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Edit, Trash2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
+import TagInput from "@/components/TagInput";
 import {
   DndContext,
   closestCenter,
@@ -100,6 +101,7 @@ export default function ModuleForm() {
     release_type: "immediate",
     release_days: null,
     is_required: false,
+    tags: [],
   });
 
   const backUrl = `/admin/courses/${courseId}`;
@@ -238,6 +240,10 @@ export default function ModuleForm() {
               <div className="space-y-2">
                 <Label className="text-[13px] font-medium">Descrição</Label>
                 <Textarea value={form.description || ""} onChange={(e) => update("description", e.target.value)} className="bg-background border-border" rows={6} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Tags</Label>
+                <TagInput value={(form as any).tags ?? []} onChange={(tags) => update("tags", tags)} placeholder="Ex: destaque, bônus, avançado..." />
               </div>
             </div>
           </div>

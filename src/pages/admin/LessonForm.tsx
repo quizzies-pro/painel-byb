@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Upload, FileText, Trash2, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
+import TagInput from "@/components/TagInput";
 
 const slugify = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -281,6 +282,10 @@ export default function LessonForm() {
               <div className="space-y-2">
                 <Label className="text-[13px] font-medium">Conteúdo (HTML)</Label>
                 <Textarea value={form.content_html || ""} onChange={(e) => update("content_html", e.target.value)} className="bg-background border-border font-mono text-xs" rows={8} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[13px] font-medium">Tags</Label>
+                <TagInput value={form.tags ?? []} onChange={(tags) => update("tags", tags)} placeholder="Ex: destaque, bônus, avançado..." />
               </div>
             </div>
           </div>
