@@ -91,6 +91,7 @@ export default function CourseForm() {
     full_description: "",
     cover_url: "",
     logo_url: "",
+    login_cover_url: "",
     banner_url: "",
     trailer_url: "",
     category: "",
@@ -248,14 +249,6 @@ export default function CourseForm() {
                 storagePath={`covers/courses/${id || "new"}`}
                 label="Capa do Produto"
               />
-              <CoverUpload
-                value={(form as any).logo_url || ""}
-                onChange={(url) => update("logo_url" as any, url)}
-                storagePath={`logos/courses/${id || "new"}`}
-                label="Logo do Produto"
-                aspectRatio="aspect-square"
-                hint="Dimensões ideais: 512×512 pixels. PNG com fundo transparente."
-              />
             </div>
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
@@ -293,12 +286,28 @@ export default function CourseForm() {
         <TabsContent value="media" className="mt-6">
           <div className="grid grid-cols-2 gap-6">
             <CoverUpload
+              value={form.logo_url || ""}
+              onChange={(url) => update("logo_url", url)}
+              storagePath={`logos/courses/${id || "new"}`}
+              label="Logo do Produto"
+              aspectRatio="aspect-square"
+              hint="Dimensões ideais: 512×512 pixels. PNG com fundo transparente."
+            />
+            <CoverUpload
               value={form.banner_url || ""}
               onChange={(url) => update("banner_url", url)}
               storagePath={`banners/courses/${id || "new"}`}
               label="Banner"
               aspectRatio="aspect-[16/9]"
               hint="Dimensões ideais: 1920×1080 pixels. Tamanho máximo: 10 MB."
+            />
+            <CoverUpload
+              value={(form as any).login_cover_url || ""}
+              onChange={(url) => update("login_cover_url" as any, url)}
+              storagePath={`login-covers/courses/${id || "new"}`}
+              label="Capa do Login"
+              aspectRatio="aspect-[9/16]"
+              hint="Imagem exibida na tela de login. Dimensões ideais: 1080×1920 pixels."
             />
             <div className="space-y-2">
               <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
