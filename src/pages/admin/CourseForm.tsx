@@ -248,14 +248,6 @@ export default function CourseForm() {
                 storagePath={`covers/courses/${id || "new"}`}
                 label="Capa do Produto"
               />
-              <CoverUpload
-                value={(form as any).logo_url || ""}
-                onChange={(url) => update("logo_url" as any, url)}
-                storagePath={`logos/courses/${id || "new"}`}
-                label="Logo do Produto"
-                aspectRatio="aspect-square"
-                hint="Dimensões ideais: 512×512 pixels. PNG com fundo transparente."
-              />
             </div>
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
