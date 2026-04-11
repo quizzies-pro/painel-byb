@@ -1,0 +1,1 @@
+ALTER TABLE public.courses ADD COLUMN logo_url text DEFAULT NULL;
