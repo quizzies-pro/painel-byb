@@ -223,14 +223,24 @@ export default function MessagesPage() {
     if (!reply.trim() || !selectedConvo || messages.length === 0) return;
     setSending(true);
 
-    // Reply in the context of the last message's lesson/course
-    const lastStudentMsg = [...messages].reverse().find((m) => m.sender_type === "student");
-    const lastMsg = lastStudentMsg ?? messages[messages.length - 1];
+    // Use replyingTo context if set, otherwise fallback to last student message
+    let targetLessonId: string;
+    let targetCourseId: string;
+
+    if (replyingTo) {
+      targetLessonId = replyingTo.lesson_id;
+      targetCourseId = replyingTo.course_id;
+    } else {
+      const lastStudentMsg = [...messages].reverse().find((m) => m.sender_type === "student");
+      const lastMsg = lastStudentMsg ?? messages[messages.length - 1];
+      targetLessonId = lastMsg.lesson_id;
+      targetCourseId = lastMsg.course_id;
+    }
 
     const { error } = await supabase.from("lesson_messages").insert({
       student_id: selectedConvo.student_id,
-      lesson_id: lastMsg.lesson_id,
-      course_id: lastMsg.course_id,
+      lesson_id: targetLessonId,
+      course_id: targetCourseId,
       message: reply.trim(),
       sender_type: "admin",
       admin_id: user?.id,
@@ -240,6 +250,7 @@ export default function MessagesPage() {
     if (error) toast.error("Erro ao enviar resposta");
     else {
       setReply("");
+      setReplyingTo(null);
       openConversation(selectedConvo);
     }
     setSending(false);
