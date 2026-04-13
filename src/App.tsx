@@ -21,6 +21,7 @@ import EnrollmentForm from "./pages/admin/EnrollmentForm";
 import ActivityLogsPage from "./pages/admin/ActivityLogsPage";
 import WebhookLogsPage from "./pages/admin/WebhookLogsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import MessagesPage from "./pages/admin/MessagesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/admin/enrollments" element={<AdminLayout><EnrollmentsPage /></AdminLayout>} />
             <Route path="/admin/enrollments/new" element={<AdminLayout><EnrollmentForm /></AdminLayout>} />
             <Route path="/admin/enrollments/:id" element={<AdminLayout><EnrollmentForm /></AdminLayout>} />
+            <Route path="/admin/messages" element={<AdminLayout><MessagesPage /></AdminLayout>} />
             <Route path="/admin/logs" element={<AdminLayout><ActivityLogsPage /></AdminLayout>} />
             <Route path="/admin/webhooks" element={<AdminLayout><WebhookLogsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
