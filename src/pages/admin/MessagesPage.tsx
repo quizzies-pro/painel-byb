@@ -311,6 +311,15 @@ export default function MessagesPage() {
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/60 text-foreground"
                     }`}>
+                      {msg.sender_type === "student" && msg.id === messages.filter(m => m.sender_type === "student")[0]?.id && (
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Badge variant="outline" className="text-[10px] font-mono bg-background/50 border-border/50">
+                            {selectedConvo.course_title}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">·</span>
+                          <span className="text-[10px] text-muted-foreground truncate">{selectedConvo.lesson_title}</span>
+                        </div>
+                      )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
                       <p className={`text-[10px] mt-1 ${msg.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                         {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
