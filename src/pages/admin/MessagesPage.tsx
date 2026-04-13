@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Send, Search, MessageSquare, Circle, Check, CheckCheck, Tag } from "lucide-react";
+import { Send, Search, MessageSquare, Circle, Check, CheckCheck, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,7 +58,8 @@ const STATUS_CONFIG: Record<ThreadStatus, { label: string; color: string; dotCla
 };
 
 export default function MessagesPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isSuperAdmin = role === "super_admin";
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
@@ -278,6 +279,19 @@ export default function MessagesPage() {
     }
   };
 
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!isSuperAdmin) return;
+    const { error } = await supabase.from("lesson_messages").delete().eq("id", msgId);
+    if (error) {
+      toast.error("Erro ao apagar mensagem");
+      return;
+    }
+    toast.success("Mensagem apagada");
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    fetchConversations();
+  };
+
+
   useEffect(() => {
     fetchConversations();
   }, []);
@@ -490,14 +504,24 @@ export default function MessagesPage() {
                         </div>
                       )}
 
-                      <div className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                      <div className={`flex items-end gap-1 group ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
                         {msg.sender_type === "student" && (
-                          <Avatar className="h-7 w-7 mr-2 mt-1 shrink-0">
+                          <Avatar className="h-7 w-7 mr-1 mt-1 shrink-0">
                             <AvatarImage src={selectedConvo.student_avatar ?? undefined} />
                             <AvatarFallback className="bg-muted text-[10px] font-medium">
                               {getInitials(selectedConvo.student_name)}
                             </AvatarFallback>
                           </Avatar>
+                        )}
+                        {/* Delete button before admin bubble */}
+                        {isSuperAdmin && msg.sender_type === "admin" && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive mb-1"
+                            title="Apagar mensagem"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         )}
                         <div className={`max-w-[60%] rounded-2xl px-4 py-2.5 ${
                           msg.sender_type === "admin"
@@ -524,6 +548,16 @@ export default function MessagesPage() {
                             )}
                           </div>
                         </div>
+                        {/* Delete button after student bubble */}
+                        {isSuperAdmin && msg.sender_type === "student" && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive mb-1"
+                            title="Apagar mensagem"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
