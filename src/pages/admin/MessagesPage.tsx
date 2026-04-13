@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Send, Search, MessageSquare, Circle, Check, CheckCheck, Tag, Trash2 } from "lucide-react";
+import { Send, Search, MessageSquare, Circle, Check, CheckCheck, Tag, Trash2, Reply, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
