@@ -563,6 +563,39 @@ export type Database = {
           },
         ]
       }
+      message_threads: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          lesson_id: string
+          status: Database["public"]["Enums"]["thread_status"]
+          student_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          status?: Database["public"]["Enums"]["thread_status"]
+          student_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          status?: Database["public"]["Enums"]["thread_status"]
+          student_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           affiliate_name: string | null
@@ -875,6 +908,7 @@ export type Database = {
         | "failed"
       release_type: "immediate" | "manual" | "drip"
       student_status: "active" | "blocked" | "pending" | "canceled"
+      thread_status: "unresolved" | "resolved" | "awaiting_response"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1029,6 +1063,7 @@ export const Constants = {
       ],
       release_type: ["immediate", "manual", "drip"],
       student_status: ["active", "blocked", "pending", "canceled"],
+      thread_status: ["unresolved", "resolved", "awaiting_response"],
     },
   },
 } as const
