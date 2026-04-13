@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Send, ArrowLeft, Circle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Send, Search, MessageSquare, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +17,7 @@ interface Conversation {
   course_id: string;
   student_name: string;
   student_email: string;
+  student_avatar: string | null;
   lesson_title: string;
   course_title: string;
   last_message: string;
@@ -43,6 +45,16 @@ export default function MessagesPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const fetchConversations = async () => {
     setLoading(true);
@@ -63,13 +75,12 @@ export default function MessagesPage() {
       return;
     }
 
-    // Get unique student and lesson IDs
     const studentIds = [...new Set(rawMessages.map((m) => m.student_id))];
     const lessonIds = [...new Set(rawMessages.map((m) => m.lesson_id))];
     const courseIds = [...new Set(rawMessages.map((m) => m.course_id))];
 
     const [studentsRes, lessonsRes, coursesRes] = await Promise.all([
-      supabase.from("students").select("id, name, email").in("id", studentIds),
+      supabase.from("students").select("id, name, email, avatar_url").in("id", studentIds),
       supabase.from("lessons").select("id, title").in("id", lessonIds),
       supabase.from("courses").select("id, title").in("id", courseIds),
     ]);
@@ -78,7 +89,6 @@ export default function MessagesPage() {
     const lessonsMap = Object.fromEntries((lessonsRes.data ?? []).map((l) => [l.id, l]));
     const coursesMap = Object.fromEntries((coursesRes.data ?? []).map((c) => [c.id, c]));
 
-    // Group by student_id + lesson_id
     const groups = new Map<string, Message[]>();
     for (const msg of rawMessages) {
       const key = `${msg.student_id}::${msg.lesson_id}`;
@@ -100,6 +110,7 @@ export default function MessagesPage() {
         course_id: first.course_id,
         student_name: student?.name ?? "Aluno desconhecido",
         student_email: student?.email ?? "",
+        student_avatar: student?.avatar_url ?? null,
         lesson_title: lesson?.title ?? "Aula desconhecida",
         course_title: course?.title ?? "Produto desconhecido",
         last_message: first.message,
@@ -124,7 +135,6 @@ export default function MessagesPage() {
 
     setMessages(data ?? []);
 
-    // Mark student messages as read
     const unreadIds = (data ?? []).filter((m) => !m.is_read && m.sender_type === "student").map((m) => m.id);
     if (unreadIds.length > 0) {
       await supabase.from("lesson_messages").update({ is_read: true }).in("id", unreadIds);
@@ -157,7 +167,30 @@ export default function MessagesPage() {
     fetchConversations();
   }, []);
 
-  const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
+  const getInitials = (name: string) => {
+    return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+  };
+
+  const getTimeLabel = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "agora";
+    if (diffMin < 60) return `${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH} h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD < 7) return `${diffD} d`;
+    const diffW = Math.floor(diffD / 7);
+    return `${diffW} sem`;
+  };
+
+  const filtered = conversations.filter((c) =>
+    c.student_name.toLowerCase().includes(search.toLowerCase()) ||
+    c.lesson_title.toLowerCase().includes(search.toLowerCase()) ||
+    c.course_title.toLowerCase().includes(search.toLowerCase())
+  );
 
   if (loading && conversations.length === 0) {
     return (
@@ -168,116 +201,154 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {selectedConvo && (
-            <Button variant="ghost" size="icon" onClick={() => setSelectedConvo(null)} className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Mensagens</h1>
-            <p className="text-xs text-muted-foreground">
-              {selectedConvo
-                ? `${selectedConvo.student_name} · ${selectedConvo.lesson_title}`
-                : `${conversations.length} conversa${conversations.length !== 1 ? "s" : ""}${totalUnread > 0 ? ` · ${totalUnread} não lida${totalUnread !== 1 ? "s" : ""}` : ""}`}
-            </p>
+    <div className="border border-border rounded-lg overflow-hidden flex" style={{ height: "calc(100vh - 120px)" }}>
+      {/* Left sidebar - conversation list */}
+      <div className="w-[340px] border-r border-border flex flex-col bg-background shrink-0">
+        <div className="p-4 border-b border-border">
+          <h1 className="text-base font-semibold tracking-tight mb-3">Mensagens</h1>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-muted/30 border-border h-9 text-sm"
+            />
           </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center">
+              <MessageSquare className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">Nenhuma conversa</p>
+            </div>
+          ) : (
+            filtered.map((convo) => {
+              const isSelected = selectedConvo?.student_id === convo.student_id && selectedConvo?.lesson_id === convo.lesson_id;
+              return (
+                <button
+                  key={`${convo.student_id}::${convo.lesson_id}`}
+                  onClick={() => openConversation(convo)}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors hover:bg-muted/40 ${
+                    isSelected ? "bg-muted/50" : ""
+                  }`}
+                >
+                  <Avatar className="h-12 w-12 shrink-0">
+                    <AvatarImage src={convo.student_avatar ?? undefined} />
+                    <AvatarFallback className="bg-muted text-foreground text-sm font-medium">
+                      {getInitials(convo.student_name)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-sm truncate ${convo.unread_count > 0 ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
+                        {convo.student_name}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {getTimeLabel(convo.last_message_at)}
+                      </span>
+                    </div>
+                    <p className={`text-xs truncate mt-0.5 ${convo.unread_count > 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                      {convo.last_message}
+                    </p>
+                  </div>
+
+                  {convo.unread_count > 0 && (
+                    <Circle className="h-2.5 w-2.5 fill-primary text-primary shrink-0" />
+                  )}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
-      {!selectedConvo ? (
-        // Conversation list
-        conversations.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border py-16 text-center">
-            <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">Nenhuma mensagem recebida ainda</p>
+      {/* Right side - chat area */}
+      <div className="flex-1 flex flex-col bg-background">
+        {!selectedConvo ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
+            <div className="h-20 w-20 rounded-full border-2 border-border flex items-center justify-center mb-4">
+              <Send className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-lg font-medium mb-1">Suas mensagens</h2>
+            <p className="text-sm text-muted-foreground">Selecione uma conversa para ver as mensagens</p>
           </div>
         ) : (
-          <div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
-            {conversations.map((convo) => (
-              <button
-                key={`${convo.student_id}::${convo.lesson_id}`}
-                onClick={() => openConversation(convo)}
-                className="w-full text-left px-4 py-3.5 hover:bg-muted/30 transition-colors flex items-start gap-3"
-              >
-                <div className="mt-1">
-                  {convo.unread_count > 0 ? (
-                    <Circle className="h-2.5 w-2.5 fill-primary text-primary" />
-                  ) : (
-                    <Circle className="h-2.5 w-2.5 text-transparent" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-sm truncate ${convo.unread_count > 0 ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
-                      {convo.student_name}
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {format(new Date(convo.last_message_at), "dd MMM HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Badge variant="outline" className="text-[10px] font-mono shrink-0">{convo.course_title}</Badge>
-                    <span className="text-xs text-muted-foreground truncate">· {convo.lesson_title}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 truncate">{convo.last_message}</p>
-                </div>
-                {convo.unread_count > 0 && (
-                  <Badge className="shrink-0 text-[10px] h-5 min-w-5 flex items-center justify-center">{convo.unread_count}</Badge>
-                )}
-              </button>
-            ))}
-          </div>
-        )
-      ) : (
-        // Conversation detail
-        <div className="border border-border rounded-lg flex flex-col" style={{ height: "calc(100vh - 220px)" }}>
-          <div className="border-b border-border px-4 py-3 bg-muted/20">
-            <p className="text-sm font-medium">{selectedConvo.student_name}</p>
-            <p className="text-xs text-muted-foreground">{selectedConvo.student_email} · {selectedConvo.course_title} · {selectedConvo.lesson_title}</p>
-          </div>
-
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-3">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[70%] rounded-lg px-3.5 py-2.5 ${
-                    msg.sender_type === "admin"
-                      ? "bg-foreground text-background"
-                      : "bg-muted/50 text-foreground border border-border"
-                  }`}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                    <p className={`text-[10px] mt-1 ${msg.sender_type === "admin" ? "text-background/60" : "text-muted-foreground"}`}>
-                      {format(new Date(msg.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          <>
+            {/* Chat header */}
+            <div className="border-b border-border px-5 py-3 flex items-center gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={selectedConvo.student_avatar ?? undefined} />
+                <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
+                  {getInitials(selectedConvo.student_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{selectedConvo.student_name}</p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {selectedConvo.course_title} · {selectedConvo.lesson_title}
+                </p>
+              </div>
             </div>
-          </ScrollArea>
 
-          <div className="border-t border-border p-3 flex gap-2">
-            <Textarea
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              placeholder="Escreva sua resposta..."
-              className="bg-background border-border resize-none min-h-[44px] max-h-[120px]"
-              rows={1}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendReply();
-                }
-              }}
-            />
-            <Button size="icon" onClick={handleSendReply} disabled={sending || !reply.trim()} className="shrink-0 h-[44px] w-[44px]">
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="space-y-3">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                    {msg.sender_type === "student" && (
+                      <Avatar className="h-7 w-7 mr-2 mt-1 shrink-0">
+                        <AvatarImage src={selectedConvo.student_avatar ?? undefined} />
+                        <AvatarFallback className="bg-muted text-[10px] font-medium">
+                          {getInitials(selectedConvo.student_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div className={`max-w-[60%] rounded-2xl px-4 py-2.5 ${
+                      msg.sender_type === "admin"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/60 text-foreground"
+                    }`}>
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                      <p className={`text-[10px] mt-1 ${msg.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Input */}
+            <div className="border-t border-border p-4 flex items-end gap-2">
+              <Textarea
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                placeholder="Mensagem..."
+                className="bg-muted/30 border-border resize-none min-h-[44px] max-h-[120px] rounded-xl"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendReply();
+                  }
+                }}
+              />
+              <Button
+                size="icon"
+                onClick={handleSendReply}
+                disabled={sending || !reply.trim()}
+                className="shrink-0 h-[44px] w-[44px] rounded-xl"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
