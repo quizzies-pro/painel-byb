@@ -58,7 +58,8 @@ const STATUS_CONFIG: Record<ThreadStatus, { label: string; color: string; dotCla
 };
 
 export default function MessagesPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isSuperAdmin = role === "super_admin";
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
