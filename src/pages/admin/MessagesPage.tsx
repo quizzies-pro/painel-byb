@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -298,21 +299,17 @@ export default function MessagesPage() {
               className="pl-9 bg-muted/30 border-border h-9 text-sm"
             />
           </div>
-          <div className="flex gap-1.5">
-            {(["all", "unresolved", "awaiting_response", "resolved"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`text-[10px] px-2 py-1 rounded-full border transition-colors ${
-                  statusFilter === s
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-transparent text-muted-foreground border-border hover:border-muted-foreground"
-                }`}
-              >
-                {s === "all" ? "Todos" : STATUS_CONFIG[s].label}
-              </button>
-            ))}
-          </div>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ThreadStatus | "all")}>
+            <SelectTrigger className="h-8 text-xs bg-muted/30 border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="unresolved">Não resolvido</SelectItem>
+              <SelectItem value="awaiting_response">Aguardando resposta</SelectItem>
+              <SelectItem value="resolved">Resolvido</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex-1 overflow-y-auto">
