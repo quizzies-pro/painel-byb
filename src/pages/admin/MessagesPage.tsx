@@ -304,8 +304,60 @@ export default function MessagesPage() {
   };
 
 
+  // Initial fetch + Realtime subscription
   useEffect(() => {
     fetchConversations();
+
+    const channel = supabase
+      .channel("lesson_messages_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "lesson_messages" },
+        (payload) => {
+          // Refresh conversation list for any change
+          fetchConversations();
+
+          // If a chat is open, check if the change is relevant
+          if (selectedConvoRef.current) {
+            const record = (payload.new as any) || (payload.old as any);
+            if (record?.student_id === selectedConvoRef.current.student_id) {
+              // Re-fetch messages for this student
+              supabase
+                .from("lesson_messages")
+                .select("*")
+                .eq("student_id", selectedConvoRef.current.student_id)
+                .order("created_at", { ascending: true })
+                .then(({ data }) => {
+                  if (data) {
+                    const enriched: EnrichedMessage[] = data.map((msg) => {
+                      const lesson = lookupsRef.current.lessonsMap[msg.lesson_id];
+                      const course = lookupsRef.current.coursesMap[msg.course_id];
+                      const mod = lesson?.module_id ? lookupsRef.current.modulesMap[lesson.module_id] : null;
+                      return {
+                        ...msg,
+                        course_title: course?.title ?? "",
+                        module_title: mod?.title ?? "",
+                        lesson_title: lesson?.title ?? "",
+                      };
+                    });
+                    setMessages(enriched);
+
+                    // Mark unread student messages as read
+                    const unreadIds = data.filter((m) => !m.is_read && m.sender_type === "student").map((m) => m.id);
+                    if (unreadIds.length > 0) {
+                      supabase.from("lesson_messages").update({ is_read: true }).in("id", unreadIds);
+                    }
+                  }
+                });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const getInitials = (name: string) => {
