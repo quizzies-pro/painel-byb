@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings, LogOut, ChevronsUpDown, MessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -79,11 +81,40 @@ function UserAvatar({ src, name, size = "md" }: { src: string | null; name: stri
   );
 }
 
+function useUnreadMessages() {
+  const [count, setCount] = useState(0);
+
+  const fetchCount = async () => {
+    const { count: c } = await supabase
+      .from("lesson_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("sender_type", "student")
+      .eq("is_read", false);
+    setCount(c ?? 0);
+  };
+
+  useEffect(() => {
+    fetchCount();
+
+    const channel = supabase
+      .channel("unread_messages_badge")
+      .on("postgres_changes", { event: "*", schema: "public", table: "lesson_messages" }, () => {
+        fetchCount();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  return count;
+}
+
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { user, role, avatarUrl, signOut } = useAuth();
+  const unreadCount = useUnreadMessages();
 
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuário";
   const displayEmail = user?.email || "";
@@ -100,21 +131,40 @@ export function AdminSidebar() {
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className={collapsed ? "items-center" : undefined}>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title} className={collapsed ? "flex justify-center" : undefined}>
-              <SidebarMenuButton asChild>
-                <NavLink
-                  to={item.url}
-                  end={item.url === "/admin"}
-                  className={`flex items-center rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${collapsed ? "justify-center px-0 py-0" : "gap-3 px-3 py-2"}`}
-                  activeClassName="text-foreground bg-accent"
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{item.title}</span>}
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const badge = item.title === "Mensagens" && unreadCount > 0 ? unreadCount : 0;
+            return (
+              <SidebarMenuItem key={item.title} className={collapsed ? "flex justify-center" : undefined}>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to={item.url}
+                    end={item.url === "/admin"}
+                    className={`flex items-center rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${collapsed ? "justify-center px-0 py-0" : "gap-3 px-3 py-2"}`}
+                    activeClassName="text-foreground bg-accent"
+                  >
+                    <div className="relative shrink-0">
+                      <item.icon className="h-4 w-4" />
+                      {badge > 0 && collapsed && (
+                        <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-1">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      )}
+                    </div>
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1">{item.title}</span>
+                        {badge > 0 && (
+                          <span className="h-5 min-w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                            {badge > 99 ? "99+" : badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
