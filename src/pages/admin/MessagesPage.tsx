@@ -70,6 +70,8 @@ export default function MessagesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ThreadStatus | "all">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const selectedConvoRef = useRef<Conversation | null>(null);
+  const lookupsRef = useRef(lookups);
 
   // Lookup maps kept at component level for reuse
   const [lookups, setLookups] = useState<{
