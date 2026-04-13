@@ -64,6 +64,7 @@ export default function MessagesPage() {
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [reply, setReply] = useState("");
+  const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
