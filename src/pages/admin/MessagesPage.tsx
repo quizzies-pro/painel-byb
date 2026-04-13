@@ -22,24 +22,21 @@ type ThreadStatus = "unresolved" | "resolved" | "awaiting_response";
 
 interface Conversation {
   student_id: string;
-  lesson_id: string;
-  course_id: string;
-  module_id: string;
   student_name: string;
   student_email: string;
   student_avatar: string | null;
-  lesson_title: string;
-  module_title: string;
-  course_title: string;
   last_message: string;
   last_message_at: string;
   last_sender_type: string;
   last_message_read: boolean;
   unread_count: number;
   thread_status: ThreadStatus;
+  last_course_title: string;
+  last_module_title: string;
+  last_lesson_title: string;
 }
 
-interface Message {
+interface EnrichedMessage {
   id: string;
   student_id: string;
   lesson_id: string;
@@ -49,6 +46,9 @@ interface Message {
   admin_id: string | null;
   is_read: boolean;
   created_at: string;
+  course_title: string;
+  module_title: string;
+  lesson_title: string;
 }
 
 const STATUS_CONFIG: Record<ThreadStatus, { label: string; color: string; dotClass: string }> = {
@@ -61,13 +61,20 @@ export default function MessagesPage() {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ThreadStatus | "all">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Lookup maps kept at component level for reuse
+  const [lookups, setLookups] = useState<{
+    lessonsMap: Record<string, any>;
+    coursesMap: Record<string, any>;
+    modulesMap: Record<string, any>;
+  }>({ lessonsMap: {}, coursesMap: {}, modulesMap: {} });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -110,9 +117,6 @@ export default function MessagesPage() {
     const studentsMap = Object.fromEntries((studentsRes.data ?? []).map((s) => [s.id, s]));
     const lessonsMap = Object.fromEntries((lessonsRes.data ?? []).map((l) => [l.id, l]));
     const coursesMap = Object.fromEntries((coursesRes.data ?? []).map((c) => [c.id, c]));
-    const threadsMap = Object.fromEntries(
-      (threadsRes.data ?? []).map((t: any) => [`${t.student_id}::${t.lesson_id}`, t])
-    );
 
     const moduleIds = [...new Set((lessonsRes.data ?? []).map((l) => l.module_id).filter(Boolean))];
     const modulesRes = moduleIds.length > 0
@@ -120,41 +124,59 @@ export default function MessagesPage() {
       : { data: [] };
     const modulesMap = Object.fromEntries((modulesRes.data ?? []).map((m) => [m.id, m]));
 
-    const groups = new Map<string, Message[]>();
+    setLookups({ lessonsMap, coursesMap, modulesMap });
+
+    // Group by student_id (one chat per student)
+    const groups = new Map<string, typeof rawMessages>();
     for (const msg of rawMessages) {
-      const key = `${msg.student_id}::${msg.lesson_id}`;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(msg);
+      if (!groups.has(msg.student_id)) groups.set(msg.student_id, []);
+      groups.get(msg.student_id)!.push(msg);
     }
 
+    // Determine worst thread status per student
+    const threadsMap = new Map<string, any[]>();
+    for (const t of threadsRes.data ?? []) {
+      const key = (t as any).student_id;
+      if (!threadsMap.has(key)) threadsMap.set(key, []);
+      threadsMap.get(key)!.push(t);
+    }
+
+    const statusPriority: Record<ThreadStatus, number> = { unresolved: 0, awaiting_response: 1, resolved: 2 };
+
     const convos: Conversation[] = [];
-    for (const [key, msgs] of groups) {
-      const first = msgs[0]; // most recent (ordered desc)
-      const student = studentsMap[first.student_id];
+    for (const [studentId, msgs] of groups) {
+      const first = msgs[0]; // most recent
+      const student = studentsMap[studentId];
+      const unread = msgs.filter((m) => !m.is_read && m.sender_type === "student").length;
+
       const lesson = lessonsMap[first.lesson_id];
       const course = coursesMap[first.course_id];
-      const unread = msgs.filter((m) => !m.is_read && m.sender_type === "student").length;
-      const moduleId = lesson?.module_id ?? "";
-      const mod = moduleId ? modulesMap[moduleId] : null;
-      const thread = threadsMap[key];
+      const mod = lesson?.module_id ? modulesMap[lesson.module_id] : null;
+
+      // Pick worst status across all threads for this student
+      const studentThreads = threadsMap.get(studentId) ?? [];
+      let worstStatus: ThreadStatus = "unresolved";
+      if (studentThreads.length > 0) {
+        worstStatus = studentThreads.reduce((worst: ThreadStatus, t: any) => {
+          const s = t.status as ThreadStatus;
+          return statusPriority[s] < statusPriority[worst] ? s : worst;
+        }, "resolved" as ThreadStatus);
+      }
 
       convos.push({
-        student_id: first.student_id,
-        lesson_id: first.lesson_id,
-        course_id: first.course_id,
-        module_id: moduleId,
+        student_id: studentId,
         student_name: student?.name ?? "Aluno desconhecido",
         student_email: student?.email ?? "",
         student_avatar: student?.avatar_url ?? null,
-        lesson_title: lesson?.title ?? "Aula desconhecida",
-        module_title: mod?.title ?? "Módulo desconhecido",
-        course_title: course?.title ?? "Produto desconhecido",
         last_message: first.message,
         last_message_at: first.created_at,
         last_sender_type: first.sender_type,
         last_message_read: first.is_read,
         unread_count: unread,
-        thread_status: thread?.status ?? "unresolved",
+        thread_status: worstStatus,
+        last_course_title: course?.title ?? "",
+        last_module_title: mod?.title ?? "",
+        last_lesson_title: lesson?.title ?? "",
       });
     }
 
@@ -165,14 +187,28 @@ export default function MessagesPage() {
 
   const openConversation = async (convo: Conversation) => {
     setSelectedConvo(convo);
+
+    // Fetch ALL messages from this student
     const { data } = await supabase
       .from("lesson_messages")
       .select("*")
       .eq("student_id", convo.student_id)
-      .eq("lesson_id", convo.lesson_id)
       .order("created_at", { ascending: true });
 
-    setMessages(data ?? []);
+    // Enrich messages with course/module/lesson titles
+    const enriched: EnrichedMessage[] = (data ?? []).map((msg) => {
+      const lesson = lookups.lessonsMap[msg.lesson_id];
+      const course = lookups.coursesMap[msg.course_id];
+      const mod = lesson?.module_id ? lookups.modulesMap[lesson.module_id] : null;
+      return {
+        ...msg,
+        course_title: course?.title ?? "",
+        module_title: mod?.title ?? "",
+        lesson_title: lesson?.title ?? "",
+      };
+    });
+
+    setMessages(enriched);
 
     const unreadIds = (data ?? []).filter((m) => !m.is_read && m.sender_type === "student").map((m) => m.id);
     if (unreadIds.length > 0) {
@@ -182,12 +218,17 @@ export default function MessagesPage() {
   };
 
   const handleSendReply = async () => {
-    if (!reply.trim() || !selectedConvo) return;
+    if (!reply.trim() || !selectedConvo || messages.length === 0) return;
     setSending(true);
+
+    // Reply in the context of the last message's lesson/course
+    const lastStudentMsg = [...messages].reverse().find((m) => m.sender_type === "student");
+    const lastMsg = lastStudentMsg ?? messages[messages.length - 1];
+
     const { error } = await supabase.from("lesson_messages").insert({
       student_id: selectedConvo.student_id,
-      lesson_id: selectedConvo.lesson_id,
-      course_id: selectedConvo.course_id,
+      lesson_id: lastMsg.lesson_id,
+      course_id: lastMsg.course_id,
       message: reply.trim(),
       sender_type: "admin",
       admin_id: user?.id,
@@ -203,35 +244,36 @@ export default function MessagesPage() {
   };
 
   const updateThreadStatus = async (convo: Conversation, newStatus: ThreadStatus) => {
-    const { error } = await supabase
-      .from("message_threads")
-      .upsert(
-        {
-          student_id: convo.student_id,
-          lesson_id: convo.lesson_id,
-          course_id: convo.course_id,
-          status: newStatus,
-          updated_by: user?.id,
-        },
-        { onConflict: "student_id,lesson_id" }
-      );
+    // We don't have a single lesson_id anymore, so update all threads for this student
+    // Get all unique lesson_ids from current messages
+    const lessonIds = [...new Set(messages.map((m) => m.lesson_id))];
+    const courseIds = [...new Set(messages.map((m) => m.course_id))];
 
-    if (error) {
-      toast.error("Erro ao atualizar status");
-      return;
+    for (let i = 0; i < lessonIds.length; i++) {
+      await supabase
+        .from("message_threads")
+        .upsert(
+          {
+            student_id: convo.student_id,
+            lesson_id: lessonIds[i],
+            course_id: courseIds[i] ?? courseIds[0],
+            status: newStatus,
+            updated_by: user?.id,
+          },
+          { onConflict: "student_id,lesson_id" }
+        );
     }
 
     toast.success(`Marcado como "${STATUS_CONFIG[newStatus].label}"`);
 
-    // Update local state
     setConversations((prev) =>
       prev.map((c) =>
-        c.student_id === convo.student_id && c.lesson_id === convo.lesson_id
+        c.student_id === convo.student_id
           ? { ...c, thread_status: newStatus }
           : c
       )
     );
-    if (selectedConvo?.student_id === convo.student_id && selectedConvo?.lesson_id === convo.lesson_id) {
+    if (selectedConvo?.student_id === convo.student_id) {
       setSelectedConvo({ ...convo, thread_status: newStatus });
     }
   };
@@ -259,19 +301,9 @@ export default function MessagesPage() {
     return `${diffW} sem`;
   };
 
-  // WhatsApp-style check marks for admin messages
-  const ReadIndicator = ({ isRead }: { isRead: boolean }) => {
-    if (isRead) {
-      return <CheckCheck className="h-3.5 w-3.5 text-blue-400 inline-block ml-1" />;
-    }
-    return <Check className="h-3.5 w-3.5 text-muted-foreground inline-block ml-1" />;
-  };
-
   const filtered = conversations.filter((c) => {
     const matchesSearch =
-      c.student_name.toLowerCase().includes(search.toLowerCase()) ||
-      c.lesson_title.toLowerCase().includes(search.toLowerCase()) ||
-      c.course_title.toLowerCase().includes(search.toLowerCase());
+      c.student_name.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || c.thread_status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -283,6 +315,12 @@ export default function MessagesPage() {
       </div>
     );
   }
+
+  // Helper to check if context (lesson) changed between messages
+  const contextChanged = (prev: EnrichedMessage | null, curr: EnrichedMessage) => {
+    if (!prev) return true;
+    return prev.lesson_id !== curr.lesson_id;
+  };
 
   return (
     <div className="border border-border rounded-lg overflow-hidden flex" style={{ height: "calc(100vh - 120px)" }}>
@@ -320,11 +358,11 @@ export default function MessagesPage() {
             </div>
           ) : (
             filtered.map((convo) => {
-              const isSelected = selectedConvo?.student_id === convo.student_id && selectedConvo?.lesson_id === convo.lesson_id;
+              const isSelected = selectedConvo?.student_id === convo.student_id;
               const statusCfg = STATUS_CONFIG[convo.thread_status];
               return (
                 <button
-                  key={`${convo.student_id}::${convo.lesson_id}`}
+                  key={convo.student_id}
                   onClick={() => openConversation(convo)}
                   className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors hover:bg-muted/40 ${
                     isSelected ? "bg-muted/50" : ""
@@ -347,7 +385,7 @@ export default function MessagesPage() {
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                      {convo.course_title} › {convo.module_title} › {convo.lesson_title}
+                      {convo.last_course_title} › {convo.last_module_title} › {convo.last_lesson_title}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {convo.last_sender_type === "admin" && (
@@ -403,9 +441,7 @@ export default function MessagesPage() {
                 </Avatar>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">{selectedConvo.student_name}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {selectedConvo.course_title} › {selectedConvo.module_title} › {selectedConvo.lesson_title}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">{selectedConvo.student_email}</p>
                 </div>
               </div>
 
@@ -414,7 +450,7 @@ export default function MessagesPage() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
                     <Tag className="h-3 w-3" />
-                    <span className={`inline-flex items-center gap-1`}>
+                    <span className="inline-flex items-center gap-1">
                       <span className={`h-1.5 w-1.5 rounded-full ${STATUS_CONFIG[selectedConvo.thread_status].dotClass}`} />
                       {STATUS_CONFIG[selectedConvo.thread_status].label}
                     </span>
@@ -439,37 +475,59 @@ export default function MessagesPage() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="space-y-3">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
-                    {msg.sender_type === "student" && (
-                      <Avatar className="h-7 w-7 mr-2 mt-1 shrink-0">
-                        <AvatarImage src={selectedConvo.student_avatar ?? undefined} />
-                        <AvatarFallback className="bg-muted text-[10px] font-medium">
-                          {getInitials(selectedConvo.student_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div className={`max-w-[60%] rounded-2xl px-4 py-2.5 ${
-                      msg.sender_type === "admin"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 text-foreground"
-                    }`}>
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
-                      <div className={`flex items-center justify-end gap-0.5 mt-1 ${msg.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                        <span className="text-[10px]">
-                          {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
-                        </span>
-                        {msg.sender_type === "admin" && (
-                          msg.is_read ? (
-                            <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
-                          ) : (
-                            <Check className="h-3.5 w-3.5" />
-                          )
+                {messages.map((msg, idx) => {
+                  const prev = idx > 0 ? messages[idx - 1] : null;
+                  const showContext = contextChanged(prev, msg);
+
+                  return (
+                    <div key={msg.id}>
+                      {/* Context separator when lesson changes */}
+                      {showContext && (
+                        <div className="flex justify-center my-3">
+                          <span className="text-[10px] text-muted-foreground bg-muted/50 px-3 py-1 rounded-full border border-border">
+                            {msg.course_title} › {msg.module_title} › {msg.lesson_title}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                        {msg.sender_type === "student" && (
+                          <Avatar className="h-7 w-7 mr-2 mt-1 shrink-0">
+                            <AvatarImage src={selectedConvo.student_avatar ?? undefined} />
+                            <AvatarFallback className="bg-muted text-[10px] font-medium">
+                              {getInitials(selectedConvo.student_name)}
+                            </AvatarFallback>
+                          </Avatar>
                         )}
+                        <div className={`max-w-[60%] rounded-2xl px-4 py-2.5 ${
+                          msg.sender_type === "admin"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/60 text-foreground"
+                        }`}>
+                          {/* Inline lesson reference tag */}
+                          {msg.sender_type === "student" && (
+                            <p className="text-[9px] opacity-60 mb-1 truncate">
+                              📍 {msg.module_title} › {msg.lesson_title}
+                            </p>
+                          )}
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                          <div className={`flex items-center justify-end gap-0.5 mt-1 ${msg.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                            <span className="text-[10px]">
+                              {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                            </span>
+                            {msg.sender_type === "admin" && (
+                              msg.is_read ? (
+                                <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
             </div>
