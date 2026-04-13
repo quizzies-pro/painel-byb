@@ -15,10 +15,12 @@ interface Conversation {
   student_id: string;
   lesson_id: string;
   course_id: string;
+  module_id: string;
   student_name: string;
   student_email: string;
   student_avatar: string | null;
   lesson_title: string;
+  module_title: string;
   course_title: string;
   last_message: string;
   last_message_at: string;
@@ -81,13 +83,20 @@ export default function MessagesPage() {
 
     const [studentsRes, lessonsRes, coursesRes] = await Promise.all([
       supabase.from("students").select("id, name, email, avatar_url").in("id", studentIds),
-      supabase.from("lessons").select("id, title").in("id", lessonIds),
+      supabase.from("lessons").select("id, title, module_id").in("id", lessonIds),
       supabase.from("courses").select("id, title").in("id", courseIds),
     ]);
 
     const studentsMap = Object.fromEntries((studentsRes.data ?? []).map((s) => [s.id, s]));
     const lessonsMap = Object.fromEntries((lessonsRes.data ?? []).map((l) => [l.id, l]));
     const coursesMap = Object.fromEntries((coursesRes.data ?? []).map((c) => [c.id, c]));
+
+    // Fetch modules
+    const moduleIds = [...new Set((lessonsRes.data ?? []).map((l) => l.module_id).filter(Boolean))];
+    const modulesRes = moduleIds.length > 0
+      ? await supabase.from("course_modules").select("id, title").in("id", moduleIds)
+      : { data: [] };
+    const modulesMap = Object.fromEntries((modulesRes.data ?? []).map((m) => [m.id, m]));
 
     const groups = new Map<string, Message[]>();
     for (const msg of rawMessages) {
@@ -104,14 +113,19 @@ export default function MessagesPage() {
       const course = coursesMap[first.course_id];
       const unread = msgs.filter((m) => !m.is_read && m.sender_type === "student").length;
 
+      const moduleId = lesson?.module_id ?? "";
+      const mod = moduleId ? modulesMap[moduleId] : null;
+
       convos.push({
         student_id: first.student_id,
         lesson_id: first.lesson_id,
         course_id: first.course_id,
+        module_id: moduleId,
         student_name: student?.name ?? "Aluno desconhecido",
         student_email: student?.email ?? "",
         student_avatar: student?.avatar_url ?? null,
         lesson_title: lesson?.title ?? "Aula desconhecida",
+        module_title: mod?.title ?? "Módulo desconhecido",
         course_title: course?.title ?? "Produto desconhecido",
         last_message: first.message,
         last_message_at: first.created_at,
@@ -250,6 +264,9 @@ export default function MessagesPage() {
                         {getTimeLabel(convo.last_message_at)}
                       </span>
                     </div>
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                      {convo.course_title} › {convo.module_title} › {convo.lesson_title}
+                    </p>
                     <p className={`text-xs truncate mt-0.5 ${convo.unread_count > 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                       {convo.last_message}
                     </p>
@@ -288,7 +305,7 @@ export default function MessagesPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">{selectedConvo.student_name}</p>
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {selectedConvo.course_title} · {selectedConvo.lesson_title}
+                  {selectedConvo.course_title} › {selectedConvo.module_title} › {selectedConvo.lesson_title}
                 </p>
               </div>
             </div>
@@ -311,6 +328,15 @@ export default function MessagesPage() {
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/60 text-foreground"
                     }`}>
+                      {msg.sender_type === "student" && msg.id === messages.filter(m => m.sender_type === "student")[0]?.id && (
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Badge variant="outline" className="text-[10px] font-mono bg-background/50 border-border/50">
+                            {selectedConvo.course_title}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">·</span>
+                          <span className="text-[10px] text-muted-foreground truncate">{selectedConvo.lesson_title}</span>
+                        </div>
+                      )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
                       <p className={`text-[10px] mt-1 ${msg.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                         {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
