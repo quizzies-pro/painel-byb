@@ -25,7 +25,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <header className="h-14 flex items-center border-b border-border px-4 bg-background sticky top-0 z-10">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
           </header>
-          <main className="flex-1 p-20">{children}</main>
+          <main className="flex-1 p-6 relative overflow-hidden">{children}</main>
         </div>
       </div>
     </SidebarProvider>
