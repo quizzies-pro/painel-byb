@@ -504,14 +504,24 @@ export default function MessagesPage() {
                         </div>
                       )}
 
-                      <div className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                      <div className={`flex items-end gap-1 group ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
                         {msg.sender_type === "student" && (
-                          <Avatar className="h-7 w-7 mr-2 mt-1 shrink-0">
+                          <Avatar className="h-7 w-7 mr-1 mt-1 shrink-0">
                             <AvatarImage src={selectedConvo.student_avatar ?? undefined} />
                             <AvatarFallback className="bg-muted text-[10px] font-medium">
                               {getInitials(selectedConvo.student_name)}
                             </AvatarFallback>
                           </Avatar>
+                        )}
+                        {/* Delete button before admin bubble */}
+                        {isSuperAdmin && msg.sender_type === "admin" && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive mb-1"
+                            title="Apagar mensagem"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         )}
                         <div className={`max-w-[60%] rounded-2xl px-4 py-2.5 ${
                           msg.sender_type === "admin"
@@ -538,6 +548,16 @@ export default function MessagesPage() {
                             )}
                           </div>
                         </div>
+                        {/* Delete button after student bubble */}
+                        {isSuperAdmin && msg.sender_type === "student" && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive mb-1"
+                            title="Apagar mensagem"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
