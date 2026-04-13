@@ -589,6 +589,24 @@ export default function MessagesPage() {
               </div>
             </div>
 
+            {/* Reply context indicator */}
+            {replyingTo && (
+              <div className="border-t border-border px-4 py-2 flex items-center justify-between bg-muted/30">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Reply className="h-4 w-4 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-primary truncate">
+                      Respondendo em: {replyingTo.module_title} › {replyingTo.lesson_title}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">{replyingTo.message}</p>
+                  </div>
+                </div>
+                <button onClick={() => setReplyingTo(null)} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground shrink-0">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
             {/* Input */}
             <div className="border-t border-border p-4 flex items-end gap-2">
               <Textarea
