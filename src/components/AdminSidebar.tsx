@@ -1,4 +1,4 @@
-import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings, LogOut, ChevronsUpDown } from "lucide-react";
+import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings, LogOut, ChevronsUpDown, MessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +29,7 @@ const contentItems = [
 
 const managementItems = [
   { title: "Alunos", url: "/admin/students", icon: Users },
+  { title: "Mensagens", url: "/admin/messages", icon: MessageSquare },
   { title: "Pagamentos", url: "/admin/payments", icon: CreditCard },
   { title: "Matrículas", url: "/admin/enrollments", icon: GraduationCap },
 ];
