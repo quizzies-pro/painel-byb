@@ -250,7 +250,7 @@ export default function MessagesPage() {
     if (error) toast.error("Erro ao enviar resposta");
     else {
       setReply("");
-      setReplyingTo(null);
+      // Keep replyingTo — only changes when user clicks another "Reply" button
       openConversation(selectedConvo);
     }
     setSending(false);
