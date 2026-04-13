@@ -392,6 +392,45 @@ export type Database = {
           },
         ]
       }
+      lesson_messages: {
+        Row: {
+          admin_id: string | null
+          course_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          lesson_id: string
+          message: string
+          sender_type: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id?: string | null
+          course_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          lesson_id: string
+          message: string
+          sender_type?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string | null
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          lesson_id?: string
+          message?: string
+          sender_type?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_ratings: {
         Row: {
           comment: string | null
