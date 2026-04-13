@@ -277,6 +277,7 @@ export default function MessagesPage() {
     if (selectedConvo?.student_id === convo.student_id) {
       setSelectedConvo({ ...convo, thread_status: newStatus });
     }
+  };
 
   const handleDeleteMessage = async (msgId: string) => {
     if (!isSuperAdmin) return;
