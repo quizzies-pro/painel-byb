@@ -408,7 +408,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden flex" style={{ height: "calc(100vh - 120px)" }}>
+    <div className="border border-border rounded-lg overflow-hidden flex absolute inset-0 m-4">
       {/* Left sidebar - conversation list */}
       <div className="w-[340px] border-r border-border flex flex-col bg-background shrink-0">
         <div className="p-4 border-b border-border">
