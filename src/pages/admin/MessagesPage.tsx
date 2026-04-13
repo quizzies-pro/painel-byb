@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Send, Search, MessageSquare, Circle, Check, CheckCheck, Tag, Trash2 } from "lucide-react";
+import { Send, Search, MessageSquare, Circle, Check, CheckCheck, Tag, Trash2, Reply, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -64,6 +64,7 @@ export default function MessagesPage() {
   const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<EnrichedMessage[]>([]);
   const [reply, setReply] = useState("");
+  const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -222,14 +223,24 @@ export default function MessagesPage() {
     if (!reply.trim() || !selectedConvo || messages.length === 0) return;
     setSending(true);
 
-    // Reply in the context of the last message's lesson/course
-    const lastStudentMsg = [...messages].reverse().find((m) => m.sender_type === "student");
-    const lastMsg = lastStudentMsg ?? messages[messages.length - 1];
+    // Use replyingTo context if set, otherwise fallback to last student message
+    let targetLessonId: string;
+    let targetCourseId: string;
+
+    if (replyingTo) {
+      targetLessonId = replyingTo.lesson_id;
+      targetCourseId = replyingTo.course_id;
+    } else {
+      const lastStudentMsg = [...messages].reverse().find((m) => m.sender_type === "student");
+      const lastMsg = lastStudentMsg ?? messages[messages.length - 1];
+      targetLessonId = lastMsg.lesson_id;
+      targetCourseId = lastMsg.course_id;
+    }
 
     const { error } = await supabase.from("lesson_messages").insert({
       student_id: selectedConvo.student_id,
-      lesson_id: lastMsg.lesson_id,
-      course_id: lastMsg.course_id,
+      lesson_id: targetLessonId,
+      course_id: targetCourseId,
       message: reply.trim(),
       sender_type: "admin",
       admin_id: user?.id,
@@ -239,6 +250,7 @@ export default function MessagesPage() {
     if (error) toast.error("Erro ao enviar resposta");
     else {
       setReply("");
+      setReplyingTo(null);
       openConversation(selectedConvo);
     }
     setSending(false);
@@ -548,15 +560,26 @@ export default function MessagesPage() {
                             )}
                           </div>
                         </div>
-                        {/* Delete button after student bubble */}
-                        {isSuperAdmin && msg.sender_type === "student" && (
-                          <button
-                            onClick={() => handleDeleteMessage(msg.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive mb-1"
-                            title="Apagar mensagem"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                        {/* Reply & Delete buttons after student bubble */}
+                        {msg.sender_type === "student" && (
+                          <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity mb-1">
+                            <button
+                              onClick={() => setReplyingTo(msg)}
+                              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                              title="Responder"
+                            >
+                              <Reply className="h-3.5 w-3.5" />
+                            </button>
+                            {isSuperAdmin && (
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                                title="Apagar mensagem"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -565,6 +588,24 @@ export default function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
             </div>
+
+            {/* Reply context indicator */}
+            {replyingTo && (
+              <div className="border-t border-border px-4 py-2 flex items-center justify-between bg-muted/30">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Reply className="h-4 w-4 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-primary truncate">
+                      Respondendo em: {replyingTo.module_title} › {replyingTo.lesson_title}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">{replyingTo.message}</p>
+                  </div>
+                </div>
+                <button onClick={() => setReplyingTo(null)} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground shrink-0">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
             {/* Input */}
             <div className="border-t border-border p-4 flex items-end gap-2">
