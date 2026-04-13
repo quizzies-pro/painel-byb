@@ -71,7 +71,6 @@ export default function MessagesPage() {
   const [statusFilter, setStatusFilter] = useState<ThreadStatus | "all">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const selectedConvoRef = useRef<Conversation | null>(null);
-  const lookupsRef = useRef(lookups);
 
   // Lookup maps kept at component level for reuse
   const [lookups, setLookups] = useState<{
@@ -79,6 +78,12 @@ export default function MessagesPage() {
     coursesMap: Record<string, any>;
     modulesMap: Record<string, any>;
   }>({ lessonsMap: {}, coursesMap: {}, modulesMap: {} });
+
+  const lookupsRef = useRef(lookups);
+
+  // Keep refs in sync
+  useEffect(() => { selectedConvoRef.current = selectedConvo; }, [selectedConvo]);
+  useEffect(() => { lookupsRef.current = lookups; }, [lookups]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
