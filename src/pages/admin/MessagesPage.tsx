@@ -277,7 +277,19 @@ export default function MessagesPage() {
     if (selectedConvo?.student_id === convo.student_id) {
       setSelectedConvo({ ...convo, thread_status: newStatus });
     }
+
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!isSuperAdmin) return;
+    const { error } = await supabase.from("lesson_messages").delete().eq("id", msgId);
+    if (error) {
+      toast.error("Erro ao apagar mensagem");
+      return;
+    }
+    toast.success("Mensagem apagada");
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    fetchConversations();
   };
+
 
   useEffect(() => {
     fetchConversations();
