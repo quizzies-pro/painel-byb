@@ -392,6 +392,36 @@ export type Database = {
           },
         ]
       }
+      lesson_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          lesson_id: string
+          rating: number
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          lesson_id: string
+          rating: number
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          rating?: number
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           allow_comments: boolean
