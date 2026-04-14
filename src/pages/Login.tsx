@@ -50,9 +50,11 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Dive
-          </h1>
+          <img
+            src="https://res.cloudinary.com/dqsuj0pjy/image/upload/v1776189600/Icone_e_Favicon_amciiv.png"
+            alt="Dive"
+            className="h-16 w-16 mx-auto"
+          />
           <p className="text-sm text-muted-foreground">
             {showReset ? "Recuperar senha" : "Painel Administrativo"}
           </p>
