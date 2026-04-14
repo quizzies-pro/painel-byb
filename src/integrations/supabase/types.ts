@@ -866,11 +866,59 @@ export type Database = {
             referencedRelation: "webhook_endpoints"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "webhook_logs_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      webhook_endpoints_secure: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_mapping: Json | null
+          headers_config: Json | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          secret_token: string | null
+          slug: string | null
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_mapping?: Json | null
+          headers_config?: Json | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          secret_token?: never
+          slug?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_mapping?: Json | null
+          headers_config?: Json | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          secret_token?: never
+          slug?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
