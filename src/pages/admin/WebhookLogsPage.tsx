@@ -69,7 +69,7 @@ export default function WebhookLogsPage() {
   const getWebhookUrl = (slug: string) => `${supabaseUrl}/functions/v1/webhook-receiver/${slug}`;
 
   const fetchEndpoints = async () => {
-    const { data } = await supabase.from("webhook_endpoints").select("*").order("created_at", { ascending: false });
+    const { data } = await (supabase.from as any)("webhook_endpoints_secure").select("*").order("created_at", { ascending: false });
     setEndpoints((data as WebhookEndpoint[]) ?? []);
   };
 
