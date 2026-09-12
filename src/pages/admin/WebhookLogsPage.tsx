@@ -22,6 +22,7 @@ interface WebhookEndpoint {
   is_active: boolean;
   description: string | null;
   created_at: string;
+  event_mapping?: Record<string, unknown> | null;
 }
 
 interface WebhookLog {
@@ -101,7 +102,12 @@ export default function WebhookLogsPage() {
   const [showMapping, setShowMapping] = useState(false);
   const [editingMappingId, setEditingMappingId] = useState<string | null>(null);
   const [savingMapping, setSavingMapping] = useState(false);
-  const [newEndpoint, setNewEndpoint] = useState({ name: "", source: "custom", slug: "", secret_token: "", description: "" });
+  const [newEndpoint, setNewEndpoint] = useState({
+    name: "", source: "custom", slug: "", secret_token: "", description: "",
+    event_field: "event", transaction_field: "transaction_id", product_field: "product_id",
+    email_field: "customer_email", name_field: "customer_name", approved_events: "approved, payment_approved, paid",
+    refund_events: "refunded, payment_refunded", chargeback_events: "chargeback, payment_chargeback",
+  });
   const [mappingForm, setMappingForm] = useState(emptyMappingForm);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
@@ -207,19 +213,39 @@ export default function WebhookLogsPage() {
   };
 
   const handleCreateEndpoint = async () => {
-    if (!newEndpoint.name || !newEndpoint.slug) { toast.error("Nome e slug são obrigatórios"); return; }
+    if (!newEndpoint.name || !newEndpoint.slug || !newEndpoint.secret_token.trim()) { toast.error("Nome, slug e token secreto são obrigatórios"); return; }
+    const splitEvents = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
     const { error } = await supabase.from("webhook_endpoints").insert({
       name: newEndpoint.name,
       source: newEndpoint.source,
       slug: newEndpoint.slug,
       secret_token: newEndpoint.secret_token || null,
       description: newEndpoint.description || null,
+      event_mapping: {
+        fields: {
+          event: newEndpoint.event_field.trim(),
+          transactionId: newEndpoint.transaction_field.trim(),
+          productId: newEndpoint.product_field.trim(),
+          buyerEmail: newEndpoint.email_field.trim(),
+          buyerName: newEndpoint.name_field.trim(),
+        },
+        events: {
+          approved: splitEvents(newEndpoint.approved_events),
+          refunded: splitEvents(newEndpoint.refund_events),
+          chargeback: splitEvents(newEndpoint.chargeback_events),
+        },
+      },
     });
     if (error) toast.error("Erro: " + error.message);
     else {
       toast.success("Webhook criado");
       setShowCreate(false);
-      setNewEndpoint({ name: "", source: "custom", slug: "", secret_token: "", description: "" });
+      setNewEndpoint({
+        name: "", source: "custom", slug: "", secret_token: "", description: "",
+        event_field: "event", transaction_field: "transaction_id", product_field: "product_id",
+        email_field: "customer_email", name_field: "customer_name", approved_events: "approved, payment_approved, paid",
+        refund_events: "refunded, payment_refunded", chargeback_events: "chargeback, payment_chargeback",
+      });
       fetchEndpoints();
     }
   };
@@ -274,12 +300,12 @@ export default function WebhookLogsPage() {
         <TabsContent value="endpoints" className="mt-6 space-y-4">
           <div className="flex justify-end">
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild>
+              {isSuperAdmin && <DialogTrigger asChild>
                 <Button size="sm" className="gap-2">
                   <Plus className="h-4 w-4" /> Novo Webhook
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              </DialogTrigger>}
+              <DialogContent className="max-h-[85vh] overflow-y-auto bg-card border-border">
                 <DialogHeader><DialogTitle>Novo Webhook Endpoint</DialogTitle></DialogHeader>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -316,11 +342,11 @@ export default function WebhookLogsPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-medium">Token Secreto (opcional)</Label>
+                     <Label className="text-[13px] font-medium">Token secreto *</Label>
                     <Input
                       value={newEndpoint.secret_token}
                       onChange={(e) => setNewEndpoint((p) => ({ ...p, secret_token: e.target.value }))}
-                      placeholder="Token para validar requisições"
+                       placeholder="Token enviado pela plataforma de pagamento"
                       className="bg-background border-border font-mono text-xs"
                     />
                   </div>
@@ -334,6 +360,21 @@ export default function WebhookLogsPage() {
                       placeholder="Notas sobre este webhook..."
                     />
                   </div>
+                   <div className="space-y-3 rounded-md border border-border p-3">
+                     <p className="text-[13px] font-medium">Campos enviados pelo gateway</p>
+                     <div className="grid grid-cols-2 gap-3">
+                       <div className="space-y-1"><Label className="text-xs">Tipo do evento</Label><Input value={newEndpoint.event_field} onChange={(e) => setNewEndpoint((p) => ({ ...p, event_field: e.target.value }))} className="font-mono text-xs" /></div>
+                       <div className="space-y-1"><Label className="text-xs">ID da transação</Label><Input value={newEndpoint.transaction_field} onChange={(e) => setNewEndpoint((p) => ({ ...p, transaction_field: e.target.value }))} className="font-mono text-xs" /></div>
+                       <div className="space-y-1"><Label className="text-xs">ID do produto</Label><Input value={newEndpoint.product_field} onChange={(e) => setNewEndpoint((p) => ({ ...p, product_field: e.target.value }))} className="font-mono text-xs" /></div>
+                       <div className="space-y-1"><Label className="text-xs">E-mail do comprador</Label><Input value={newEndpoint.email_field} onChange={(e) => setNewEndpoint((p) => ({ ...p, email_field: e.target.value }))} className="font-mono text-xs" /></div>
+                       <div className="space-y-1"><Label className="text-xs">Nome do comprador</Label><Input value={newEndpoint.name_field} onChange={(e) => setNewEndpoint((p) => ({ ...p, name_field: e.target.value }))} className="font-mono text-xs" /></div>
+                     </div>
+                     <div className="space-y-1"><Label className="text-xs">Eventos de compra aprovada</Label><Input value={newEndpoint.approved_events} onChange={(e) => setNewEndpoint((p) => ({ ...p, approved_events: e.target.value }))} placeholder="approved, paid" className="font-mono text-xs" /></div>
+                     <div className="grid grid-cols-2 gap-3">
+                       <div className="space-y-1"><Label className="text-xs">Eventos de reembolso</Label><Input value={newEndpoint.refund_events} onChange={(e) => setNewEndpoint((p) => ({ ...p, refund_events: e.target.value }))} className="font-mono text-xs" /></div>
+                       <div className="space-y-1"><Label className="text-xs">Eventos de chargeback</Label><Input value={newEndpoint.chargeback_events} onChange={(e) => setNewEndpoint((p) => ({ ...p, chargeback_events: e.target.value }))} className="font-mono text-xs" /></div>
+                     </div>
+                   </div>
                   <div className="flex justify-end gap-3">
                     <Button variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
                     <Button onClick={handleCreateEndpoint}>Criar Webhook</Button>
@@ -359,10 +400,10 @@ export default function WebhookLogsPage() {
                       {!ep.is_active && <Badge variant="outline" className="text-[11px] bg-red-500/10 text-red-400 border-red-500/20">Inativo</Badge>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch checked={ep.is_active} onCheckedChange={() => handleToggleActive(ep.id, ep.is_active)} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteEndpoint(ep.id)}>
+                      {isSuperAdmin && <Switch checked={ep.is_active} onCheckedChange={() => handleToggleActive(ep.id, ep.is_active)} />}
+                      {isSuperAdmin && <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteEndpoint(ep.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </Button>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -374,7 +415,7 @@ export default function WebhookLogsPage() {
                     </Button>
                   </div>
                   {ep.description && <p className="text-xs text-muted-foreground">{ep.description}</p>}
-                  {ep.secret_token && (
+                   {ep.secret_token && (
                     <p className="text-[11px] text-muted-foreground">🔑 Token configurado — envie via header <code className="bg-background px-1 rounded">x-webhook-token</code></p>
                   )}
                 </div>

@@ -1,1 +1,7 @@
 project_id = "scvpucsfbrhhkjteriov"
+
+[functions.webhook-receiver]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = true

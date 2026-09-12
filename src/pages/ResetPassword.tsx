@@ -15,9 +15,15 @@ export default function ResetPassword() {
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
+    const query = window.location.search;
+    if (hash.includes("type=recovery") || hash.includes("type=invite") || query.includes("code=")) {
       setIsRecovery(true);
     }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) setIsRecovery(true);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
