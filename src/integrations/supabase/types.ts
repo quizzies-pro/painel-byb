@@ -752,6 +752,7 @@ export type Database = {
       }
       students: {
         Row: {
+          auth_user_id: string | null
           avatar_url: string | null
           cpf: string | null
           created_at: string
@@ -765,6 +766,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auth_user_id?: string | null
           avatar_url?: string | null
           cpf?: string | null
           created_at?: string
@@ -778,6 +780,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auth_user_id?: string | null
           avatar_url?: string | null
           cpf?: string | null
           created_at?: string
