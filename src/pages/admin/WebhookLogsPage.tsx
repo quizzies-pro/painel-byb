@@ -300,12 +300,12 @@ export default function WebhookLogsPage() {
         <TabsContent value="endpoints" className="mt-6 space-y-4">
           <div className="flex justify-end">
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild>
+              {isSuperAdmin && <DialogTrigger asChild>
                 <Button size="sm" className="gap-2">
                   <Plus className="h-4 w-4" /> Novo Webhook
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              </DialogTrigger>}
+              <DialogContent className="max-h-[85vh] overflow-y-auto bg-card border-border">
                 <DialogHeader><DialogTitle>Novo Webhook Endpoint</DialogTitle></DialogHeader>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
