@@ -207,7 +207,7 @@ export default function WebhookLogsPage() {
   };
 
   const handleCreateEndpoint = async () => {
-    if (!newEndpoint.name || !newEndpoint.slug) { toast.error("Nome e slug são obrigatórios"); return; }
+    if (!newEndpoint.name || !newEndpoint.slug || !newEndpoint.secret_token.trim()) { toast.error("Nome, slug e token secreto são obrigatórios"); return; }
     const { error } = await supabase.from("webhook_endpoints").insert({
       name: newEndpoint.name,
       source: newEndpoint.source,
@@ -316,11 +316,11 @@ export default function WebhookLogsPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[13px] font-medium">Token Secreto (opcional)</Label>
+                     <Label className="text-[13px] font-medium">Token secreto *</Label>
                     <Input
                       value={newEndpoint.secret_token}
                       onChange={(e) => setNewEndpoint((p) => ({ ...p, secret_token: e.target.value }))}
-                      placeholder="Token para validar requisições"
+                       placeholder="Token enviado pela plataforma de pagamento"
                       className="bg-background border-border font-mono text-xs"
                     />
                   </div>
@@ -374,7 +374,7 @@ export default function WebhookLogsPage() {
                     </Button>
                   </div>
                   {ep.description && <p className="text-xs text-muted-foreground">{ep.description}</p>}
-                  {ep.secret_token && (
+                   {ep.secret_token && (
                     <p className="text-[11px] text-muted-foreground">🔑 Token configurado — envie via header <code className="bg-background px-1 rounded">x-webhook-token</code></p>
                   )}
                 </div>
