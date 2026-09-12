@@ -1166,7 +1166,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      verify_webhook_secret: {
+        Args: { _endpoint_id: string; _provided_secret: string }
+        Returns: boolean
+      }
     }
     Enums: {
       access_type: "lifetime" | "limited"
