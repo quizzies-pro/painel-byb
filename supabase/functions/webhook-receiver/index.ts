@@ -136,14 +136,21 @@ async function processApproval(
     origin: String(endpoint.source),
     webhook_event_id: webhookEventId,
   };
-  const { error: paymentError } = await supabase.from("payments").upsert(
-    {
-      ...paymentValues,
-      webhook_endpoint_id: endpoint.id,
-      external_payment_id: event.transactionId,
-    },
-    { onConflict: "webhook_endpoint_id,external_payment_id" },
-  );
+  const { data: existingPayment, error: paymentLookupError } = await supabase
+    .from("payments")
+    .select("id")
+    .eq("webhook_endpoint_id", endpoint.id)
+    .eq("external_payment_id", event.transactionId)
+    .maybeSingle();
+  if (paymentLookupError) throw paymentLookupError;
+  const paymentQuery = existingPayment
+    ? supabase.from("payments").update(paymentValues).eq("id", existingPayment.id)
+    : supabase.from("payments").insert({
+        ...paymentValues,
+        webhook_endpoint_id: endpoint.id,
+        external_payment_id: event.transactionId,
+      });
+  const { error: paymentError } = await paymentQuery;
   if (paymentError) throw paymentError;
 
   const expiresAt = course.access_type === "limited" && course.access_days
