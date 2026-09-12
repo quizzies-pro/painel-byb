@@ -110,6 +110,7 @@ export type Database = {
           allow_comments: boolean
           banner_url: string | null
           category: string | null
+          checkout_url: string | null
           cover_url: string | null
           created_at: string
           display_order: number
@@ -139,6 +140,7 @@ export type Database = {
           allow_comments?: boolean
           banner_url?: string | null
           category?: string | null
+          checkout_url?: string | null
           cover_url?: string | null
           created_at?: string
           display_order?: number
@@ -168,6 +170,7 @@ export type Database = {
           allow_comments?: boolean
           banner_url?: string | null
           category?: string | null
+          checkout_url?: string | null
           cover_url?: string | null
           created_at?: string
           display_order?: number
@@ -620,6 +623,8 @@ export type Database = {
           status: Database["public"]["Enums"]["payment_status"]
           student_id: string
           updated_at: string
+          webhook_endpoint_id: string | null
+          webhook_event_id: string | null
         }
         Insert: {
           affiliate_name?: string | null
@@ -644,6 +649,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"]
           student_id: string
           updated_at?: string
+          webhook_endpoint_id?: string | null
+          webhook_event_id?: string | null
         }
         Update: {
           affiliate_name?: string | null
@@ -668,6 +675,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"]
           student_id?: string
           updated_at?: string
+          webhook_endpoint_id?: string | null
+          webhook_event_id?: string | null
         }
         Relationships: [
           {
@@ -682,6 +691,34 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_webhook_event_id_fkey"
+            columns: ["webhook_event_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_events"
             referencedColumns: ["id"]
           },
         ]
@@ -790,7 +827,12 @@ export type Database = {
           headers_config: Json | null
           id: string
           is_active: boolean
+          last_received_at: string | null
+          last_test_status: string | null
+          last_tested_at: string | null
           name: string
+          secret_hash: string | null
+          secret_hint: string | null
           secret_token: string | null
           slug: string
           source: string
@@ -803,7 +845,12 @@ export type Database = {
           headers_config?: Json | null
           id?: string
           is_active?: boolean
+          last_received_at?: string | null
+          last_test_status?: string | null
+          last_tested_at?: string | null
           name: string
+          secret_hash?: string | null
+          secret_hint?: string | null
           secret_token?: string | null
           slug: string
           source?: string
@@ -816,13 +863,88 @@ export type Database = {
           headers_config?: Json | null
           id?: string
           is_active?: boolean
+          last_received_at?: string | null
+          last_test_status?: string | null
+          last_tested_at?: string | null
           name?: string
+          secret_hash?: string | null
+          secret_hint?: string | null
           secret_token?: string | null
           slug?: string
           source?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          buyer_email: string | null
+          created_at: string
+          error_message: string | null
+          event_key: string
+          event_type: string
+          external_product_id: string | null
+          external_transaction_id: string | null
+          id: string
+          processed_at: string | null
+          sanitized_payload: Json
+          status: string
+          updated_at: string
+          webhook_endpoint_id: string
+        }
+        Insert: {
+          buyer_email?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_key: string
+          event_type: string
+          external_product_id?: string | null
+          external_transaction_id?: string | null
+          id?: string
+          processed_at?: string | null
+          sanitized_payload?: Json
+          status?: string
+          updated_at?: string
+          webhook_endpoint_id: string
+        }
+        Update: {
+          buyer_email?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_key?: string
+          event_type?: string
+          external_product_id?: string | null
+          external_transaction_id?: string | null
+          id?: string
+          processed_at?: string | null
+          sanitized_payload?: Json
+          status?: string
+          updated_at?: string
+          webhook_endpoint_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_events_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_events_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_events_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_secure"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhook_logs: {
         Row: {
@@ -875,6 +997,77 @@ export type Database = {
           },
           {
             foreignKeyName: "webhook_logs_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_secure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_product_mappings: {
+        Row: {
+          checkout_url: string | null
+          course_id: string
+          created_at: string
+          external_product_id: string
+          external_product_name: string | null
+          id: string
+          is_active: boolean
+          revoke_on_chargeback: boolean
+          revoke_on_refund: boolean
+          updated_at: string
+          webhook_endpoint_id: string
+        }
+        Insert: {
+          checkout_url?: string | null
+          course_id: string
+          created_at?: string
+          external_product_id: string
+          external_product_name?: string | null
+          id?: string
+          is_active?: boolean
+          revoke_on_chargeback?: boolean
+          revoke_on_refund?: boolean
+          updated_at?: string
+          webhook_endpoint_id: string
+        }
+        Update: {
+          checkout_url?: string | null
+          course_id?: string
+          created_at?: string
+          external_product_id?: string
+          external_product_name?: string | null
+          id?: string
+          is_active?: boolean
+          revoke_on_chargeback?: boolean
+          revoke_on_refund?: boolean
+          updated_at?: string
+          webhook_endpoint_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_product_mappings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_product_mappings_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_product_mappings_webhook_endpoint_id_fkey"
+            columns: ["webhook_endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_product_mappings_webhook_endpoint_id_fkey"
             columns: ["webhook_endpoint_id"]
             isOneToOne: false
             referencedRelation: "webhook_endpoints_secure"
