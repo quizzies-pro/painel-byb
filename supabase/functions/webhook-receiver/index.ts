@@ -1,305 +1,329 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "npm:zod@3.25.76";
+import {
+  makeEventKey,
+  normalizeWebhook,
+  sanitizePayload,
+  type NormalizedWebhook,
+  type WebhookPayload,
+} from "../_shared/webhook-utils.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-token",
-};
+const PayloadSchema = z.record(z.unknown());
+const APP_URL = Deno.env.get("APP_URL") ?? "https://painel-byb.lovable.app";
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function bearerToken(req: Request, payload: WebhookPayload): string {
+  const authorization = req.headers.get("authorization") ?? "";
+  const fromHeader = authorization.toLowerCase().startsWith("bearer ")
+    ? authorization.slice(7).trim()
+    : authorization.trim();
+  const fromPayload = typeof payload.token === "string" ? payload.token : "";
+  return req.headers.get("x-webhook-token")?.trim() || fromHeader || fromPayload;
+}
+
+async function findAuthUserByEmail(supabase: SupabaseClient, email: string) {
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const user = data.users.find((item) => item.email?.toLowerCase() === email);
+    if (user) return user;
+    if (data.users.length < 1000) return null;
+  }
+  throw new Error("Limite de usuários atingido ao localizar o comprador");
+}
+
+async function ensureStudent(supabase: SupabaseClient, event: NormalizedWebhook, source: string) {
+  const { data: existingStudent, error: studentLookupError } = await supabase
+    .from("students")
+    .select("id, auth_user_id")
+    .ilike("email", event.buyerEmail)
+    .maybeSingle();
+  if (studentLookupError) throw studentLookupError;
+
+  let authUserId = existingStudent?.auth_user_id ?? null;
+  if (!authUserId) {
+    const existingAuthUser = await findAuthUserByEmail(supabase, event.buyerEmail);
+    if (existingAuthUser) {
+      authUserId = existingAuthUser.id;
+    } else {
+      const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+        event.buyerEmail,
+        { redirectTo: `${APP_URL}/reset-password`, data: { name: event.buyerName } },
+      );
+      if (inviteError || !invited.user) throw inviteError ?? new Error("Não foi possível enviar o acesso ao aluno");
+      authUserId = invited.user.id;
+    }
+  }
+
+  const studentValues = {
+    name: event.buyerName,
+    email: event.buyerEmail,
+    phone: event.buyerPhone,
+    cpf: event.buyerCpf,
+    status: "active",
+    origin: source,
+    auth_user_id: authUserId,
+  };
+
+  if (existingStudent) {
+    const { data, error } = await supabase
+      .from("students")
+      .update(studentValues)
+      .eq("id", existingStudent.id)
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id as string;
+  }
+
+  const { data, error } = await supabase.from("students").insert(studentValues).select("id").single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+async function processApproval(
+  supabase: SupabaseClient,
+  endpoint: Record<string, unknown>,
+  webhookEventId: string,
+  event: NormalizedWebhook,
+  payload: WebhookPayload,
+) {
+  if (!event.transactionId || !event.productId || !event.buyerEmail || !z.string().email().safeParse(event.buyerEmail).success) {
+    throw new Error("Evento aprovado sem transação, produto ou e-mail válido");
+  }
+
+  const { data: mapping, error: mappingError } = await supabase
+    .from("webhook_product_mappings")
+    .select("course_id")
+    .eq("webhook_endpoint_id", endpoint.id)
+    .eq("external_product_id", event.productId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (mappingError) throw mappingError;
+  if (!mapping) throw new Error(`Produto externo não mapeado: ${event.productId}`);
+
+  const studentId = await ensureStudent(supabase, event, String(endpoint.source));
+  const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("access_type, access_days")
+    .eq("id", mapping.course_id)
+    .single();
+  if (courseError) throw courseError;
+
+  const approvedAt = new Date().toISOString();
+  const paymentValues = {
+    external_order_id: event.orderId,
+    student_id: studentId,
+    course_id: mapping.course_id,
+    product_name: event.productName,
+    product_id: event.productId,
+    amount: event.amount,
+    currency: event.currency,
+    payment_method: event.paymentMethod,
+    installments: event.installments,
+    status: "approved",
+    purchased_at: event.purchasedAt,
+    approved_at: approvedAt,
+    canceled_at: null,
+    raw_payload: sanitizePayload(payload),
+    origin: String(endpoint.source),
+    webhook_event_id: webhookEventId,
+  };
+  const { error: paymentError } = await supabase.from("payments").upsert(
+    {
+      ...paymentValues,
+      webhook_endpoint_id: endpoint.id,
+      external_payment_id: event.transactionId,
+    },
+    { onConflict: "webhook_endpoint_id,external_payment_id" },
+  );
+  if (paymentError) throw paymentError;
+
+  const expiresAt = course.access_type === "limited" && course.access_days
+    ? new Date(Date.now() + Number(course.access_days) * 86_400_000).toISOString()
+    : null;
+  const { error: enrollmentError } = await supabase.from("enrollments").upsert(
+    {
+      student_id: studentId,
+      course_id: mapping.course_id,
+      origin: "purchase",
+      status: "active",
+      started_at: approvedAt,
+      expires_at: expiresAt,
+      notes: `Liberado automaticamente pelo webhook ${String(endpoint.name)}`,
+    },
+    { onConflict: "student_id,course_id" },
+  );
+  if (enrollmentError) throw enrollmentError;
+}
+
+async function processReversal(
+  supabase: SupabaseClient,
+  endpointId: string,
+  webhookEventId: string,
+  event: NormalizedWebhook,
+) {
+  if (!event.transactionId) throw new Error("Evento de estorno sem identificação da transação");
+  const status = event.eventType === "refunded" ? "refunded" : event.eventType === "chargeback" ? "chargeback" : "canceled";
+  const { data: payment, error } = await supabase
+    .from("payments")
+    .update({ status, canceled_at: new Date().toISOString(), webhook_event_id: webhookEventId })
+    .eq("webhook_endpoint_id", endpointId)
+    .eq("external_payment_id", event.transactionId)
+    .select("student_id, course_id, product_id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!payment?.course_id) throw new Error(`Pagamento não encontrado: ${event.transactionId}`);
+
+  const { data: mapping, error: mappingError } = await supabase
+    .from("webhook_product_mappings")
+    .select("revoke_on_refund, revoke_on_chargeback")
+    .eq("webhook_endpoint_id", endpointId)
+    .eq("external_product_id", payment.product_id)
+    .maybeSingle();
+  if (mappingError) throw mappingError;
+  const shouldRevoke = event.eventType === "refunded"
+    ? mapping?.revoke_on_refund !== false
+    : event.eventType === "chargeback"
+      ? mapping?.revoke_on_chargeback !== false
+      : true;
+  if (!shouldRevoke) return;
+
+  const { count, error: countError } = await supabase
+    .from("payments")
+    .select("id", { count: "exact", head: true })
+    .eq("student_id", payment.student_id)
+    .eq("course_id", payment.course_id)
+    .eq("status", "approved");
+  if (countError) throw countError;
+  if ((count ?? 0) === 0) {
+    const { error: enrollmentError } = await supabase
+      .from("enrollments")
+      .update({ status: "blocked", notes: `Acesso bloqueado automaticamente: ${status}` })
+      .eq("student_id", payment.student_id)
+      .eq("course_id", payment.course_id);
+    if (enrollmentError) throw enrollmentError;
+  }
+}
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return json({ error: "Server configuration error" }, 500);
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
 
-  // Extract slug from URL path: /webhook-receiver/SLUG
-  const url = new URL(req.url);
-  const pathParts = url.pathname.split("/").filter(Boolean);
-  const slug = pathParts[pathParts.length - 1];
-
-  if (!slug || slug === "webhook-receiver") {
-    return new Response(JSON.stringify({ error: "Missing webhook slug" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // Find the webhook endpoint config
+  const slug = new URL(req.url).pathname.split("/").filter(Boolean).at(-1);
+  if (!slug || slug === "webhook-receiver") return json({ error: "Missing webhook slug" }, 400);
   const { data: endpoint, error: endpointError } = await supabase
     .from("webhook_endpoints")
-    .select("*")
+    .select("id, name, source, slug, is_active, event_mapping")
     .eq("slug", slug)
-    .single();
+    .maybeSingle();
+  if (endpointError || !endpoint) return json({ error: "Webhook endpoint not found" }, 404);
+  if (!endpoint.is_active) return json({ error: "Webhook endpoint is disabled" }, 403);
 
-  if (endpointError || !endpoint) {
-    return new Response(JSON.stringify({ error: "Webhook endpoint not found" }), {
-      status: 404,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  if (!endpoint.is_active) {
-    return new Response(JSON.stringify({ error: "Webhook endpoint is disabled" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // Parse payload
-  let payload: Record<string, unknown>;
+  let rawPayload: unknown;
   try {
-    payload = await req.json();
+    rawPayload = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Invalid JSON" }, 400);
+  }
+  const parsedPayload = PayloadSchema.safeParse(rawPayload);
+  if (!parsedPayload.success) return json({ error: "Payload must be a JSON object" }, 400);
+  const payload = parsedPayload.data;
+
+  const token = bearerToken(req, payload);
+  if (!token) return json({ error: "Unauthorized" }, 401);
+  const { data: validSecret, error: secretError } = await supabase.rpc("verify_webhook_secret", {
+    _endpoint_id: endpoint.id,
+    _provided_secret: token,
+  });
+  if (secretError || validSecret !== true) return json({ error: "Unauthorized" }, 401);
+
+  const normalized = normalizeWebhook(payload, endpoint.event_mapping);
+  const eventKey = await makeEventKey(endpoint.id, normalized, payload);
+  const safePayload = sanitizePayload(payload) as Record<string, unknown>;
+  const { data: existingEvent } = await supabase
+    .from("webhook_events")
+    .select("id, status")
+    .eq("webhook_endpoint_id", endpoint.id)
+    .eq("event_key", eventKey)
+    .maybeSingle();
+  if (existingEvent?.status === "processed" || existingEvent?.status === "ignored") {
+    return json({ status: "duplicate", event_id: existingEvent.id });
   }
 
-  // Log the webhook
-  const { data: logEntry } = await supabase.from("webhook_logs").insert({
+  let webhookEventId = existingEvent?.id as string | undefined;
+  if (webhookEventId) {
+    const { error } = await supabase.from("webhook_events").update({ status: "processing", error_message: null }).eq("id", webhookEventId);
+    if (error) return json({ error: "Could not prepare event" }, 500);
+  } else {
+    const { data, error } = await supabase.from("webhook_events").insert({
+      webhook_endpoint_id: endpoint.id,
+      event_key: eventKey,
+      event_type: normalized.rawEventType || normalized.eventType,
+      external_transaction_id: normalized.transactionId || null,
+      external_product_id: normalized.productId || null,
+      buyer_email: normalized.buyerEmail || null,
+      status: "processing",
+      sanitized_payload: safePayload,
+    }).select("id").single();
+    if (error) {
+      if (error.code === "23505") return json({ status: "duplicate" });
+      return json({ error: "Could not register event" }, 500);
+    }
+    webhookEventId = data.id;
+  }
+
+  const { data: log } = await supabase.from("webhook_logs").insert({
     source: endpoint.source,
-    event_type: extractEventType(payload, endpoint.source),
-    payload,
+    event_type: normalized.rawEventType || normalized.eventType,
+    payload: safePayload,
     status: "received",
     webhook_endpoint_id: endpoint.id,
   }).select("id").single();
 
-  const logId = logEntry?.id;
-
   try {
-    // Validate token if configured
-    if (endpoint.secret_token && endpoint.secret_token.length > 0) {
-      const receivedToken = req.headers.get("x-webhook-token") 
-        || req.headers.get("authorization")?.replace("Bearer ", "")
-        || (payload.token as string);
-
-      if (receivedToken !== endpoint.secret_token) {
-        await updateLog(supabase, logId, "failed", "Token inválido");
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (normalized.eventType === "approved") {
+      await processApproval(supabase, endpoint, webhookEventId, normalized, payload);
+    } else if (["refunded", "chargeback", "canceled"].includes(normalized.eventType)) {
+      await processReversal(supabase, endpoint.id, webhookEventId, normalized);
+    } else if (normalized.eventType === "pending") {
+      // Pending events remain recorded, but access is granted only after approval.
+    } else {
+      await supabase.from("webhook_events").update({
+        status: "ignored",
+        error_message: `Evento não suportado: ${normalized.rawEventType || "sem tipo"}`,
+        processed_at: new Date().toISOString(),
+      }).eq("id", webhookEventId);
+      if (log?.id) await supabase.from("webhook_logs").update({ status: "ignored", processed_at: new Date().toISOString() }).eq("id", log.id);
+      return json({ status: "ignored", event_id: webhookEventId });
     }
 
-    // Process based on source
-    switch (endpoint.source) {
-      case "ticto":
-        await processTicto(supabase, payload, logId);
-        break;
-      case "hotmart":
-        await processGeneric(supabase, payload, logId, "hotmart");
-        break;
-      case "eduzz":
-        await processGeneric(supabase, payload, logId, "eduzz");
-        break;
-      case "n8n":
-        // N8N webhooks are just logged and forwarded — the response confirms receipt
-        await updateLog(supabase, logId, "processed", null);
-        break;
-      default:
-        // Generic/custom webhooks — just log them as processed
-        await updateLog(supabase, logId, "processed", null);
-        break;
-    }
-
-    return new Response(JSON.stringify({ status: "ok", webhook_id: endpoint.slug }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    await updateLog(supabase, logId, "failed", errorMsg);
-    return new Response(JSON.stringify({ error: errorMsg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const processedAt = new Date().toISOString();
+    await Promise.all([
+      supabase.from("webhook_events").update({ status: "processed", processed_at: processedAt }).eq("id", webhookEventId),
+      log?.id ? supabase.from("webhook_logs").update({ status: "processed", processed_at: processedAt }).eq("id", log.id) : Promise.resolve(),
+      supabase.from("webhook_endpoints").update({ last_received_at: processedAt }).eq("id", endpoint.id),
+    ]);
+    return json({ status: "ok", event_id: webhookEventId });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    const processedAt = new Date().toISOString();
+    await Promise.all([
+      supabase.from("webhook_events").update({ status: "failed", error_message: message, processed_at: processedAt }).eq("id", webhookEventId),
+      log?.id ? supabase.from("webhook_logs").update({ status: "failed", error_message: message, processed_at: processedAt }).eq("id", log.id) : Promise.resolve(),
+    ]);
+    return json({ error: message, event_id: webhookEventId }, 422);
   }
 });
-
-function extractEventType(payload: Record<string, unknown>, source: string): string {
-  // Try common event field names
-  return (
-    (payload.event as string) ||
-    (payload.event_type as string) ||
-    (payload.type as string) ||
-    (payload.action as string) ||
-    (payload.hottok as string && "hotmart_event") ||
-    "unknown"
-  );
-}
-
-async function processTicto(
-  supabase: ReturnType<typeof createClient>,
-  payload: Record<string, unknown>,
-  logId: string | undefined
-) {
-  const event = (payload.event as string) || "";
-
-  // Check for duplicate
-  const externalId = (payload.payment_id as string) || (payload.transaction_id as string);
-  if (externalId) {
-    const { data: existing } = await supabase
-      .from("payments")
-      .select("id")
-      .eq("external_payment_id", externalId)
-      .maybeSingle();
-
-    if (existing && (event === "purchase_created" || event === "payment_approved")) {
-      await updateLog(supabase, logId, "ignored", "Pagamento duplicado");
-      return;
-    }
-  }
-
-  switch (event) {
-    case "purchase_created":
-    case "payment_approved": {
-      const customerEmail = (payload.customer_email as string) || (payload.email as string) || "";
-      const customerName = (payload.customer_name as string) || (payload.name as string) || "Sem nome";
-      const customerPhone = (payload.customer_phone as string) || (payload.phone as string) || null;
-      const customerCpf = (payload.customer_cpf as string) || (payload.cpf as string) || null;
-
-      // Upsert student
-      let studentId: string;
-      const { data: existingStudent } = await supabase
-        .from("students")
-        .select("id")
-        .eq("email", customerEmail)
-        .maybeSingle();
-
-      if (existingStudent) {
-        studentId = existingStudent.id;
-        await supabase.from("students").update({
-          name: customerName,
-          phone: customerPhone,
-          cpf: customerCpf,
-          status: "active",
-        }).eq("id", studentId);
-      } else {
-        const { data: newStudent } = await supabase.from("students").insert({
-          name: customerName,
-          email: customerEmail,
-          phone: customerPhone,
-          cpf: customerCpf,
-          status: "active",
-          origin: "ticto",
-        }).select("id").single();
-        studentId = newStudent!.id;
-      }
-
-      // Find course
-      const productId = (payload.product_id as string) || "";
-      const { data: course } = await supabase
-        .from("courses")
-        .select("id")
-        .eq("ticto_product_id", productId)
-        .maybeSingle();
-
-      // Create payment
-      await supabase.from("payments").insert({
-        external_payment_id: externalId || null,
-        external_order_id: (payload.order_id as string) || null,
-        student_id: studentId,
-        course_id: course?.id || null,
-        product_name: (payload.product_name as string) || null,
-        product_id: productId || null,
-        amount: Number(payload.amount || payload.value || 0),
-        currency: "BRL",
-        payment_method: (payload.payment_method as string) || null,
-        installments: Number(payload.installments || 1),
-        status: event === "payment_approved" ? "approved" : "pending",
-        coupon_code: (payload.coupon as string) || null,
-        affiliate_name: (payload.affiliate as string) || null,
-        purchased_at: new Date().toISOString(),
-        approved_at: event === "payment_approved" ? new Date().toISOString() : null,
-        raw_payload: payload,
-        origin: "ticto",
-      });
-
-      // Create enrollment
-      if (course?.id && event === "payment_approved") {
-        const { data: existingEnrollment } = await supabase
-          .from("enrollments")
-          .select("id")
-          .eq("student_id", studentId)
-          .eq("course_id", course.id)
-          .maybeSingle();
-
-        if (!existingEnrollment) {
-          await supabase.from("enrollments").insert({
-            student_id: studentId,
-            course_id: course.id,
-            origin: "purchase",
-            status: "active",
-            started_at: new Date().toISOString(),
-          });
-        }
-      }
-
-      await updateLog(supabase, logId, "processed", null);
-      break;
-    }
-
-    case "payment_refunded":
-    case "payment_chargeback": {
-      const refundExternalId = (payload.payment_id as string) || (payload.transaction_id as string);
-      if (refundExternalId) {
-        const newStatus = event === "payment_refunded" ? "refunded" : "chargeback";
-        const { data: payment } = await supabase
-          .from("payments")
-          .update({ status: newStatus, canceled_at: new Date().toISOString() })
-          .eq("external_payment_id", refundExternalId)
-          .select("student_id, course_id")
-          .maybeSingle();
-
-        const settingKey = event === "payment_refunded" ? "block_on_refund" : "block_on_chargeback";
-        const { data: blockSetting } = await supabase
-          .from("platform_settings")
-          .select("value")
-          .eq("key", settingKey)
-          .single();
-
-        if (blockSetting?.value === "true" && payment?.student_id && payment?.course_id) {
-          await supabase.from("enrollments")
-            .update({ status: "blocked" })
-            .eq("student_id", payment.student_id)
-            .eq("course_id", payment.course_id);
-        }
-      }
-      await updateLog(supabase, logId, "processed", null);
-      break;
-    }
-
-    default:
-      await updateLog(supabase, logId, "ignored", `Evento não suportado: ${event}`);
-  }
-}
-
-async function processGeneric(
-  supabase: ReturnType<typeof createClient>,
-  payload: Record<string, unknown>,
-  logId: string | undefined,
-  _source: string
-) {
-  // Generic processing — just log as processed
-  // Future: implement specific logic per platform
-  await updateLog(supabase, logId, "processed", null);
-}
-
-async function updateLog(
-  supabase: ReturnType<typeof createClient>,
-  logId: string | undefined,
-  status: string,
-  errorMessage: string | null
-) {
-  if (!logId) return;
-  await supabase.from("webhook_logs").update({
-    status,
-    error_message: errorMessage,
-    processed_at: new Date().toISOString(),
-  }).eq("id", logId);
-}
