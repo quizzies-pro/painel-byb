@@ -1,118 +1,107 @@
+# Plano — Conectores de pagamento por produto
 
+## Objetivo
+Permitir que cada produto tenha um ou mais webhooks de venda configurados pelo painel. Uma compra aprovada cria ou localiza o aluno, envia um link seguro de primeiro acesso e libera somente o produto comprado. Na área de membros, o aluno vê todo o catálogo, com seus produtos disponíveis e os demais bloqueados com opção de compra.
 
-# Plano de Implementação — TTS Academy Admin Panel
+## Fluxo final
+```text
+Plataforma de pagamento
+        ↓ webhook assinado
+Conector do produto no painel
+        ↓ validação + identificação da venda
+Aluno + pagamento + matrícula
+        ↓
+E-mail com link seguro de acesso
+        ↓
+Área de membros: comprado = liberado | não comprado = bloqueado
+```
 
-## Visão Geral
-Painel administrativo completo para a área de membros TTS Academy, com design system inspirado na Vercel (preto e branco, minimalista, fontes Geist Sans/Mono). Dividido em **3 fases** de implementação.
+## 1. Estrutura dos conectores
+- Criar uma estrutura própria para vincular cada endpoint a produtos externos e produtos da Dive.
+- Permitir vários códigos externos apontando para o mesmo produto e um produto sendo vendido em plataformas diferentes.
+- Manter por conector: nome, plataforma, URL exclusiva, status, segredo, mapeamento dos campos, eventos aceitos e data do último recebimento.
+- Substituir o vínculo exclusivo atual da Ticto por um mapeamento genérico, preservando compatibilidade com os dados existentes.
+- Impedir vínculos duplicados entre plataforma, endpoint e código externo do produto.
 
----
+## 2. Configuração pelo painel administrativo
+- Transformar a área de Webhooks em uma tela de conectores por produto.
+- Criar um assistente com:
+  1. nome e plataforma;
+  2. seleção do produto da Dive;
+  3. código do produto na plataforma de pagamento;
+  4. correspondência dos campos recebidos;
+  5. eventos de compra aprovada, pendente, reembolso, chargeback e cancelamento;
+  6. geração da URL e configuração do segredo;
+  7. teste com uma amostra de webhook antes de ativar.
+- Exibir estado do conector, produto relacionado, última entrega, erros e botão para copiar a URL.
+- Permitir editar, pausar, testar e excluir somente conforme as permissões administrativas.
+- Manter uma caixa de eventos com filtros e detalhes úteis, ocultando dados sensíveis.
 
-## Design System
-- **Cores**: Fundo preto (#000), cards cinza escuro (#111), bordas (#333), texto branco (#fff) e cinza (#888)
-- **Fontes**: Geist Sans para corpo, Geist Mono para dados/códigos
-- **Componentes**: Estilo limpo, bordas finas, sem sombras pesadas, badges minimalistas
-- **Vídeos**: Apenas reprodução via embed do Vimeo (sem upload de vídeo)
+## 3. Recebimento seguro e processamento
+- Consolidar os dois receptores atuais em um único receptor genérico para evitar regras duplicadas.
+- Validar método, tamanho, formato e campos obrigatórios de toda requisição.
+- Exigir segredo ou assinatura em todo conector; conectores sem proteção não poderão ser ativados.
+- Comparar assinaturas de forma segura e adicionar suporte a validadores específicos quando uma plataforma exigir seu próprio padrão.
+- Não salvar tokens, assinaturas, CPF completo ou outros dados sensíveis nos registros de eventos.
+- Criar idempotência por conector + identificador do evento/transação, impedindo matrículas e pagamentos duplicados em reenvios.
+- Registrar cada etapa como recebido, validado, processado, ignorado ou falhou, com possibilidade segura de reprocessamento.
 
----
+## 4. Regra única de venda e acesso
+- Normalizar qualquer webhook para um formato interno comum: evento, transação, produto externo, comprador, valor, moeda e data.
+- Em compra aprovada:
+  - localizar o conector e seu produto;
+  - localizar ou criar o aluno pelo e-mail normalizado;
+  - localizar ou criar a conta de acesso usando o mesmo identificador do aluno;
+  - registrar ou atualizar o pagamento;
+  - criar ou reativar a matrícula do produto correto;
+  - calcular validade conforme o tipo e os dias de acesso do produto;
+  - enviar o link seguro para o aluno definir o acesso.
+- Se o aluno já existir, apenas acrescentar o novo produto e preservar os acessos anteriores.
+- Em reembolso, chargeback ou cancelamento, atualizar o pagamento e aplicar a regra configurada à matrícula daquele produto, sem afetar os demais.
+- Eventos pendentes registram a venda, mas não liberam conteúdo.
+- Produtos externos sem vínculo ficam em erro de configuração e nunca liberam um produto por aproximação de nome.
 
-## FASE 1 — Autenticação + Banco de Dados + CRUD de Conteúdo
+## 5. Conta do aluno e primeiro acesso
+- Usar convite/link de definição de senha enviado pelo Supabase, sem criar ou armazenar senha temporária.
+- Garantir que o registro do aluno use o mesmo identificador da conta autenticada, corrigindo o bloqueio atual entre compra e login.
+- Tornar o processamento repetível: webhooks reenviados não enviam vários convites nem criam contas duplicadas.
+- Prever reenvio manual do link pelo painel e estados claros: convite enviado, conta ativada e falha no envio.
 
-### 1.1 Autenticação Admin
-- Login com email/senha (tela minimalista estilo Vercel)
-- Tela "Esqueci minha senha"
-- Super Admin seed: gabrielschuberts@gmail.com / @Gabriel1989
-- Tabela `user_roles` com enum (super_admin, admin_operacional)
-- Proteção de rotas admin
+## 6. Área de membros e catálogo
+- A área de membros será preparada para o projeto do aluno conectado ao mesmo banco; este projeto atual permanece como painel administrativo.
+- Mostrar todos os produtos publicados em caixas de tamanho fixo.
+- Produto com matrícula ativa: botão para acessar e conteúdo liberado conforme módulos/aulas.
+- Produto sem matrícula: visual bloqueado, cadeado e botão de compra usando a URL comercial cadastrada no produto.
+- Produto expirado, cancelado ou bloqueado: estado correspondente, sem acesso ao conteúdo.
+- Garantir que a proteção real esteja no banco: ocultar ou mostrar um botão nunca substitui as regras de acesso.
+- Exibir somente pagamentos, matrículas, mensagens e avaliações pertencentes ao aluno autenticado.
 
-### 1.2 Estrutura do Banco de Dados (Supabase)
-Criar todas as tabelas com RLS:
-- **courses** — id, title, slug, short_description, full_description, cover_url, banner_url, trailer_url (Vimeo), category, instructor_name, status (draft/published/hidden/archived), featured, access_type, access_days, ticto_product_id, tags, allow_comments, has_certificate, is_free, language, seo_title, seo_description, display_order, created_at, updated_at
-- **course_modules** — id, course_id, title, description, cover_url, sort_order, status, release_type (immediate/manual/drip), release_days, is_required, created_at, updated_at
-- **lessons** — id, course_id, module_id, title, slug, short_description, content_html, lesson_type (video/text/audio/download/hybrid), video_url (Vimeo), audio_url, thumbnail_url, duration_seconds, is_preview, is_required, allow_comments, allow_download, status, release_type, release_days, sort_order, tags, author, estimated_time, published_at, created_at, updated_at
-- **lesson_materials** — id, course_id, module_id, lesson_id, title, description, file_url, external_link, material_type, sort_order, is_visible, created_at
+## 7. Segurança e permissões
+- Manter segredos fora das respostas do navegador e impedir que administradores operacionais consultem o valor original.
+- Reservar criação, troca e exclusão de segredos ao super admin; permissões operacionais poderão acompanhar eventos sem revelar credenciais.
+- Revisar as regras de acesso das novas tabelas, concedendo apenas o mínimo necessário ao painel, ao aluno e ao processador de webhooks.
+- Não confiar em nome de produto, valor ou status enviados pelo navegador.
+- Adicionar limites contra abuso, rejeição de eventos antigos quando aplicável e trilha de auditoria administrativa.
 
-Storage buckets: course-covers, module-covers, lesson-thumbnails, materials
+## 8. Implantação por etapas
+1. **Base segura:** tabelas de conectores, mapeamentos e idempotência; migração do vínculo Ticto existente.
+2. **Processador genérico:** validação, normalização, pagamento, aluno, conta, matrícula e cancelamentos.
+3. **Painel:** assistente de configuração, teste, monitoramento e reprocessamento.
+4. **Área de membros:** catálogo liberado/bloqueado e proteção por matrícula.
+5. **Validação:** testes de compra nova, aluno existente, segundo produto, evento duplicado, pendência, reembolso, assinatura inválida e produto não mapeado.
 
-### 1.3 Layout Admin
-- Sidebar de navegação com todos os módulos
-- Header com nome do admin e logout
-- Layout responsivo
+## Detalhes técnicos
+- Novas tabelas públicas terão concessões explícitas, RLS e índices no mesmo conjunto de alterações.
+- O receptor externo ficará público apenas no transporte; cada chamada será autenticada pela assinatura do conector e processada internamente com privilégios controlados.
+- O payload será validado antes de qualquer gravação e convertido para um contrato interno independente da plataforma.
+- O código específico de cada plataforma ficará isolado em adaptadores; a regra de matrícula será única e compartilhada.
+- A entrega da área do aluno será aplicada no novo projeto conectado ao mesmo Supabase quando ele estiver disponível; o banco e o contrato de acesso serão preparados nesta implementação.
 
-### 1.4 CRUD de Cursos
-- Listagem com filtros (status, categoria, gratuito/pago) e busca
-- Formulário de criação/edição com todos os campos
-- Upload de capa/banner via Supabase Storage
-- Campo de URL do Vimeo para trailer
-- Ações: publicar, despublicar, arquivar, duplicar, reordenar (drag & drop)
-
-### 1.5 CRUD de Módulos
-- Listagem filtrada por curso
-- Formulário com campos: título, descrição, capa, ordem, status, regra de liberação (imediata/manual/drip)
-- Reordenação dentro do curso
-
-### 1.6 CRUD de Aulas
-- Listagem com filtros por curso, módulo, status e tipo
-- Formulário completo: título, slug, conteúdo (editor de texto rico), tipo de aula, URL do Vimeo, thumbnail, duração, materiais
-- Mover aula entre módulos
-- Upload de materiais complementares (PDF, planilhas, etc.)
-
----
-
-## FASE 2 — Alunos + Pagamentos + Matrículas
-
-### 2.1 Tabelas adicionais
-- **students** — id, name, email (unique), phone, cpf, status (active/blocked/pending/canceled), origin, last_login_at, created_at, updated_at
-- **payments** — id, external_payment_id, external_order_id, student_id, course_id, product_name, product_id, amount, currency, payment_method, installments, status (pending/approved/refunded/canceled/chargeback/expired/failed), coupon_code, affiliate_name, purchased_at, approved_at, canceled_at, raw_payload, origin, created_at, updated_at
-- **enrollments** — id, student_id, course_id, origin (purchase/manual/bonus/test), status (active/expired/canceled/blocked), started_at, expires_at, created_by, notes, created_at, updated_at
-
-### 2.2 Gestão de Alunos
-- Listagem com filtros (status, curso, pagamento, data)
-- Busca por nome, email, telefone, ID de compra
-- Página individual do aluno: resumo, matrículas, pagamentos, histórico
-- Ações: editar, ativar, bloquear, liberar curso manualmente, remover acesso, redefinir senha, reenviar email
-
-### 2.3 Gestão de Pagamentos
-- Listagem com filtros por status, produto, período
-- Detalhes do pagamento com payload bruto
-- Ações manuais: reprocessar, forçar sincronização, observações internas
-
-### 2.4 Gestão de Matrículas
-- Listagem separada de alunos (1 aluno = N matrículas)
-- Criar matrícula manual (bônus, teste)
-- Revogar, renovar, bloquear, reativar acesso
-- Alterar data de expiração
-
----
-
-## FASE 3 — Dashboard + Logs + Webhooks + Configurações
-
-### 3.1 Dashboard
-- Cards: total alunos, cursos, vendas, receita total/mensal, alunos ativos/bloqueados, aulas/cursos publicados, pagamentos pendentes
-- Listas rápidas: últimos alunos, vendas, pagamentos pendentes, cursos editados
-- Alertas: aluno sem acesso após pagamento, curso sem módulos, módulo sem aulas
-- Gráficos: vendas/alunos por período, receita por curso, pagamentos por status
-
-### 3.2 Webhook Ticto (Edge Function)
-- Endpoint para receber eventos da Ticto
-- Processar: compra criada, pagamento aprovado/pendente/recusado, reembolso, chargeback
-- Lógica automática: criar aluno + pagamento + matrícula
-- Segurança: validação de assinatura, prevenção de duplicatas
-- Tabela **webhook_logs**: payload, status de processamento, erros
-
-### 3.3 Logs e Histórico
-- Tabela **activity_logs**: tipo, entidade, ator, timestamp, detalhes
-- Tela de visualização com filtros
-- Registro automático de todas as ações administrativas
-
-### 3.4 Configurações
-- Configurações gerais: nome, logo, favicon, timezone
-- Configurações de conteúdo: cursos em destaque, comentários, certificados
-- Configurações de acesso: política de expiração, bloqueio em reembolso/chargeback
-- Configurações de integração: URL webhook, token Ticto
-- Gestão de admins: criar, editar, ativar/desativar, definir permissões
-
----
-
-## Começamos pela Fase 1
-Após aprovação, implementamos: autenticação → banco de dados → layout admin → CRUD cursos → CRUD módulos → CRUD aulas, tudo com design Vercel-style.
-
+## Critérios de aceite
+- O admin conecta um código de produto externo a um produto da Dive sem alterar código.
+- Uma compra aprovada cria o aluno, envia um único link de acesso e libera apenas o produto comprado.
+- Uma segunda compra no mesmo e-mail adiciona outro produto à mesma conta.
+- Reenvios do mesmo evento não duplicam pagamento, aluno, convite ou matrícula.
+- Reembolso ou chargeback afeta somente o produto daquela venda.
+- O aluno vê todos os produtos publicados, mas só abre os que possui com matrícula ativa.
+- Nenhum segredo aparece para alunos ou administradores operacionais, e eventos falsos ou sem assinatura são rejeitados.
