@@ -5,6 +5,7 @@ import { z } from "npm:zod@3.25.76";
 const MEMBER_APP_URL = Deno.env.get("MEMBER_APP_URL") ?? "https://member-haven-forge.lovable.app";
 
 const StudentSchema = z.object({
+  student_id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(160),
   email: z.string().trim().email().transform((value) => value.toLowerCase()),
   phone: z.string().trim().max(40).nullable().optional(),
@@ -61,14 +62,17 @@ Deno.serve(async (req) => {
 
     const parsed = StudentSchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: "Revise os dados informados" }, 400);
-    const { send_invite: sendInvite, ...studentInput } = parsed.data;
+    const { student_id: studentId, send_invite: sendInvite, ...studentInput } = parsed.data;
 
     const { data: duplicate } = await supabaseAdmin
       .from("students")
-      .select("id")
+      .select("id, auth_user_id")
       .ilike("email", studentInput.email)
       .maybeSingle();
-    if (duplicate) return json({ error: "Já existe um aluno cadastrado com este e-mail" }, 409);
+    if (duplicate && duplicate.id !== studentId) {
+      return json({ error: "Já existe um aluno cadastrado com este e-mail" }, 409);
+    }
+    if (studentId && !duplicate) return json({ error: "Aluno não encontrado" }, 404);
 
     let authUserId: string | null = null;
     let accessEmailSent = false;
@@ -91,18 +95,23 @@ Deno.serve(async (req) => {
       accessEmailSent = true;
     }
 
-    const { data: student, error: insertError } = await supabaseAdmin
-      .from("students")
-      .insert({
-        ...studentInput,
-        origin: studentInput.origin || "Manual",
-        auth_user_id: authUserId,
-      })
-      .select("id")
-      .single();
-    if (insertError) throw insertError;
+    const studentRecord = {
+      ...studentInput,
+      origin: studentInput.origin || "Manual",
+      ...(authUserId ? { auth_user_id: authUserId } : {}),
+    };
+    const query = studentId
+      ? supabaseAdmin.from("students").update(studentRecord).eq("id", studentId)
+      : supabaseAdmin.from("students").insert(studentRecord);
+    const { data: student, error: writeError } = await query.select("id").single();
+    if (writeError) throw writeError;
 
-    return json({ success: true, student_id: student.id, access_email_sent: accessEmailSent });
+    return json({
+      success: true,
+      student_id: student.id,
+      auth_user_id: authUserId ?? duplicate?.auth_user_id ?? null,
+      access_email_sent: accessEmailSent,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro ao cadastrar aluno";
     return json({ error: message }, 500);

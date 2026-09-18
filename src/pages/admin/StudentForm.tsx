@@ -17,6 +17,7 @@ export default function StudentForm() {
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendingAccess, setSendingAccess] = useState(false);
   const [sendInvite, setSendInvite] = useState(true);
 
   const [form, setForm] = useState<TablesInsert<"students">>({
@@ -63,6 +64,21 @@ export default function StudentForm() {
       }
     }
     setSaving(false);
+  };
+
+  const handleSendAccess = async () => {
+    if (!id || !form.name || !form.email) return;
+    setSendingAccess(true);
+    const { data, error } = await supabase.functions.invoke("student-invitations", {
+      body: { ...form, student_id: id, send_invite: true },
+    });
+    if (error || data?.error) {
+      toast.error("Erro: " + (data?.error || error?.message || "Não foi possível enviar o acesso"));
+    } else {
+      toast.success("Link para criação de senha enviado por e-mail");
+      if (data?.student_id) update("auth_user_id", form.auth_user_id || data.auth_user_id);
+    }
+    setSendingAccess(false);
   };
 
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
@@ -133,7 +149,7 @@ export default function StudentForm() {
               <Input value={form.origin || ""} onChange={(e) => update("origin", e.target.value)} placeholder="Ex: Ticto, Manual" className="bg-background border-border" />
             </div>
           </div>
-          {!isEdit && (
+          {!isEdit ? (
             <div className="flex items-center justify-between gap-6 rounded-lg border border-border bg-card p-4">
               <div className="flex items-start gap-3">
                 <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
@@ -143,6 +159,19 @@ export default function StudentForm() {
                 </div>
               </div>
               <Switch id="send-student-invite" checked={sendInvite} onCheckedChange={setSendInvite} />
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-6 rounded-lg border border-border bg-card p-4">
+              <div className="flex items-start gap-3">
+                <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                <div>
+                  <Label className="text-[13px] font-medium">Acesso à área de membros</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">Envie um novo link para o aluno criar ou redefinir a senha.</p>
+                </div>
+              </div>
+              <Button type="button" variant="outline" onClick={handleSendAccess} disabled={sendingAccess}>
+                {sendingAccess ? "Enviando..." : "Enviar acesso"}
+              </Button>
             </div>
           )}
         </div>
