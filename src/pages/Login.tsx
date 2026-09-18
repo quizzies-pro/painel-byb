@@ -80,8 +80,10 @@ export default function Login() {
 
         <div className="max-w-xl pb-8">
           <p className="mb-5 font-mono text-xs uppercase text-muted-foreground">Painel administrativo</p>
-          <h1 className="text-5xl font-medium leading-[1.06] text-foreground xl:text-6xl">
-            <div className="whitespace-pre-line">{"Direção\nImplementação\n\nValidação"}</div>
+          <h1 className="flex flex-col text-5xl font-medium leading-[0.96] tracking-normal text-foreground xl:text-6xl">
+            <span>Direção</span>
+            <span>Implementação</span>
+            <span>Validação</span>
             <span className="block text-muted-foreground">Escala</span>
           </h1>
           <p className="mt-6 max-w-md text-base leading-7 text-muted-foreground">
