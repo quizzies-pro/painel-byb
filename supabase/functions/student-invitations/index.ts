@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
 
-const MEMBER_APP_URL = Deno.env.get("MEMBER_APP_URL") ?? "https://member-haven-forge.lovable.app";
+const MEMBER_APP_URL = Deno.env.get("MEMBER_APP_URL") ?? "https://painel-byb.lovable.app";
 
 const StudentSchema = z.object({
   student_id: z.string().uuid().optional(),
