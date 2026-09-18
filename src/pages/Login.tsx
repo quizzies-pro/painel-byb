@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import diveHubLogo from "@/assets/dive-hub-logo.png.asset.json";
 
 export default function Login() {
   const { user, isAdmin, loading, signIn, resetPassword } = useAuth();
@@ -52,7 +51,7 @@ export default function Login() {
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="space-y-2 text-center">
           <img
-            src={diveHubLogo.url}
+            src="/dive-hub-logo.png"
             alt="Dive | Hub"
             className="h-16 w-auto max-w-full mx-auto object-contain"
           />
