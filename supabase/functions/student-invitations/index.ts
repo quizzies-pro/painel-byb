@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
 
@@ -22,7 +22,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function findAuthUserByEmail(supabaseAdmin: ReturnType<typeof createClient>, email: string) {
+async function findAuthUserByEmail(supabaseAdmin: SupabaseClient, email: string) {
   for (let page = 1; page <= 20; page += 1) {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
