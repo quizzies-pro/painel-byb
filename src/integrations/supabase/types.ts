@@ -108,6 +108,7 @@ export type Database = {
           access_days: number | null
           access_type: Database["public"]["Enums"]["access_type"]
           allow_comments: boolean
+          available_for_sale: boolean
           banner_url: string | null
           category: string | null
           checkout_url: string | null
@@ -128,6 +129,7 @@ export type Database = {
           short_description: string | null
           slug: string
           status: Database["public"]["Enums"]["course_status"]
+          storefront_visible: boolean
           tags: string[] | null
           ticto_product_id: string | null
           title: string
@@ -138,6 +140,7 @@ export type Database = {
           access_days?: number | null
           access_type?: Database["public"]["Enums"]["access_type"]
           allow_comments?: boolean
+          available_for_sale?: boolean
           banner_url?: string | null
           category?: string | null
           checkout_url?: string | null
@@ -158,6 +161,7 @@ export type Database = {
           short_description?: string | null
           slug: string
           status?: Database["public"]["Enums"]["course_status"]
+          storefront_visible?: boolean
           tags?: string[] | null
           ticto_product_id?: string | null
           title: string
@@ -168,6 +172,7 @@ export type Database = {
           access_days?: number | null
           access_type?: Database["public"]["Enums"]["access_type"]
           allow_comments?: boolean
+          available_for_sale?: boolean
           banner_url?: string | null
           category?: string | null
           checkout_url?: string | null
@@ -188,6 +193,7 @@ export type Database = {
           short_description?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["course_status"]
+          storefront_visible?: boolean
           tags?: string[] | null
           ticto_product_id?: string | null
           title?: string
