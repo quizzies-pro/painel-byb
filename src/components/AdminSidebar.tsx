@@ -23,6 +23,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import diveHubLogo from "@/assets/dive-hub-logo.png.asset.json";
+import diveHubIcon from "@/assets/dive-hub-icon.png.asset.json";
 
 const contentItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -52,9 +54,9 @@ function LogoSection({ collapsed }: { collapsed: boolean }) {
     <div className={`pb-4 ${collapsed ? "px-2 flex justify-center" : "px-3"}`}>
       <NavLink to="/admin" end className="block">
         {collapsed ? (
-          <img src="/logo-icon.png" alt="BYB" className="h-9 w-9 object-contain rounded-lg" />
+          <img src={diveHubIcon.url} alt="Dive | Hub" className="h-9 w-9 object-contain" />
         ) : (
-          <img src="/logo-full.png" alt="The BYB" className="h-9 object-contain" />
+          <img src={diveHubLogo.url} alt="Dive | Hub" className="h-9 w-auto max-w-full object-contain object-left" />
         )}
       </NavLink>
     </div>
