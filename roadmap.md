@@ -6,3 +6,4 @@
 - [x] Proteger segredos, permissões e dados sensíveis dos logs
 - [x] Preparar regras de acesso para a área de membros
 - [x] Validar os fluxos principais e revisar pendências
+- [x] Aplicar Geist Sans e Geist Mono sem alterar o layout existente
