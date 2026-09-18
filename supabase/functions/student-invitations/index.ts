@@ -106,7 +106,12 @@ Deno.serve(async (req) => {
     const { data: student, error: writeError } = await query.select("id").single();
     if (writeError) throw writeError;
 
-    return json({ success: true, student_id: student.id, access_email_sent: accessEmailSent });
+    return json({
+      success: true,
+      student_id: student.id,
+      auth_user_id: authUserId ?? duplicate?.auth_user_id ?? null,
+      access_email_sent: accessEmailSent,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro ao cadastrar aluno";
     return json({ error: message }, 500);
