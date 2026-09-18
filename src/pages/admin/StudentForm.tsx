@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 
@@ -16,6 +17,7 @@ export default function StudentForm() {
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendInvite, setSendInvite] = useState(true);
 
   const [form, setForm] = useState<TablesInsert<"students">>({
     name: "",
@@ -45,13 +47,20 @@ export default function StudentForm() {
     if (!form.name || !form.email) { toast.error("Nome e email são obrigatórios"); return; }
     setSaving(true);
     if (isEdit) {
-      const { error } = await supabase.from("students").update(form).eq("id", id!);
+      if (!id) return;
+      const { error } = await supabase.from("students").update(form).eq("id", id);
       if (error) toast.error("Erro: " + error.message);
       else { toast.success("Aluno atualizado"); navigate("/admin/students"); }
     } else {
-      const { error } = await supabase.from("students").insert(form);
-      if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Aluno criado"); navigate("/admin/students"); }
+      const { data, error } = await supabase.functions.invoke("student-invitations", {
+        body: { ...form, send_invite: sendInvite },
+      });
+      if (error || data?.error) {
+        toast.error("Erro: " + (data?.error || error?.message || "Não foi possível criar o aluno"));
+      } else {
+        toast.success(sendInvite ? "Aluno criado e convite enviado por e-mail" : "Aluno criado");
+        navigate("/admin/students");
+      }
     }
     setSaving(false);
   };
@@ -124,6 +133,18 @@ export default function StudentForm() {
               <Input value={form.origin || ""} onChange={(e) => update("origin", e.target.value)} placeholder="Ex: Ticto, Manual" className="bg-background border-border" />
             </div>
           </div>
+          {!isEdit && (
+            <div className="flex items-center justify-between gap-6 rounded-lg border border-border bg-card p-4">
+              <div className="flex items-start gap-3">
+                <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="send-student-invite" className="text-[13px] font-medium">Enviar acesso por e-mail</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">O aluno receberá um link seguro para criar a própria senha.</p>
+                </div>
+              </div>
+              <Switch id="send-student-invite" checked={sendInvite} onCheckedChange={setSendInvite} />
+            </div>
+          )}
         </div>
       </div>
     </div>

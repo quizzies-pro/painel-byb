@@ -9,3 +9,4 @@
 - [x] Aplicar Geist Sans e Geist Mono sem alterar o layout existente
 - [x] Adicionar controles de vitrine e venda no Dive | Hub
 - [ ] Aplicar prévia privada e regras de vitrine no projeto Dive Club — bloqueado por edição entre projetos
+- [x] Enviar convite para criação de senha no cadastro manual de alunos
