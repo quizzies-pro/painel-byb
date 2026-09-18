@@ -54,7 +54,7 @@ function LogoSection({ collapsed }: { collapsed: boolean }) {
         {collapsed ? (
           <img src="/dive-hub-icon.png" alt="Dive | Hub" className="h-9 w-9 object-contain" />
         ) : (
-          <img src="/dive-hub-logo.png" alt="Dive | Hub" className="h-[22px] w-auto max-w-full object-contain object-left" />
+          <img src="/dive-hub-logo.png" alt="Dive | Hub" className="h-[18px] w-auto max-w-full object-contain object-left" />
         )}
       </NavLink>
     </div>
