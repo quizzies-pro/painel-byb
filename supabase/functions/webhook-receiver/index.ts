@@ -10,7 +10,7 @@ import {
 } from "../_shared/webhook-utils.ts";
 
 const PayloadSchema = z.record(z.unknown());
-const APP_URL = Deno.env.get("APP_URL") ?? "https://painel-byb.lovable.app";
+const MEMBER_APP_URL = (Deno.env.get("MEMBER_APP_URL") ?? "https://membros.diveclube.com.br").replace(/\/$/, "");
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -55,7 +55,7 @@ async function ensureStudent(supabase: SupabaseClient, event: NormalizedWebhook,
     } else {
       const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
         event.buyerEmail,
-        { redirectTo: `${APP_URL}/reset-password`, data: { name: event.buyerName } },
+        { redirectTo: `${MEMBER_APP_URL}/reset-password`, data: { name: event.buyerName } },
       );
       if (inviteError || !invited.user) throw inviteError ?? new Error("Não foi possível enviar o acesso ao aluno");
       authUserId = invited.user.id;

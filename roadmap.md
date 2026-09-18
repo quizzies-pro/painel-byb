@@ -10,3 +10,4 @@
 - [x] Adicionar controles de vitrine e venda no Dive | Hub
 - [ ] Aplicar prévia privada e regras de vitrine no projeto Dive Club — bloqueado por edição entre projetos
 - [x] Enviar convite para criação de senha no cadastro manual de alunos
+- [x] Direcionar criação e recuperação de senha dos alunos exclusivamente para a área de membros
