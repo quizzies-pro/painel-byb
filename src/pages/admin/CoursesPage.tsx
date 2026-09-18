@@ -24,6 +24,15 @@ const statusLabel: Record<string, string> = {
   archived: "Arquivado",
 };
 
+const visibilityLabels = (course: Course) => {
+  const labels: string[] = [];
+  if (course.status !== "published") labels.push("Em construção");
+  if (!course.storefront_visible) labels.push("Prévia privada");
+  else labels.push("Na vitrine");
+  labels.push(course.available_for_sale ? "À venda" : "Fora de venda");
+  return labels;
+};
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState("");
@@ -118,7 +127,7 @@ export default function CoursesPage() {
               <tr className="border-b border-border bg-card">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Título</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Categoria</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Disponibilidade</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
@@ -131,9 +140,10 @@ export default function CoursesPage() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{course.category || "—"}</td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={statusColors[course.status] || ""}>
-                      {statusLabel[course.status] || course.status}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className={statusColors[course.status] || ""}>{statusLabel[course.status] || course.status}</Badge>
+                      {visibilityLabels(course).map((label) => <Badge key={label} variant="secondary" className="text-[10px] font-normal">{label}</Badge>)}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
@@ -175,10 +185,11 @@ export default function CoursesPage() {
                 <Link to={`/admin/courses/${course.id}`}>
                   <h3 className="font-medium text-foreground text-sm leading-tight group-hover:underline">{course.title}</h3>
                 </Link>
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline" className={`text-[11px] ${statusColors[course.status] || ""}`}>
-                    {statusLabel[course.status] || course.status}
-                  </Badge>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className={`text-[11px] ${statusColors[course.status] || ""}`}>{statusLabel[course.status] || course.status}</Badge>
+                    {visibilityLabels(course).map((label) => <Badge key={label} variant="secondary" className="text-[10px] font-normal">{label}</Badge>)}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
