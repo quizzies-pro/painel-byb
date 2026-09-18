@@ -168,7 +168,7 @@ export default function WebhookLogsPage() {
 
   const handleSaveMapping = async () => {
     if (!mappingForm.webhook_endpoint_id || !mappingForm.external_product_id.trim() || !mappingForm.course_id) {
-      toast.error("Webhook, ID externo e produto da Dive são obrigatórios");
+      toast.error("Webhook, ID externo e produto da Dive | Hub são obrigatórios");
       return;
     }
 
@@ -513,7 +513,7 @@ export default function WebhookLogsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Produto liberado na Dive *</Label>
+                  <Label>Produto liberado na Dive | Hub *</Label>
                   <Select value={mappingForm.course_id} onValueChange={(value) => setMappingForm((current) => ({ ...current, course_id: value }))}>
                     <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
                     <SelectContent>{courses.map((course) => <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>)}</SelectContent>
