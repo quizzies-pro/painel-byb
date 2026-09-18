@@ -97,6 +97,8 @@ export default function CourseForm() {
     category: "",
     instructor_name: "",
     status: "draft",
+    storefront_visible: false,
+    available_for_sale: false,
     featured: false,
     access_type: "lifetime",
     access_days: null,
@@ -152,10 +154,14 @@ export default function CourseForm() {
       toast.error("Título e slug são obrigatórios");
       return;
     }
+    if (form.available_for_sale && !form.checkout_url?.trim()) {
+      toast.error("Adicione o link de checkout antes de disponibilizar o produto para venda");
+      return;
+    }
     setSaving(true);
 
-    if (isEdit) {
-      const { error } = await supabase.from("courses").update(form).eq("id", id!);
+    if (isEdit && id) {
+      const { error } = await supabase.from("courses").update(form).eq("id", id);
       if (error) toast.error("Erro ao atualizar produto: " + error.message);
       else { toast.success("Produto atualizado"); navigate("/admin/courses"); }
     } else {
@@ -347,6 +353,37 @@ export default function CourseForm() {
                 <Input type="number" value={form.access_days ?? ""} onChange={(e) => update("access_days", e.target.value ? Number(e.target.value) : null)} className="bg-background border-border" />
               </div>
             )}
+
+            <div className="col-span-2 border-y border-border divide-y divide-border">
+              <div className="flex items-center justify-between gap-8 py-5">
+                <div className="space-y-1">
+                  <Label className="text-[13px] font-medium">Exibir na vitrine</Label>
+                  <p className="text-xs text-muted-foreground">Alunos sem acesso poderão ver este produto na tela principal.</p>
+                </div>
+                <Switch checked={form.storefront_visible ?? false} onCheckedChange={(value) => update("storefront_visible", value)} />
+              </div>
+
+              <div className="space-y-4 py-5">
+                <div className="flex items-center justify-between gap-8">
+                  <div className="space-y-1">
+                    <Label className="text-[13px] font-medium">Disponível para venda</Label>
+                    <p className="text-xs text-muted-foreground">Mostra o botão de compra para quem ainda não possui este produto.</p>
+                  </div>
+                  <Switch checked={form.available_for_sale ?? false} onCheckedChange={(value) => update("available_for_sale", value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Link de checkout</Label>
+                  <Input
+                    type="url"
+                    value={form.checkout_url || ""}
+                    onChange={(event) => update("checkout_url", event.target.value)}
+                    placeholder="https://..."
+                    className="bg-background border-border"
+                  />
+                  <p className="text-xs text-muted-foreground">Destino do botão de compra exibido na área de membros.</p>
+                </div>
+              </div>
+            </div>
 
             <div className="col-span-2 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border border-border p-5">
               <div className="flex items-center justify-between">

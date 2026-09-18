@@ -7,3 +7,5 @@
 - [x] Preparar regras de acesso para a área de membros
 - [x] Validar os fluxos principais e revisar pendências
 - [x] Aplicar Geist Sans e Geist Mono sem alterar o layout existente
+- [x] Adicionar controles de vitrine e venda no Dive | Hub
+- [ ] Aplicar prévia privada e regras de vitrine no projeto Dive Club — bloqueado por edição entre projetos
