@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
 
-const MEMBER_APP_URL = Deno.env.get("MEMBER_APP_URL") ?? "https://painel-byb.lovable.app";
+const MEMBER_APP_URL = (Deno.env.get("MEMBER_APP_URL") ?? "https://membros.diveclube.com.br").replace(/\/$/, "");
 
 const StudentSchema = z.object({
   student_id: z.string().uuid().optional(),
@@ -85,12 +85,17 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
       } else {
-        const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(studentInput.email, {
-          redirectTo: `${MEMBER_APP_URL}/reset-password`,
-          data: { name: studentInput.name },
+        const { data, error } = await supabaseAdmin.auth.admin.createUser({
+          email: studentInput.email,
+          email_confirm: true,
+          user_metadata: { name: studentInput.name },
         });
-        if (error || !data.user) throw error ?? new Error("Não foi possível enviar o convite");
+        if (error || !data.user) throw error ?? new Error("Não foi possível criar o acesso");
         authUserId = data.user.id;
+        const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(studentInput.email, {
+          redirectTo: `${MEMBER_APP_URL}/reset-password`,
+        });
+        if (resetError) throw resetError;
       }
       accessEmailSent = true;
     }
