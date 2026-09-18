@@ -2,6 +2,7 @@
 
 ## Core
 TTS Academy - área de membros para infoproduto.
+Painel administrativo chamado Dive | Hub; nunca exibir a marca BYB ou The BYB na interface.
 Design System: Vercel Light theme, #FAFAFA bg, #FFF surface, black text, Inter 13px base.
 Módulos sempre dentro de Produto, Aulas sempre dentro de Módulo (hierarquia aninhada).
 Vídeos hospedados no Vimeo - apenas reprodução via link/embed.
@@ -10,4 +11,5 @@ Supabase Storage para uploads. Ticto webhook edge function deployed.
 
 ## Memories
 - [Design system](mem://design/vercel-style) — Vercel Light theme, Inter + JetBrains Mono, minimal flat high-contrast
+- [Dive Hub brand](mem://design/dive-hub-brand) — Naming, supplied logos, and image optimization rules for the admin panel
 - [Faseamento](mem://features/phases) — 3 fases de implementação concluídas
