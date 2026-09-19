@@ -160,7 +160,8 @@ export default function EnrollmentForm() {
     let enrollmentId = id;
 
     if (isEdit) {
-      const { error } = await supabase.from("enrollments").update(payload).eq("id", id!);
+      if (!id) { setSaving(false); return; }
+      const { error } = await supabase.from("enrollments").update(payload).eq("id", id);
       if (error) { toast.error("Erro: " + error.message); setSaving(false); return; }
     } else {
       const { data, error } = await supabase.from("enrollments").insert(payload).select("id").single();
@@ -178,11 +179,11 @@ export default function EnrollmentForm() {
 
       if (accessMode === "custom" && (selectedModules.size > 0 || selectedLessons.size > 0)) {
         const moduleInserts = Array.from(selectedModules).map((module_id) => ({
-          enrollment_id: enrollmentId!,
+          enrollment_id: enrollmentId,
           module_id,
         }));
         const lessonInserts = Array.from(selectedLessons).map((lesson_id) => ({
-          enrollment_id: enrollmentId!,
+          enrollment_id: enrollmentId,
           lesson_id,
         }));
 

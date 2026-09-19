@@ -280,19 +280,22 @@ export default function CourseForm() {
             const config = PRODUCT_TYPES[type];
             const Icon = type === "course" ? BookOpen : Package;
             return (
-              <button
+              <Button
                 key={type}
                 type="button"
+                variant="outline"
                 onClick={() => {
                   setForm((current) => ({ ...current, product_type: type }));
                   setTypeChosen(true);
                 }}
-                className="group min-h-48 rounded-lg border border-border bg-card p-6 text-left transition-colors hover:border-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group h-auto min-h-48 items-start justify-start whitespace-normal rounded-lg border-border bg-card p-6 text-left hover:border-foreground hover:bg-card"
               >
-                <Icon className="mb-8 h-7 w-7 text-muted-foreground transition-colors group-hover:text-foreground" />
-                <h2 className="text-lg font-semibold">{config.label}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{config.description}</p>
-              </button>
+                <div>
+                  <Icon className="mb-8 h-7 w-7 text-muted-foreground transition-colors group-hover:text-foreground" />
+                  <h2 className="text-lg font-semibold">{config.label}</h2>
+                  <p className="mt-2 text-sm font-normal leading-6 text-muted-foreground">{config.description}</p>
+                </div>
+              </Button>
             );
           })}
         </div>
