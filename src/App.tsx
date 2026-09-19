@@ -22,6 +22,9 @@ import ActivityLogsPage from "./pages/admin/ActivityLogsPage";
 import WebhookLogsPage from "./pages/admin/WebhookLogsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
+import WaitlistsPage from "./pages/admin/WaitlistsPage";
+import WaitlistForm from "./pages/admin/WaitlistForm";
+import WaitlistDetail from "./pages/admin/WaitlistDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +59,10 @@ const App = () => (
             <Route path="/admin/enrollments/new" element={<AdminLayout><EnrollmentForm /></AdminLayout>} />
             <Route path="/admin/enrollments/:id" element={<AdminLayout><EnrollmentForm /></AdminLayout>} />
             <Route path="/admin/messages" element={<AdminLayout><MessagesPage /></AdminLayout>} />
+            <Route path="/admin/waitlists" element={<AdminLayout requiredPermission="waitlists"><WaitlistsPage /></AdminLayout>} />
+            <Route path="/admin/waitlists/new" element={<AdminLayout requiredPermission="waitlists" requireManage><WaitlistForm /></AdminLayout>} />
+            <Route path="/admin/waitlists/:id" element={<AdminLayout requiredPermission="waitlists"><WaitlistDetail /></AdminLayout>} />
+            <Route path="/admin/waitlists/:id/edit" element={<AdminLayout requiredPermission="waitlists" requireManage><WaitlistForm /></AdminLayout>} />
             <Route path="/admin/logs" element={<AdminLayout><ActivityLogsPage /></AdminLayout>} />
             <Route path="/admin/webhooks" element={<AdminLayout><WebhookLogsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />

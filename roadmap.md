@@ -14,3 +14,6 @@
 - [x] Criar categorias de apresentação e vínculos ordenados por produto
 - [x] Adicionar criação, seleção múltipla e ordenação de categorias dentro do produto
 - [ ] Aplicar as seções categorizadas na página principal do Dive Club — bloqueado por edição entre projetos
+- [x] Criar banco seguro para listas de espera por produto e consentimento de marketing
+- [x] Criar gestão de listas de espera, participantes e exportação no Dive | Hub
+- [ ] Conectar os botões de espera no projeto Dive Club — bloqueado por edição entre projetos

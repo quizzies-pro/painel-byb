@@ -756,6 +756,134 @@ export type Database = {
         }
         Relationships: []
       }
+      product_waitlist_members: {
+        Row: {
+          consent_text_snapshot: string
+          consent_version: string
+          consented_at: string
+          created_at: string
+          email_snapshot: string
+          id: string
+          marketing_email: boolean
+          marketing_whatsapp: boolean
+          name_snapshot: string
+          phone_snapshot: string
+          privacy_policy_url_snapshot: string
+          source: string
+          status: string
+          student_id: string
+          updated_at: string
+          waitlist_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          consent_text_snapshot: string
+          consent_version: string
+          consented_at?: string
+          created_at?: string
+          email_snapshot: string
+          id?: string
+          marketing_email?: boolean
+          marketing_whatsapp?: boolean
+          name_snapshot: string
+          phone_snapshot: string
+          privacy_policy_url_snapshot: string
+          source?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+          waitlist_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          consent_text_snapshot?: string
+          consent_version?: string
+          consented_at?: string
+          created_at?: string
+          email_snapshot?: string
+          id?: string
+          marketing_email?: boolean
+          marketing_whatsapp?: boolean
+          name_snapshot?: string
+          phone_snapshot?: string
+          privacy_policy_url_snapshot?: string
+          source?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+          waitlist_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_waitlist_members_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_waitlist_members_waitlist_id_fkey"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "product_waitlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_waitlists: {
+        Row: {
+          closed_at: string | null
+          consent_text: string
+          consent_version: string
+          course_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          privacy_policy_url: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          consent_text: string
+          consent_version?: string
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          privacy_policy_url: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          consent_text?: string
+          consent_version?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          privacy_policy_url?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_waitlists_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storefront_categories: {
         Row: {
           created_at: string
@@ -1241,6 +1369,34 @@ export type Database = {
       }
     }
     Functions: {
+      get_product_waitlist_state: {
+        Args: { _waitlist_id: string }
+        Returns: {
+          consent_text: string
+          consent_version: string
+          course_id: string
+          has_active_enrollment: boolean
+          membership_status: string
+          phone_missing: boolean
+          privacy_policy_url: string
+          product_available_for_sale: boolean
+          waitlist_description: string
+          waitlist_id: string
+          waitlist_name: string
+          waitlist_status: string
+        }[]
+      }
+      join_product_waitlist: {
+        Args: { _consent: boolean; _source?: string; _waitlist_id: string }
+        Returns: {
+          member_id: string
+          membership_status: string
+        }[]
+      }
+      leave_product_waitlist: {
+        Args: { _waitlist_id: string }
+        Returns: boolean
+      }
       verify_webhook_secret: {
         Args: { _endpoint_id: string; _provided_secret: string }
         Returns: boolean

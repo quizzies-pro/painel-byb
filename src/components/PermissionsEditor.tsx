@@ -22,6 +22,7 @@ export interface Permissions {
   lessons: { view: boolean; manage: boolean };
   students: { view: boolean; manage: boolean };
   enrollments: { view: boolean; manage: boolean };
+  waitlists: { view: boolean; manage: boolean };
   payments: { view: boolean };
   webhooks: { view: boolean; manage: boolean };
   settings: { view: boolean };
@@ -40,6 +41,7 @@ export const DEFAULT_PERMISSIONS: Permissions = {
   lessons: { view: true, manage: true },
   students: { view: true, manage: true },
   enrollments: { view: true, manage: true },
+  waitlists: { view: true, manage: true },
   payments: { view: true },
   webhooks: { view: true, manage: true },
   settings: { view: true },
@@ -61,6 +63,15 @@ interface PermissionSection {
 }
 
 const sectionConfig: PermissionSection[] = [
+  {
+    key: "waitlists",
+    label: "Listas de espera",
+    icon: <UserCheck className="h-4 w-4" />,
+    fields: [
+      { key: "view", label: "Visualizar" },
+      { key: "manage", label: "Criar / Editar / Excluir" },
+    ],
+  },
   {
     key: "courses",
     label: "Cursos",
@@ -171,6 +182,7 @@ export function PermissionsEditor({ permissions, onChange, disabled }: Permissio
       lessons: { view: false, manage: false },
       students: { view: false, manage: false },
       enrollments: { view: false, manage: false },
+      waitlists: { view: false, manage: false },
       payments: { view: false },
       webhooks: { view: false, manage: false },
       settings: { view: false },

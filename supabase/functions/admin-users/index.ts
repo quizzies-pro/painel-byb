@@ -12,6 +12,7 @@ const DEFAULT_PERMISSIONS = {
   lessons: { view: true, manage: true },
   students: { view: true, manage: true },
   enrollments: { view: true, manage: true },
+  waitlists: { view: true, manage: true },
   payments: { view: true },
   webhooks: { view: true, manage: true },
   settings: { view: true },
