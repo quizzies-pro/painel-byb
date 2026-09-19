@@ -25,7 +25,8 @@
 - [x] Permitir preparação segura de Packs apenas como rascunho
 - [x] Adaptar produtos, matrículas e listas de espera no Hub para Curso e Pack
 - [x] Documentar o contrato de Views para a Members
-- [ ] Definir o modelo de conteúdo do Pack a partir do desenho aprovado
-- [ ] Criar o gerenciador de conteúdo de Packs no Hub — depende do modelo de conteúdo
+- [x] Definir o modelo de conteúdo do Pack para Canva, Textual e Google Drive
+- [x] Criar o gerenciador de conteúdo de Packs no Hub
+- [x] Conectar a conta empresarial do Google Drive e preparar sincronização manual protegida
 - [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
 - [ ] Liberar vitrine e venda de Packs após validação da entrega
