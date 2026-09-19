@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, ExternalLink, FileText, Folder, FolderPlus, HardDrive, Image, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Copy, ExternalLink, FileText, Folder, FolderPlus, HardDrive, Image, Pencil, PlayCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
@@ -16,10 +16,29 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 type Collection = Tables<"pack_collections">;
 type PackItem = Tables<"pack_items">;
+type PackVideo = Tables<"pack_videos">;
 type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format">;
 type DriveFile = { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; thumbnailLink?: string; iconLink?: string };
 
 const EMPTY_COLLECTION = { title: "", description: "" };
+
+const getVideoProvider = (url: string) => url.includes("youtu") ? "YouTube" : "Vimeo";
+
+const getVideoEmbedUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "youtu.be") return `https://www.youtube.com/embed/${parsed.pathname.slice(1)}`;
+    if (parsed.hostname.endsWith("youtube.com")) {
+      const id = parsed.searchParams.get("v") ?? parsed.pathname.split("/").filter(Boolean).pop();
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (parsed.hostname.endsWith("vimeo.com")) {
+      const id = parsed.pathname.split("/").filter(Boolean).pop();
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+  } catch { return null; }
+  return null;
+};
 
 export default function PackContentPage() {
   const { courseId } = useParams();
@@ -27,9 +46,11 @@ export default function PackContentPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [items, setItems] = useState<PackItem[]>([]);
+  const [videos, setVideos] = useState<PackVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [itemOpen, setItemOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const [driveOpen, setDriveOpen] = useState(false);
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
@@ -38,21 +59,24 @@ export default function PackContentPage() {
   const [driveCollectionId, setDriveCollectionId] = useState("none");
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [editingItem, setEditingItem] = useState<PackItem | null>(null);
+  const [editingVideo, setEditingVideo] = useState<PackVideo | null>(null);
   const [collectionForm, setCollectionForm] = useState(EMPTY_COLLECTION);
   const [itemForm, setItemForm] = useState({
     title: "", description: "", cover_url: "", collection_id: "none", status: "draft",
     canva_template_url: "", textual_content: "", textual_example: "",
   });
+  const [videoForm, setVideoForm] = useState({ title: "", description: "", video_url: "", status: "draft" });
 
   const format = product?.pack_format as PackFormat | null | undefined;
 
   const loadData = async () => {
     if (!courseId) return;
     setLoading(true);
-    const [productResult, collectionsResult, itemsResult] = await Promise.all([
+    const [productResult, collectionsResult, itemsResult, videosResult] = await Promise.all([
       supabase.from("courses").select("id, title, product_type, pack_format").eq("id", courseId).single(),
       supabase.from("pack_collections").select("*").eq("course_id", courseId).order("sort_order"),
       supabase.from("pack_items").select("*").eq("course_id", courseId).order("sort_order"),
+      supabase.from("pack_videos").select("*").eq("course_id", courseId).order("sort_order"),
     ]);
     if (productResult.error || !productResult.data || productResult.data.product_type !== "pack") {
       toast.error("Pack não encontrado");
@@ -62,6 +86,7 @@ export default function PackContentPage() {
     setProduct(productResult.data);
     setCollections(collectionsResult.data ?? []);
     setItems(itemsResult.data ?? []);
+    setVideos(videosResult.data ?? []);
     setLoading(false);
   };
 
@@ -151,6 +176,58 @@ export default function PackContentPage() {
     const { error } = await supabase.from("pack_items").delete().eq("id", item.id);
     if (error) return toast.error(error.message);
     toast.success("Item excluído");
+    loadData();
+  };
+
+  const openVideo = (video?: PackVideo) => {
+    setEditingVideo(video ?? null);
+    setVideoForm(video ? {
+      title: video.title,
+      description: video.description ?? "",
+      video_url: video.video_url,
+      status: video.status,
+    } : { title: "", description: "", video_url: "", status: "draft" });
+    setVideoOpen(true);
+  };
+
+  const saveVideo = async () => {
+    if (!courseId || !videoForm.title.trim()) return toast.error("Informe o título do vídeo");
+    if (!getVideoEmbedUrl(videoForm.video_url.trim())) return toast.error("Informe um link válido do YouTube ou Vimeo");
+    const values: TablesInsert<"pack_videos"> = {
+      course_id: courseId,
+      title: videoForm.title.trim(),
+      description: videoForm.description.trim() || null,
+      video_url: videoForm.video_url.trim(),
+      status: videoForm.status as TablesInsert<"pack_videos">["status"],
+      sort_order: editingVideo?.sort_order ?? videos.length,
+    };
+    const result = editingVideo
+      ? await supabase.from("pack_videos").update(values).eq("id", editingVideo.id)
+      : await supabase.from("pack_videos").insert(values);
+    if (result.error) return toast.error(result.error.message);
+    toast.success(editingVideo ? "Vídeo atualizado" : "Vídeo adicionado");
+    setVideoOpen(false);
+    loadData();
+  };
+
+  const deleteVideo = async (video: PackVideo) => {
+    if (!confirm(`Excluir o vídeo “${video.title}”?`)) return;
+    const { error } = await supabase.from("pack_videos").delete().eq("id", video.id);
+    if (error) return toast.error(error.message);
+    toast.success("Vídeo excluído");
+    loadData();
+  };
+
+  const moveVideo = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    const current = videos[index];
+    const target = videos[targetIndex];
+    if (!current || !target) return;
+    const [{ error: currentError }, { error: targetError }] = await Promise.all([
+      supabase.from("pack_videos").update({ sort_order: target.sort_order }).eq("id", current.id),
+      supabase.from("pack_videos").update({ sort_order: current.sort_order }).eq("id", target.id),
+    ]);
+    if (currentError || targetError) return toast.error("Não foi possível alterar a ordem");
     loadData();
   };
 
@@ -252,6 +329,11 @@ export default function PackContentPage() {
 
       {format === "drive" && <div className="flex items-center justify-between gap-5 rounded-lg border border-border bg-muted/20 p-5"><div><p className="text-sm font-medium">Biblioteca do Google Drive</p><p className="mt-1 text-xs text-muted-foreground">Selecione arquivos da conta da empresa e sincronize alterações quando precisar.</p></div><div className="flex shrink-0 gap-2"><Button variant="outline" size="sm" className="gap-2" onClick={syncDrive} disabled={driveLoading || items.length === 0}><RefreshCw className={`h-3.5 w-3.5 ${driveLoading ? "animate-spin" : ""}`} />Sincronizar agora</Button><Button size="sm" className="gap-2" onClick={() => loadDriveFolder()} disabled={driveLoading}><HardDrive className="h-3.5 w-3.5" />Selecionar arquivos</Button></div></div>}
 
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3"><div><h2 className="font-medium">Vídeos explicativos</h2><p className="mt-1 text-xs text-muted-foreground">Orientações sobre como utilizar este Pack.</p></div><Button variant="outline" size="sm" className="gap-2" onClick={() => openVideo()}><Plus className="h-3.5 w-3.5" />Adicionar vídeo</Button></div>
+        {videos.length === 0 ? <div className="rounded-lg border border-dashed border-border py-8 text-center"><PlayCircle className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-3 text-sm text-muted-foreground">Nenhum vídeo explicativo cadastrado.</p></div> : <div className="divide-y divide-border rounded-lg border border-border bg-card">{videos.map((video, index) => <div key={video.id} className="flex items-center gap-4 p-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted"><PlayCircle className="h-5 w-5 text-muted-foreground" /></div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate text-sm font-medium">{video.title}</p><Badge variant="outline" className="text-[10px]">{getVideoProvider(video.video_url)}</Badge><Badge variant="outline" className="text-[10px]">{video.status === "published" ? "Publicado" : video.status === "hidden" ? "Oculto" : "Rascunho"}</Badge></div>{video.description && <p className="mt-1 truncate text-xs text-muted-foreground">{video.description}</p>}</div><div className="flex gap-1"><Button size="icon" variant="ghost" className="h-8 w-8" disabled={index === 0} onClick={() => moveVideo(index, -1)} title="Mover vídeo para cima"><ArrowUp className="h-3.5 w-3.5" /></Button><Button size="icon" variant="ghost" className="h-8 w-8" disabled={index === videos.length - 1} onClick={() => moveVideo(index, 1)} title="Mover vídeo para baixo"><ArrowDown className="h-3.5 w-3.5" /></Button><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(video.video_url, "_blank")} title="Abrir vídeo"><ExternalLink className="h-3.5 w-3.5" /></Button><Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openVideo(video)} title="Editar vídeo"><Pencil className="h-3.5 w-3.5" /></Button><Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteVideo(video)} title="Excluir vídeo"><Trash2 className="h-3.5 w-3.5" /></Button></div></div>)}</div>}
+      </section>
+
       {collections.length === 0 && items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border py-16 text-center"><FileText className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-4 text-sm font-medium">Este Pack ainda não tem conteúdo</p><p className="mt-1 text-xs text-muted-foreground">Crie uma coleção ou adicione o primeiro item.</p><div className="mt-5 flex justify-center gap-2"><Button variant="outline" onClick={() => openCollection()}>Nova coleção</Button>{format !== "drive" && <Button onClick={() => openItem()}>Novo item</Button>}</div></div>
       ) : <div className="space-y-8">
@@ -266,6 +348,8 @@ export default function PackContentPage() {
       <Dialog open={collectionOpen} onOpenChange={setCollectionOpen}><DialogContent><DialogHeader><DialogTitle>{editingCollection ? "Editar coleção" : "Nova coleção"}</DialogTitle></DialogHeader><div className="space-y-4"><div className="space-y-2"><Label>Nome</Label><Input value={collectionForm.title} onChange={(event) => setCollectionForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={collectionForm.description} onChange={(event) => setCollectionForm((current) => ({ ...current, description: event.target.value }))} /></div></div><DialogFooter><Button variant="outline" onClick={() => setCollectionOpen(false)}>Cancelar</Button><Button onClick={saveCollection}>Salvar</Button></DialogFooter></DialogContent></Dialog>
 
       <Dialog open={itemOpen} onOpenChange={setItemOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{editingItem ? "Editar item" : `Novo item ${PACK_FORMATS[format].label}`}</DialogTitle></DialogHeader><div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1"><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label>Título</Label><Input value={itemForm.title} onChange={(event) => setItemForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Coleção</Label><Select value={itemForm.collection_id} onValueChange={(value) => setItemForm((current) => ({ ...current, collection_id: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select></div></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={itemForm.description} onChange={(event) => setItemForm((current) => ({ ...current, description: event.target.value }))} /></div><div className="space-y-2"><Label>URL da capa</Label><Input type="url" value={itemForm.cover_url} onChange={(event) => setItemForm((current) => ({ ...current, cover_url: event.target.value }))} placeholder="https://..." /></div>{format === "canva" && <div className="space-y-2"><Label>Link de duplicação do Canva</Label><Input type="url" value={itemForm.canva_template_url} onChange={(event) => setItemForm((current) => ({ ...current, canva_template_url: event.target.value }))} placeholder="https://www.canva.com/design/..." /></div>}{format === "textual" && <><div className="space-y-2"><Label>Conteúdo</Label><Textarea rows={12} value={itemForm.textual_content} onChange={(event) => setItemForm((current) => ({ ...current, textual_content: event.target.value }))} /></div><div className="space-y-2"><Label>Exemplo ou orientação adicional</Label><Textarea rows={4} value={itemForm.textual_example} onChange={(event) => setItemForm((current) => ({ ...current, textual_example: event.target.value }))} /></div></>}<div className="space-y-2"><Label>Estado</Label><Select value={itemForm.status} onValueChange={(value) => setItemForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div></div><DialogFooter><Button variant="outline" onClick={() => setItemOpen(false)}>Cancelar</Button><Button onClick={saveItem}>Salvar item</Button></DialogFooter></DialogContent></Dialog>
+
+      <Dialog open={videoOpen} onOpenChange={setVideoOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{editingVideo ? "Editar vídeo" : "Adicionar vídeo"}</DialogTitle></DialogHeader><div className="space-y-4"><div className="space-y-2"><Label>Título</Label><Input value={videoForm.title} onChange={(event) => setVideoForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex.: Como personalizar os materiais" /></div><div className="space-y-2"><Label>Link do YouTube ou Vimeo</Label><Input type="url" value={videoForm.video_url} onChange={(event) => setVideoForm((current) => ({ ...current, video_url: event.target.value }))} placeholder="https://youtube.com/watch?v=..." /></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={videoForm.description} onChange={(event) => setVideoForm((current) => ({ ...current, description: event.target.value }))} placeholder="Resumo opcional do vídeo" /></div><div className="space-y-2"><Label>Estado</Label><Select value={videoForm.status} onValueChange={(value) => setVideoForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div>{getVideoEmbedUrl(videoForm.video_url) && <div className="overflow-hidden rounded-lg border border-border bg-muted"><iframe src={getVideoEmbedUrl(videoForm.video_url) ?? undefined} title="Prévia do vídeo" className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}</div><DialogFooter><Button variant="outline" onClick={() => setVideoOpen(false)}>Cancelar</Button><Button onClick={saveVideo}>Salvar vídeo</Button></DialogFooter></DialogContent></Dialog>
 
       <Dialog open={driveOpen} onOpenChange={setDriveOpen}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>Selecionar arquivos do Google Drive</DialogTitle></DialogHeader><div className="space-y-4"><div className="flex items-center justify-between gap-4"><Select value={driveCollectionId} onValueChange={setDriveCollectionId}><SelectTrigger className="w-64"><SelectValue placeholder="Coleção de destino" /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select>{driveFolderId !== "root" && <Button variant="outline" size="sm" onClick={() => loadDriveFolder("root")}>Voltar ao início</Button>}</div><div className="max-h-[55vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">{driveFiles.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">Nenhum arquivo encontrado nesta pasta</p> : driveFiles.map((file) => {
         const isFolder = file.mimeType === "application/vnd.google-apps.folder";

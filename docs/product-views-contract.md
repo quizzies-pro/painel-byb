@@ -32,6 +32,16 @@ Todo Pack possui um `pack_format` permanente:
 
 As coleções vêm de `pack_collections`, ordenadas por `sort_order`. Os conteúdos vêm de `pack_items`, também ordenados por `sort_order`. A leitura por aluno é permitida apenas com matrícula ativa e não expirada.
 
+## Vídeos explicativos dos Packs
+
+Todos os formatos de Pack podem ter uma lista complementar de vídeos em `pack_videos`:
+
+- consultar somente vídeos com `status = published`, ordenados por `sort_order`;
+- exibir título, descrição e reprodução incorporada de `video_url`;
+- aceitar links HTTPS do YouTube e Vimeo, convertendo-os para o endereço oficial de incorporação;
+- não misturar esses vídeos com módulos ou aulas de Cursos;
+- aplicar a mesma matrícula ativa e não expirada exigida para o restante do Pack.
+
 ## Estado temporário do Pack
 
 Até a View e o conteúdo próprio do Pack serem implementados:

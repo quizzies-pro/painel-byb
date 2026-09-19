@@ -28,5 +28,6 @@
 - [x] Definir o modelo de conteúdo do Pack para Canva, Textual e Google Drive
 - [x] Criar o gerenciador de conteúdo de Packs no Hub
 - [x] Conectar a conta empresarial do Google Drive e preparar sincronização manual protegida
+- [x] Criar lista ordenável de vídeos explicativos por Pack com links do YouTube e Vimeo
 - [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
 - [ ] Liberar vitrine e venda de Packs após validação da entrega
