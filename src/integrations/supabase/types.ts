@@ -124,6 +124,7 @@ export type Database = {
           language: string
           login_cover_url: string | null
           logo_url: string | null
+          pack_format: Database["public"]["Enums"]["pack_format"] | null
           product_type: Database["public"]["Enums"]["product_type"]
           seo_description: string | null
           seo_title: string | null
@@ -157,6 +158,7 @@ export type Database = {
           language?: string
           login_cover_url?: string | null
           logo_url?: string | null
+          pack_format?: Database["public"]["Enums"]["pack_format"] | null
           product_type?: Database["public"]["Enums"]["product_type"]
           seo_description?: string | null
           seo_title?: string | null
@@ -190,6 +192,7 @@ export type Database = {
           language?: string
           login_cover_url?: string | null
           logo_url?: string | null
+          pack_format?: Database["public"]["Enums"]["pack_format"] | null
           product_type?: Database["public"]["Enums"]["product_type"]
           seo_description?: string | null
           seo_title?: string | null
@@ -607,6 +610,143 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      pack_collections: {
+        Row: {
+          course_id: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_visible: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_visible?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_visible?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_collections_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pack_items: {
+        Row: {
+          canva_template_url: string | null
+          collection_id: string | null
+          course_id: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          drive_available: boolean
+          drive_file_id: string | null
+          drive_file_name: string | null
+          drive_file_size: number | null
+          drive_mime_type: string | null
+          drive_modified_at: string | null
+          drive_synced_at: string | null
+          drive_thumbnail_url: string | null
+          format: Database["public"]["Enums"]["pack_format"]
+          id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["pack_item_status"]
+          tags: string[]
+          textual_content: string | null
+          textual_example: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          canva_template_url?: string | null
+          collection_id?: string | null
+          course_id: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          drive_available?: boolean
+          drive_file_id?: string | null
+          drive_file_name?: string | null
+          drive_file_size?: number | null
+          drive_mime_type?: string | null
+          drive_modified_at?: string | null
+          drive_synced_at?: string | null
+          drive_thumbnail_url?: string | null
+          format: Database["public"]["Enums"]["pack_format"]
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["pack_item_status"]
+          tags?: string[]
+          textual_content?: string | null
+          textual_example?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          canva_template_url?: string | null
+          collection_id?: string | null
+          course_id?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          drive_available?: boolean
+          drive_file_id?: string | null
+          drive_file_name?: string | null
+          drive_file_size?: number | null
+          drive_mime_type?: string | null
+          drive_modified_at?: string | null
+          drive_synced_at?: string | null
+          drive_thumbnail_url?: string | null
+          format?: Database["public"]["Enums"]["pack_format"]
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["pack_item_status"]
+          tags?: string[]
+          textual_content?: string | null
+          textual_example?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "pack_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_items_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -1421,6 +1561,8 @@ export type Database = {
         | "link"
         | "other"
       module_status: "draft" | "published" | "hidden"
+      pack_format: "canva" | "textual" | "drive"
+      pack_item_status: "draft" | "published" | "hidden"
       payment_status:
         | "pending"
         | "approved"
@@ -1576,6 +1718,8 @@ export const Constants = {
         "other",
       ],
       module_status: ["draft", "published", "hidden"],
+      pack_format: ["canva", "textual", "drive"],
+      pack_item_status: ["draft", "published", "hidden"],
       payment_status: [
         "pending",
         "approved",
