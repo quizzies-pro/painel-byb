@@ -43,10 +43,12 @@ export default function WaitlistForm() {
     event.preventDefault();
     const parsed = waitlistSchema.safeParse(form);
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Revise os dados"); return; }
-    const selectedCourse = courses.find((course) => course.id === parsed.data.course_id);
+    const { course_id, name, description, consent_text, consent_version, privacy_policy_url } = parsed.data;
+    if (!course_id || !name || !consent_text || !consent_version || !privacy_policy_url) { toast.error("Preencha todos os campos obrigatórios"); return; }
+    const selectedCourse = courses.find((course) => course.id === course_id);
     if (selectedCourse?.available_for_sale) { toast.error("Este produto já está disponível para venda"); return; }
     setSaving(true);
-    const payload = { ...parsed.data, description: parsed.data.description || null };
+    const payload = { course_id, name, consent_text, consent_version, privacy_policy_url, description: description || null };
     const result = id
       ? await supabase.from("product_waitlists").update(payload).eq("id", id)
       : await supabase.from("product_waitlists").insert(payload);
