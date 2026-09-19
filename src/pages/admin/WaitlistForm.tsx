@@ -51,7 +51,7 @@ export default function WaitlistForm() {
     const payload = { ...parsed.data, description: parsed.data.description || null };
     const result = id
       ? await supabase.from("product_waitlists").update(payload).eq("id", id)
-      : await supabase.from("product_waitlists").insert({ ...payload, created_by: user?.id });
+      : await supabase.from("product_waitlists").insert({ ...payload, created_by: user?.id ?? null });
     setSaving(false);
     if (result.error) { toast.error(result.error.message); return; }
     toast.success(id ? "Lista atualizada" : "Lista criada");
