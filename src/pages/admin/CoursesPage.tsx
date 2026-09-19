@@ -9,6 +9,9 @@ import { Plus, Search, Edit, Trash2, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 
 type Course = Tables<"courses">;
+type CategoryLink = Tables<"storefront_category_courses"> & {
+  storefront_categories: Pick<Tables<"storefront_categories">, "name"> | null;
+};
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -38,15 +41,25 @@ export default function CoursesPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "grid">("grid");
+  const [categoryNames, setCategoryNames] = useState<Record<string, string[]>>({});
 
   const fetchCourses = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("courses")
-      .select("*")
-      .order("display_order", { ascending: true });
-    if (error) toast.error("Erro ao carregar produtos");
-    else setCourses(data ?? []);
+    const [coursesResponse, linksResponse] = await Promise.all([
+      supabase.from("courses").select("*").order("display_order", { ascending: true }),
+      supabase.from("storefront_category_courses").select("*, storefront_categories(name)"),
+    ]);
+    if (coursesResponse.error || linksResponse.error) toast.error("Erro ao carregar produtos");
+    else {
+      setCourses(coursesResponse.data ?? []);
+      const grouped = ((linksResponse.data ?? []) as CategoryLink[]).reduce<Record<string, string[]>>((result, link) => {
+        const name = link.storefront_categories?.name;
+        if (!name) return result;
+        result[link.course_id] = [...(result[link.course_id] ?? []), name];
+        return result;
+      }, {});
+      setCategoryNames(grouped);
+    }
     setLoading(false);
   };
 
@@ -138,7 +151,13 @@ export default function CoursesPage() {
                     <div className="font-medium text-foreground">{course.title}</div>
                     <div className="text-xs text-muted-foreground font-mono mt-0.5">{course.slug}</div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{course.category || "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {(categoryNames[course.id] ?? []).length > 0
+                        ? categoryNames[course.id].map((name) => <Badge key={name} variant="outline" className="text-[10px] font-normal">{name}</Badge>)
+                        : <span className="text-muted-foreground">Sem categoria</span>}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
                       <Badge variant="outline" className={statusColors[course.status] || ""}>{statusLabel[course.status] || course.status}</Badge>
@@ -199,9 +218,9 @@ export default function CoursesPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                {course.category && (
-                  <p className="text-xs text-muted-foreground">{course.category}</p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  {(categoryNames[course.id] ?? []).length > 0 ? categoryNames[course.id].join(" · ") : "Sem categoria de apresentação"}
+                </p>
               </div>
             </div>
           ))}
