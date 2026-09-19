@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 
 type StudentOption = Pick<Tables<"students">, "id" | "name" | "email">;
-type CourseOption = Pick<Tables<"courses">, "id" | "title">;
+type CourseOption = Pick<Tables<"courses">, "id" | "title" | "product_type">;
 type Module = Tables<"course_modules">;
 type Lesson = Tables<"lessons">;
 
@@ -36,6 +37,7 @@ export default function EnrollmentForm() {
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [accessMode, setAccessMode] = useState<"full" | "custom">("full");
+  const selectedProduct = courses.find((course) => course.id === form.course_id);
 
   const [form, setForm] = useState<TablesInsert<"enrollments">>({
     student_id: "",
@@ -51,7 +53,7 @@ export default function EnrollmentForm() {
   useEffect(() => {
     Promise.all([
       supabase.from("students").select("id, name, email").order("name"),
-      supabase.from("courses").select("id, title").order("title"),
+      supabase.from("courses").select("id, title, product_type").order("title"),
     ]).then(([sRes, cRes]) => {
       setStudents(sRes.data ?? []);
       setCourses(cRes.data ?? []);
@@ -85,7 +87,7 @@ export default function EnrollmentForm() {
 
   // Load modules & lessons when course changes
   useEffect(() => {
-    if (!form.course_id) { setModulesWithLessons([]); return; }
+    if (!form.course_id || selectedProduct?.product_type !== "course") { setModulesWithLessons([]); return; }
 
     Promise.all([
       supabase.from("course_modules").select("*").eq("course_id", form.course_id).order("sort_order"),
@@ -99,7 +101,7 @@ export default function EnrollmentForm() {
       }));
       setModulesWithLessons(grouped);
     });
-  }, [form.course_id]);
+  }, [form.course_id, selectedProduct?.product_type]);
 
   const update = (key: string, value: unknown) => setForm((p) => ({ ...p, [key]: value }));
 
@@ -238,7 +240,7 @@ export default function EnrollmentForm() {
             }}>
               <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
               <SelectContent>
-                {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title} · {PRODUCT_TYPES[c.product_type as ProductType].label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -272,7 +274,9 @@ export default function EnrollmentForm() {
         </div>
 
         {/* Granular access control */}
-        {form.course_id && modulesWithLessons.length > 0 && (
+        {selectedProduct?.product_type === "pack" && <div className="rounded-lg border border-border bg-muted/30 p-4"><p className="text-sm font-medium">Acesso integral ao Pack</p><p className="mt-1 text-xs text-muted-foreground">A organização interna do Pack será definida na próxima etapa.</p></div>}
+
+        {selectedProduct?.product_type === "course" && modulesWithLessons.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-[13px] font-medium">Acesso ao Conteúdo</Label>

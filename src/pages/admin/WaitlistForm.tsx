@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { PRODUCT_TYPES } from "@/lib/product-types";
 
 const waitlistSchema = z.object({
   course_id: z.string().uuid("Selecione um produto"),
@@ -20,7 +21,7 @@ const waitlistSchema = z.object({
   privacy_policy_url: z.string().trim().url("Informe uma URL válida").startsWith("https://", "Use uma URL HTTPS"),
 });
 
-type Course = Pick<Tables<"courses">, "id" | "title" | "available_for_sale">;
+type Course = Pick<Tables<"courses">, "id" | "title" | "available_for_sale" | "product_type">;
 
 export default function WaitlistForm() {
   const { id } = useParams();
@@ -31,7 +32,7 @@ export default function WaitlistForm() {
   const [form, setForm] = useState({ course_id: "", name: "", description: "", consent_text: "Autorizo o envio de novidades, conteúdos e ofertas deste produto por e-mail e WhatsApp.", consent_version: "1.0", privacy_policy_url: "https://membros.diveclube.com.br/politica-de-privacidade" });
 
   useEffect(() => {
-    supabase.from("courses").select("id, title, available_for_sale").order("title").then(({ data }) => setCourses(data ?? []));
+    supabase.from("courses").select("id, title, available_for_sale, product_type").order("title").then(({ data }) => setCourses(data ?? []));
     if (id) supabase.from("product_waitlists").select("*").eq("id", id).single().then(({ data, error }) => {
       if (error || !data) { toast.error("Lista não encontrada"); navigate("/admin/waitlists"); return; }
       setForm({ course_id: data.course_id, name: data.name, description: data.description ?? "", consent_text: data.consent_text, consent_version: data.consent_version, privacy_policy_url: data.privacy_policy_url });
@@ -63,7 +64,7 @@ export default function WaitlistForm() {
   return <form onSubmit={submit} className="space-y-6">
     <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><Button type="button" variant="ghost" size="icon" onClick={() => navigate("/admin/waitlists")}><ArrowLeft /></Button><div><h1 className="text-2xl font-semibold">{id ? "Editar lista" : "Nova lista de espera"}</h1><p className="mt-1 text-sm text-muted-foreground">Vincule a campanha a um produto ainda não liberado.</p></div></div><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => navigate("/admin/waitlists")}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar lista"}</Button></div></div>
     <div className="max-w-2xl space-y-5">
-      <div className="space-y-2"><Label>Produto *</Label><Select value={form.course_id} onValueChange={(value) => setForm((current) => ({ ...current, course_id: value }))}><SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger><SelectContent>{courses.map((course) => <SelectItem key={course.id} value={course.id} disabled={course.available_for_sale}>{course.title}{course.available_for_sale ? " — à venda" : ""}</SelectItem>)}</SelectContent></Select></div>
+      <div className="space-y-2"><Label>Produto *</Label><Select value={form.course_id} onValueChange={(value) => setForm((current) => ({ ...current, course_id: value }))}><SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger><SelectContent>{courses.map((course) => <SelectItem key={course.id} value={course.id} disabled={course.available_for_sale}>{course.title} · {PRODUCT_TYPES[course.product_type].label}{course.available_for_sale ? " — à venda" : ""}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-2"><Label htmlFor="name">Nome interno *</Label><Input id="name" maxLength={160} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Ex.: Lançamento — Turma 2" /></div>
       <div className="space-y-2"><Label htmlFor="description">Descrição</Label><Textarea id="description" maxLength={1000} rows={3} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Contexto interno desta lista..." /></div>
       <div className="grid grid-cols-[1fr_140px] gap-4"><div className="space-y-2"><Label htmlFor="privacy">Política de privacidade *</Label><Input id="privacy" type="url" maxLength={2048} value={form.privacy_policy_url} onChange={(event) => setForm((current) => ({ ...current, privacy_policy_url: event.target.value }))} /></div><div className="space-y-2"><Label htmlFor="version">Versão *</Label><Input id="version" maxLength={50} value={form.consent_version} onChange={(event) => setForm((current) => ({ ...current, consent_version: event.target.value }))} /></div></div>
