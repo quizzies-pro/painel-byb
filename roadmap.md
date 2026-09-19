@@ -17,3 +17,5 @@
 - [x] Criar banco seguro para listas de espera por produto e consentimento de marketing
 - [x] Criar gestão de listas de espera, participantes e exportação no Dive | Hub
 - [ ] Conectar os botões de espera no projeto Dive Club — bloqueado por edição entre projetos
+
+- [x] Documentar o contrato seguro da lista de espera para integração na Members
