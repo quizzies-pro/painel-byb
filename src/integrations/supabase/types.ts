@@ -748,6 +748,50 @@ export type Database = {
           },
         ]
       }
+      pack_videos: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["pack_item_status"]
+          title: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["pack_item_status"]
+          title: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["pack_item_status"]
+          title?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_videos_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           affiliate_name: string | null
