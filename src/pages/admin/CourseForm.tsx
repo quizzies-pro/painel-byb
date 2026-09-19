@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, LayoutGrid, List, GripVertical, BookOpen, Package, LockKeyhole } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, LayoutGrid, List, GripVertical, BookOpen, Package, LockKeyhole, Palette, FileText, HardDrive } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 import ProductCategoriesEditor, { CategorySelection } from "@/components/ProductCategoriesEditor";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
+import { PACK_FORMATS, PackFormat } from "@/lib/pack-formats";
 
 type CourseInsert = TablesInsert<"courses">;
 type Module = Tables<"course_modules">;
@@ -87,6 +88,7 @@ export default function CourseForm() {
   const [modulesView, setModulesView] = useState<"list" | "grid">("grid");
   const [categorySelections, setCategorySelections] = useState<CategorySelection[]>([]);
   const [typeChosen, setTypeChosen] = useState(isEdit);
+  const [packFormatChosen, setPackFormatChosen] = useState(isEdit);
 
   const [form, setForm] = useState<CourseInsert>({
     title: "",
@@ -116,6 +118,7 @@ export default function CourseForm() {
     seo_description: "",
     display_order: 0,
     product_type: "course",
+    pack_format: null,
   });
 
   const fetchModules = async () => {
@@ -303,6 +306,23 @@ export default function CourseForm() {
     );
   }
 
+  if (form.product_type === "pack" && !packFormatChosen) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => setTypeChosen(false)}><ArrowLeft className="h-4 w-4" /></Button>
+          <div><h1 className="text-2xl font-semibold tracking-tight">Formato do Pack</h1><p className="mt-1 text-sm text-muted-foreground">Escolha como o conteúdo será entregue. Essa escolha será permanente.</p></div>
+        </div>
+        <div className="grid max-w-5xl grid-cols-3 gap-4">
+          {(Object.keys(PACK_FORMATS) as PackFormat[]).map((format) => {
+            const Icon = format === "canva" ? Palette : format === "textual" ? FileText : HardDrive;
+            return <Button key={format} type="button" variant="outline" className="group h-auto min-h-52 items-start justify-start whitespace-normal p-6 text-left" onClick={() => { setForm((current) => ({ ...current, pack_format: format })); setPackFormatChosen(true); }}><div><Icon className="mb-8 h-7 w-7 text-muted-foreground group-hover:text-foreground" /><h2 className="text-lg font-semibold">{PACK_FORMATS[format].label}</h2><p className="mt-2 text-sm font-normal leading-6 text-muted-foreground">{PACK_FORMATS[format].description}</p></div></Button>;
+          })}
+        </div>
+      </div>
+    );
+  }
+
   const productType = form.product_type ?? "course";
   const isCourse = productType === "course";
 
@@ -317,11 +337,13 @@ export default function CourseForm() {
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Produto" : "Novo Produto"}</h1>
               <Badge variant="outline">{PRODUCT_TYPES[productType].label}</Badge>
+              {!isCourse && form.pack_format && <Badge variant="secondary">{PACK_FORMATS[form.pack_format].label}</Badge>}
             </div>
             <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><LockKeyhole className="h-3 w-3" />O formato não pode ser alterado depois da criação.</p>
           </div>
         </div>
         <div className="flex gap-3">
+          {!isCourse && id && <Button type="button" variant="outline" asChild><Link to={`/admin/courses/${id}/pack-content`}>Gerenciar conteúdo</Link></Button>}
           <Button type="button" variant="outline" onClick={() => navigate("/admin/courses")}>Cancelar</Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : isEdit ? "Salvar Alterações" : "Criar Produto"}
