@@ -30,6 +30,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
+import ProductCategoriesEditor, { CategorySelection } from "@/components/ProductCategoriesEditor";
 
 type CourseInsert = TablesInsert<"courses">;
 type Module = Tables<"course_modules">;
@@ -83,6 +84,7 @@ export default function CourseForm() {
   const [saving, setSaving] = useState(false);
   const [modules, setModules] = useState<Module[]>([]);
   const [modulesView, setModulesView] = useState<"list" | "grid">("grid");
+  const [categorySelections, setCategorySelections] = useState<CategorySelection[]>([]);
 
   const [form, setForm] = useState<CourseInsert>({
     title: "",
@@ -123,6 +125,15 @@ export default function CourseForm() {
     setModules(data ?? []);
   };
 
+  const fetchCategorySelections = async (courseId: string) => {
+    const { data, error } = await supabase
+      .from("storefront_category_courses")
+      .select("category_id, display_order")
+      .eq("course_id", courseId);
+    if (error) toast.error("Erro ao carregar categorias do produto");
+    else setCategorySelections((data ?? []).map((item) => ({ categoryId: item.category_id, displayOrder: item.display_order })));
+  };
+
   useEffect(() => {
     if (id) {
       setLoading(true);
@@ -136,6 +147,7 @@ export default function CourseForm() {
         setLoading(false);
       });
       fetchModules();
+      fetchCategorySelections(id);
     }
   }, [id, navigate]);
 
@@ -160,15 +172,48 @@ export default function CourseForm() {
     }
     setSaving(true);
 
+    let savedCourseId = id;
     if (isEdit && id) {
       const { error } = await supabase.from("courses").update(form).eq("id", id);
-      if (error) toast.error("Erro ao atualizar produto: " + error.message);
-      else { toast.success("Produto atualizado"); navigate("/admin/courses"); }
+      if (error) {
+        toast.error("Erro ao atualizar produto: " + error.message);
+        setSaving(false);
+        return;
+      }
     } else {
-      const { error } = await supabase.from("courses").insert(form);
-      if (error) toast.error("Erro ao criar produto: " + error.message);
-      else { toast.success("Produto criado"); navigate("/admin/courses"); }
+      const { data, error } = await supabase.from("courses").insert(form).select("id").single();
+      if (error || !data) {
+        toast.error("Erro ao criar produto: " + (error?.message ?? "não foi possível concluir"));
+        setSaving(false);
+        return;
+      }
+      savedCourseId = data.id;
     }
+
+    if (savedCourseId) {
+      const { error: removeError } = await supabase.from("storefront_category_courses").delete().eq("course_id", savedCourseId);
+      if (removeError) {
+        toast.error("Produto salvo, mas não foi possível atualizar as categorias");
+        setSaving(false);
+        return;
+      }
+      if (categorySelections.length > 0) {
+        const { error: linkError } = await supabase.from("storefront_category_courses").insert(
+          categorySelections.map((item) => ({
+            course_id: savedCourseId,
+            category_id: item.categoryId,
+            display_order: item.displayOrder,
+          }))
+        );
+        if (linkError) {
+          toast.error("Produto salvo, mas não foi possível vincular as categorias");
+          setSaving(false);
+          return;
+        }
+      }
+    }
+    toast.success(isEdit ? "Produto atualizado" : "Produto criado");
+    navigate("/admin/courses");
     setSaving(false);
   };
 
@@ -238,6 +283,9 @@ export default function CourseForm() {
           </TabsTrigger>
           <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Configurações
+          </TabsTrigger>
+          <TabsTrigger value="presentation" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
+            Apresentação
           </TabsTrigger>
           {isEdit && (
             <TabsTrigger value="modules" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
@@ -403,6 +451,12 @@ export default function CourseForm() {
                 <Switch checked={form.has_certificate ?? false} onCheckedChange={(v) => update("has_certificate", v)} />
               </div>
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="presentation" className="mt-6">
+          <div className="max-w-4xl">
+            <ProductCategoriesEditor value={categorySelections} onChange={setCategorySelections} />
           </div>
         </TabsContent>
 
