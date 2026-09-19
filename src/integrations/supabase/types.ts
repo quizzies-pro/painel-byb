@@ -756,6 +756,75 @@ export type Database = {
         }
         Relationships: []
       }
+      storefront_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      storefront_category_courses: {
+        Row: {
+          category_id: string
+          course_id: string
+          created_at: string
+          display_order: number
+        }
+        Insert: {
+          category_id: string
+          course_id: string
+          created_at?: string
+          display_order?: number
+        }
+        Update: {
+          category_id?: string
+          course_id?: string
+          created_at?: string
+          display_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storefront_category_courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "storefront_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storefront_category_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           auth_user_id: string | null
