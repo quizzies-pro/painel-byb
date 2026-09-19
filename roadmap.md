@@ -11,3 +11,6 @@
 - [ ] Aplicar prévia privada e regras de vitrine no projeto Dive Club — bloqueado por edição entre projetos
 - [x] Enviar convite para criação de senha no cadastro manual de alunos
 - [x] Direcionar criação e recuperação de senha dos alunos exclusivamente para a área de membros
+- [x] Criar categorias de apresentação e vínculos ordenados por produto
+- [x] Adicionar criação, seleção múltipla e ordenação de categorias dentro do produto
+- [ ] Aplicar as seções categorizadas na página principal do Dive Club — bloqueado por edição entre projetos
