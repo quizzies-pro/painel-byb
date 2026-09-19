@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, ExternalLink, FileText, FolderPlus, Image, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, FileText, Folder, FolderPlus, HardDrive, Image, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
@@ -12,10 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Collection = Tables<"pack_collections">;
 type PackItem = Tables<"pack_items">;
 type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format">;
+type DriveFile = { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; thumbnailLink?: string; iconLink?: string };
 
 const EMPTY_COLLECTION = { title: "", description: "" };
 
@@ -28,6 +30,12 @@ export default function PackContentPage() {
   const [loading, setLoading] = useState(true);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [itemOpen, setItemOpen] = useState(false);
+  const [driveOpen, setDriveOpen] = useState(false);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [driveFolderId, setDriveFolderId] = useState("root");
+  const [selectedDriveFiles, setSelectedDriveFiles] = useState<Set<string>>(new Set());
+  const [driveCollectionId, setDriveCollectionId] = useState("none");
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [editingItem, setEditingItem] = useState<PackItem | null>(null);
   const [collectionForm, setCollectionForm] = useState(EMPTY_COLLECTION);
@@ -146,6 +154,57 @@ export default function PackContentPage() {
     loadData();
   };
 
+  const invokeDrive = async (body: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("pack-drive", { body });
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+
+  const loadDriveFolder = async (folderId = "root") => {
+    setDriveLoading(true);
+    try {
+      const data = await invokeDrive({ action: "list", folder_id: folderId });
+      setDriveFiles(data.files ?? []);
+      setDriveFolderId(folderId);
+      setSelectedDriveFiles(new Set());
+      setDriveOpen(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o Google Drive");
+    } finally {
+      setDriveLoading(false);
+    }
+  };
+
+  const importDriveFiles = async () => {
+    if (!courseId || selectedDriveFiles.size === 0) return toast.error("Selecione pelo menos um arquivo");
+    setDriveLoading(true);
+    try {
+      await invokeDrive({ action: "import", course_id: courseId, collection_id: driveCollectionId === "none" ? null : driveCollectionId, file_ids: [...selectedDriveFiles] });
+      toast.success("Arquivos importados");
+      setDriveOpen(false);
+      loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao importar arquivos");
+    } finally {
+      setDriveLoading(false);
+    }
+  };
+
+  const syncDrive = async () => {
+    if (!courseId) return;
+    setDriveLoading(true);
+    try {
+      await invokeDrive({ action: "sync", course_id: courseId });
+      toast.success("Biblioteca sincronizada");
+      loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao sincronizar a biblioteca");
+    } finally {
+      setDriveLoading(false);
+    }
+  };
+
   if (loading || !product || !format) return <div className="flex justify-center py-16"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
 
   const renderItems = (collectionItems: PackItem[], collectionId?: string) => (
@@ -166,6 +225,14 @@ export default function PackContentPage() {
             {item.description && <p className="line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
             {format === "canva" && item.canva_template_url && <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => window.open(item.canva_template_url ?? "", "_blank")}><ExternalLink className="h-3.5 w-3.5" />Ver template</Button>}
             {format === "textual" && <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigator.clipboard.writeText(item.textual_content ?? "")}><Copy className="h-3.5 w-3.5" />Copiar texto</Button>}
+            {format === "drive" && <Button variant="outline" size="sm" className="w-full gap-2" onClick={async () => {
+              try {
+                const { data, error } = await supabase.functions.invoke("pack-drive", { body: { action: "download", item_id: item.id } });
+                if (error) throw error;
+                const blob = data instanceof Blob ? data : new Blob([data]);
+                window.open(URL.createObjectURL(blob), "_blank");
+              } catch { toast.error("Não foi possível abrir o arquivo"); }
+            }} disabled={!item.drive_available}><ExternalLink className="h-3.5 w-3.5" />{item.drive_available ? "Abrir arquivo" : "Indisponível"}</Button>}
           </div>
         </div>
       ))}
@@ -183,14 +250,14 @@ export default function PackContentPage() {
         <Button variant="outline" className="gap-2" onClick={() => openCollection()}><FolderPlus className="h-4 w-4" />Nova coleção</Button>
       </div>
 
-      {format === "drive" && <div className="rounded-lg border border-border bg-muted/20 p-5"><p className="text-sm font-medium">Biblioteca do Google Drive</p><p className="mt-1 text-xs text-muted-foreground">Conecte a conta da empresa para selecionar arquivos e sincronizar esta biblioteca.</p><Button className="mt-4" size="sm" disabled>Conectar Google Drive</Button></div>}
+      {format === "drive" && <div className="flex items-center justify-between gap-5 rounded-lg border border-border bg-muted/20 p-5"><div><p className="text-sm font-medium">Biblioteca do Google Drive</p><p className="mt-1 text-xs text-muted-foreground">Selecione arquivos da conta da empresa e sincronize alterações quando precisar.</p></div><div className="flex shrink-0 gap-2"><Button variant="outline" size="sm" className="gap-2" onClick={syncDrive} disabled={driveLoading || items.length === 0}><RefreshCw className={`h-3.5 w-3.5 ${driveLoading ? "animate-spin" : ""}`} />Sincronizar agora</Button><Button size="sm" className="gap-2" onClick={() => loadDriveFolder()} disabled={driveLoading}><HardDrive className="h-3.5 w-3.5" />Selecionar arquivos</Button></div></div>}
 
       {collections.length === 0 && items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border py-16 text-center"><FileText className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-4 text-sm font-medium">Este Pack ainda não tem conteúdo</p><p className="mt-1 text-xs text-muted-foreground">Crie uma coleção ou adicione o primeiro item.</p><div className="mt-5 flex justify-center gap-2"><Button variant="outline" onClick={() => openCollection()}>Nova coleção</Button>{format !== "drive" && <Button onClick={() => openItem()}>Novo item</Button>}</div></div>
       ) : <div className="space-y-8">
         {collections.map((collection) => <section key={collection.id} className="space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3"><div><h2 className="font-medium">{collection.title}</h2>{collection.description && <p className="mt-1 text-xs text-muted-foreground">{collection.description}</p>}</div><div className="flex gap-1"><Button size="icon" variant="ghost" onClick={() => openCollection(collection)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => deleteCollection(collection)}><Trash2 className="h-4 w-4" /></Button></div></div>
-          {format !== "drive" ? renderItems(groupedItems.get(collection.id) ?? [], collection.id) : <p className="text-xs text-muted-foreground">Os arquivos aparecerão após a conexão com o Google Drive.</p>}
+          {renderItems(groupedItems.get(collection.id) ?? [], collection.id)}
         </section>)}
         {(groupedItems.get("unfiled")?.length ?? 0) > 0 && <section className="space-y-4"><h2 className="border-b border-border pb-3 font-medium">Sem coleção</h2>{renderItems(groupedItems.get("unfiled") ?? [])}</section>}
         {format !== "drive" && collections.length > 0 && <Button variant="outline" onClick={() => openItem()}><Plus className="mr-2 h-4 w-4" />Novo item sem coleção</Button>}
@@ -199,6 +266,11 @@ export default function PackContentPage() {
       <Dialog open={collectionOpen} onOpenChange={setCollectionOpen}><DialogContent><DialogHeader><DialogTitle>{editingCollection ? "Editar coleção" : "Nova coleção"}</DialogTitle></DialogHeader><div className="space-y-4"><div className="space-y-2"><Label>Nome</Label><Input value={collectionForm.title} onChange={(event) => setCollectionForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={collectionForm.description} onChange={(event) => setCollectionForm((current) => ({ ...current, description: event.target.value }))} /></div></div><DialogFooter><Button variant="outline" onClick={() => setCollectionOpen(false)}>Cancelar</Button><Button onClick={saveCollection}>Salvar</Button></DialogFooter></DialogContent></Dialog>
 
       <Dialog open={itemOpen} onOpenChange={setItemOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{editingItem ? "Editar item" : `Novo item ${PACK_FORMATS[format].label}`}</DialogTitle></DialogHeader><div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1"><div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label>Título</Label><Input value={itemForm.title} onChange={(event) => setItemForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Coleção</Label><Select value={itemForm.collection_id} onValueChange={(value) => setItemForm((current) => ({ ...current, collection_id: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select></div></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={itemForm.description} onChange={(event) => setItemForm((current) => ({ ...current, description: event.target.value }))} /></div><div className="space-y-2"><Label>URL da capa</Label><Input type="url" value={itemForm.cover_url} onChange={(event) => setItemForm((current) => ({ ...current, cover_url: event.target.value }))} placeholder="https://..." /></div>{format === "canva" && <div className="space-y-2"><Label>Link de duplicação do Canva</Label><Input type="url" value={itemForm.canva_template_url} onChange={(event) => setItemForm((current) => ({ ...current, canva_template_url: event.target.value }))} placeholder="https://www.canva.com/design/..." /></div>}{format === "textual" && <><div className="space-y-2"><Label>Conteúdo</Label><Textarea rows={12} value={itemForm.textual_content} onChange={(event) => setItemForm((current) => ({ ...current, textual_content: event.target.value }))} /></div><div className="space-y-2"><Label>Exemplo ou orientação adicional</Label><Textarea rows={4} value={itemForm.textual_example} onChange={(event) => setItemForm((current) => ({ ...current, textual_example: event.target.value }))} /></div></>}<div className="space-y-2"><Label>Estado</Label><Select value={itemForm.status} onValueChange={(value) => setItemForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div></div><DialogFooter><Button variant="outline" onClick={() => setItemOpen(false)}>Cancelar</Button><Button onClick={saveItem}>Salvar item</Button></DialogFooter></DialogContent></Dialog>
+
+      <Dialog open={driveOpen} onOpenChange={setDriveOpen}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>Selecionar arquivos do Google Drive</DialogTitle></DialogHeader><div className="space-y-4"><div className="flex items-center justify-between gap-4"><Select value={driveCollectionId} onValueChange={setDriveCollectionId}><SelectTrigger className="w-64"><SelectValue placeholder="Coleção de destino" /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select>{driveFolderId !== "root" && <Button variant="outline" size="sm" onClick={() => loadDriveFolder("root")}>Voltar ao início</Button>}</div><div className="max-h-[55vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">{driveFiles.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">Nenhum arquivo encontrado nesta pasta</p> : driveFiles.map((file) => {
+        const isFolder = file.mimeType === "application/vnd.google-apps.folder";
+        return <div key={file.id} className="flex items-center gap-3 p-3">{isFolder ? <Folder className="h-5 w-5 text-muted-foreground" /> : <Checkbox checked={selectedDriveFiles.has(file.id)} onCheckedChange={(checked) => setSelectedDriveFiles((current) => { const next = new Set(current); if (checked) next.add(file.id); else next.delete(file.id); return next; })} />}<div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{file.name}</p><p className="truncate text-xs text-muted-foreground">{isFolder ? "Pasta" : file.mimeType}</p></div>{isFolder && <Button variant="ghost" size="sm" onClick={() => loadDriveFolder(file.id)}>Abrir</Button>}</div>;
+      })}</div></div><DialogFooter><Button variant="outline" onClick={() => setDriveOpen(false)}>Cancelar</Button><Button onClick={importDriveFiles} disabled={driveLoading || selectedDriveFiles.size === 0}>{driveLoading ? "Importando..." : `Importar ${selectedDriveFiles.size || ""}`}</Button></DialogFooter></DialogContent></Dialog>
     </div>
   );
 }

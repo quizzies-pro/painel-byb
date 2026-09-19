@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.student-invitations]
 verify_jwt = false
+
+[functions.pack-drive]
+verify_jwt = false
