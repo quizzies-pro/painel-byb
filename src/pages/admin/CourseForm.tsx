@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, LayoutGrid, List, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, LayoutGrid, List, GripVertical, BookOpen, Package, LockKeyhole } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -31,6 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 import ProductCategoriesEditor, { CategorySelection } from "@/components/ProductCategoriesEditor";
+import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 
 type CourseInsert = TablesInsert<"courses">;
 type Module = Tables<"course_modules">;
@@ -85,6 +86,7 @@ export default function CourseForm() {
   const [modules, setModules] = useState<Module[]>([]);
   const [modulesView, setModulesView] = useState<"list" | "grid">("grid");
   const [categorySelections, setCategorySelections] = useState<CategorySelection[]>([]);
+  const [typeChosen, setTypeChosen] = useState(isEdit);
 
   const [form, setForm] = useState<CourseInsert>({
     title: "",
@@ -113,6 +115,7 @@ export default function CourseForm() {
     seo_title: "",
     seo_description: "",
     display_order: 0,
+    product_type: "course",
   });
 
   const fetchModules = async () => {
@@ -168,6 +171,10 @@ export default function CourseForm() {
     }
     if (form.available_for_sale && !form.checkout_url?.trim()) {
       toast.error("Adicione o link de checkout antes de disponibilizar o produto para venda");
+      return;
+    }
+    if (form.product_type === "pack" && (form.status !== "draft" || form.storefront_visible || form.available_for_sale)) {
+      toast.error("Packs devem permanecer em rascunho até a estrutura de entrega estar pronta");
       return;
     }
     setSaving(true);
@@ -256,6 +263,49 @@ export default function CourseForm() {
     );
   }
 
+  if (!typeChosen) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/courses")} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Novo Produto</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Escolha o formato de entrega. Essa escolha será permanente.</p>
+          </div>
+        </div>
+        <div className="grid max-w-3xl grid-cols-2 gap-4">
+          {(["course", "pack"] as ProductType[]).map((type) => {
+            const config = PRODUCT_TYPES[type];
+            const Icon = type === "course" ? BookOpen : Package;
+            return (
+              <Button
+                key={type}
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setForm((current) => ({ ...current, product_type: type }));
+                  setTypeChosen(true);
+                }}
+                className="group h-auto min-h-48 items-start justify-start whitespace-normal rounded-lg border-border bg-card p-6 text-left hover:border-foreground hover:bg-card"
+              >
+                <div>
+                  <Icon className="mb-8 h-7 w-7 text-muted-foreground transition-colors group-hover:text-foreground" />
+                  <h2 className="text-lg font-semibold">{config.label}</h2>
+                  <p className="mt-2 text-sm font-normal leading-6 text-muted-foreground">{config.description}</p>
+                </div>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const productType = form.product_type ?? "course";
+  const isCourse = productType === "course";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -263,7 +313,13 @@ export default function CourseForm() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/courses")} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Produto" : "Novo Produto"}</h1>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Produto" : "Novo Produto"}</h1>
+              <Badge variant="outline">{PRODUCT_TYPES[productType].label}</Badge>
+            </div>
+            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><LockKeyhole className="h-3 w-3" />O formato não pode ser alterado depois da criação.</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <Button type="button" variant="outline" onClick={() => navigate("/admin/courses")}>Cancelar</Button>
@@ -287,7 +343,7 @@ export default function CourseForm() {
           <TabsTrigger value="presentation" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Apresentação
           </TabsTrigger>
-          {isEdit && (
+          {isEdit && isCourse && (
             <TabsTrigger value="modules" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
               Módulos
             </TabsTrigger>
@@ -305,7 +361,7 @@ export default function CourseForm() {
               />
             </div>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+              <div className={`grid gap-6 ${isCourse ? "grid-cols-2" : "grid-cols-1"}`}>
                 <div className="space-y-2">
                   <Label className="text-[13px] font-medium">Título *</Label>
                   <Input value={form.title} onChange={(e) => handleTitleChange(e.target.value)} className="bg-background border-border" required />
@@ -328,10 +384,10 @@ export default function CourseForm() {
                   <Label className="text-[13px] font-medium">Categoria</Label>
                   <Input value={form.category || ""} onChange={(e) => update("category", e.target.value)} className="bg-background border-border" />
                 </div>
-                <div className="space-y-2">
+                {isCourse && <div className="space-y-2">
                   <Label className="text-[13px] font-medium">Instrutor</Label>
                   <Input value={form.instructor_name || ""} onChange={(e) => update("instructor_name", e.target.value)} className="bg-background border-border" />
-                </div>
+                </div>}
               </div>
             </div>
           </div>
@@ -364,17 +420,17 @@ export default function CourseForm() {
               hint="1080×1920px, vertical."
             />
           </div>
-          <div className="mt-4 space-y-2">
+          {isCourse && <div className="mt-4 space-y-2">
             <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
             <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border h-8 text-xs" />
-          </div>
+          </div>}
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-[13px] font-medium">Status</Label>
-              <Select value={form.status || "draft"} onValueChange={(v) => update("status", v)}>
+              <Select value={form.status || "draft"} onValueChange={(v) => update("status", v)} disabled={!isCourse}>
                 <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Rascunho</SelectItem>
@@ -402,13 +458,18 @@ export default function CourseForm() {
               </div>
             )}
 
+            {!isCourse && <div className="col-span-2 rounded-lg border border-border bg-muted/30 p-4">
+              <p className="text-sm font-medium">Entrega do Pack pendente</p>
+              <p className="mt-1 text-xs text-muted-foreground">O Pack pode ser preparado e associado a categorias ou listas de espera, mas permanece fora da vitrine e de venda até a próxima etapa.</p>
+            </div>}
+
             <div className="col-span-2 border-y border-border divide-y divide-border">
               <div className="flex items-center justify-between gap-8 py-5">
                 <div className="space-y-1">
                   <Label className="text-[13px] font-medium">Exibir na vitrine</Label>
                   <p className="text-xs text-muted-foreground">Alunos sem acesso poderão ver este produto na tela principal.</p>
                 </div>
-                <Switch checked={form.storefront_visible ?? false} onCheckedChange={(value) => update("storefront_visible", value)} />
+                <Switch checked={form.storefront_visible ?? false} disabled={!isCourse} onCheckedChange={(value) => update("storefront_visible", value)} />
               </div>
 
               <div className="space-y-4 py-5">
@@ -417,7 +478,7 @@ export default function CourseForm() {
                     <Label className="text-[13px] font-medium">Disponível para venda</Label>
                     <p className="text-xs text-muted-foreground">Mostra o botão de compra para quem ainda não possui este produto.</p>
                   </div>
-                  <Switch checked={form.available_for_sale ?? false} onCheckedChange={(value) => update("available_for_sale", value)} />
+                  <Switch checked={form.available_for_sale ?? false} disabled={!isCourse} onCheckedChange={(value) => update("available_for_sale", value)} />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[13px] font-medium">Link de checkout</Label>
@@ -442,14 +503,14 @@ export default function CourseForm() {
                 <Label className="text-[13px]">Gratuito</Label>
                 <Switch checked={form.is_free ?? false} onCheckedChange={(v) => update("is_free", v)} />
               </div>
-              <div className="flex items-center justify-between">
+              {isCourse && <div className="flex items-center justify-between">
                 <Label className="text-[13px]">Permitir Comentários</Label>
                 <Switch checked={form.allow_comments ?? true} onCheckedChange={(v) => update("allow_comments", v)} />
-              </div>
-              <div className="flex items-center justify-between">
+              </div>}
+              {isCourse && <div className="flex items-center justify-between">
                 <Label className="text-[13px]">Certificado</Label>
                 <Switch checked={form.has_certificate ?? false} onCheckedChange={(v) => update("has_certificate", v)} />
-              </div>
+              </div>}
             </div>
           </div>
         </TabsContent>
@@ -461,7 +522,7 @@ export default function CourseForm() {
         </TabsContent>
 
 
-        {id && (
+        {id && isCourse && (
           <TabsContent value="modules" className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[13px] text-muted-foreground">Arraste para reordenar os módulos</p>

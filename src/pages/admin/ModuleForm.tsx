@@ -90,6 +90,7 @@ export default function ModuleForm() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isCourseProduct, setIsCourseProduct] = useState(true);
 
   const [form, setForm] = useState<TablesInsert<"course_modules">>({
     course_id: courseId || "",
@@ -123,8 +124,13 @@ export default function ModuleForm() {
 
   useEffect(() => {
     if (courseId) {
-      supabase.from("courses").select("title").eq("id", courseId).single().then(({ data }) => {
+      supabase.from("courses").select("title, product_type").eq("id", courseId).single().then(({ data }) => {
         setCourseName(data?.title || "");
+        if (data?.product_type !== "course") {
+          setIsCourseProduct(false);
+          toast.error("Módulos estão disponíveis somente para Cursos");
+          navigate(`/admin/courses/${courseId}`);
+        }
       });
     }
 
@@ -143,11 +149,13 @@ export default function ModuleForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!courseId || !isCourseProduct) { toast.error("Este produto não aceita módulos"); return; }
     if (!form.title) { toast.error("Título é obrigatório"); return; }
     setSaving(true);
-    const payload = { ...form, course_id: courseId! };
+    const payload = { ...form, course_id: courseId };
     if (isEdit) {
-      const { error } = await supabase.from("course_modules").update(payload).eq("id", id!);
+      if (!id) { setSaving(false); return; }
+      const { error } = await supabase.from("course_modules").update(payload).eq("id", id);
       if (error) toast.error("Erro: " + error.message);
       else { toast.success("Módulo atualizado"); navigate(backUrl); }
     } else {
@@ -326,8 +334,8 @@ export default function ModuleForm() {
                           <SortableLessonRow
                             key={l.id}
                             lesson={l}
-                            courseId={courseId!}
-                            moduleId={id!}
+                            courseId={courseId ?? ""}
+                            moduleId={id ?? ""}
                             onDelete={handleDeleteLesson}
                           />
                         ))}

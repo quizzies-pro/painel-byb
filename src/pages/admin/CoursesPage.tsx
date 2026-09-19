@@ -5,8 +5,10 @@ import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
+import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 
 type Course = Tables<"courses">;
 type CategoryLink = Tables<"storefront_category_courses"> & {
@@ -42,6 +44,7 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "grid">("grid");
   const [categoryNames, setCategoryNames] = useState<Record<string, string[]>>({});
+  const [typeFilter, setTypeFilter] = useState<"all" | ProductType>("all");
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -75,11 +78,12 @@ export default function CoursesPage() {
     }
   };
 
-  const filtered = courses.filter(
-    (c) =>
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = courses.filter((course) => {
+    const matchesType = typeFilter === "all" || course.product_type === typeFilter;
+    const term = search.toLowerCase();
+    const matchesSearch = course.title.toLowerCase().includes(term) || Boolean(course.category?.toLowerCase().includes(term));
+    return matchesType && matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
@@ -105,6 +109,10 @@ export default function CoursesPage() {
             className="pl-9 bg-card border-border"
           />
         </div>
+        <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as "all" | ProductType)}>
+          <SelectTrigger className="w-40 bg-card border-border"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="all">Todos os tipos</SelectItem><SelectItem value="course">Cursos</SelectItem><SelectItem value="pack">Packs</SelectItem></SelectContent>
+        </Select>
         <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
           <Button
             variant="ghost"
@@ -148,7 +156,7 @@ export default function CoursesPage() {
               {filtered.map((course) => (
                 <tr key={course.id} className="border-b border-border last:border-0 hover:bg-card/50 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{course.title}</div>
+                    <div className="flex items-center gap-2"><span className="font-medium text-foreground">{course.title}</span><Badge variant="outline" className="text-[10px]">{PRODUCT_TYPES[course.product_type].label}</Badge></div>
                     <div className="text-xs text-muted-foreground font-mono mt-0.5">{course.slug}</div>
                   </td>
                   <td className="px-4 py-3">
@@ -202,12 +210,13 @@ export default function CoursesPage() {
               </Link>
               <div className="p-4 space-y-2">
                 <Link to={`/admin/courses/${course.id}`}>
-                  <h3 className="font-medium text-foreground text-sm leading-tight group-hover:underline">{course.title}</h3>
+                    <div className="flex items-center gap-2"><h3 className="font-medium text-foreground text-sm leading-tight group-hover:underline">{course.title}</h3><Badge variant="outline" className="text-[10px]">{PRODUCT_TYPES[course.product_type].label}</Badge></div>
                 </Link>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-wrap gap-1.5">
                     <Badge variant="outline" className={`text-[11px] ${statusColors[course.status] || ""}`}>{statusLabel[course.status] || course.status}</Badge>
                     {visibilityLabels(course).map((label) => <Badge key={label} variant="secondary" className="text-[10px] font-normal">{label}</Badge>)}
+                    {course.product_type === "pack" && <Badge variant="secondary" className="text-[10px] font-normal">Entrega pendente</Badge>}
                   </div>
                   <Button
                     variant="ghost"

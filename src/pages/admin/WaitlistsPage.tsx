@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { PRODUCT_TYPES } from "@/lib/product-types";
 
-type Waitlist = Tables<"product_waitlists"> & { courses: Pick<Tables<"courses">, "title"> | null };
+type Waitlist = Tables<"product_waitlists"> & { courses: Pick<Tables<"courses">, "title" | "product_type"> | null };
 
 export default function WaitlistsPage() {
   const [waitlists, setWaitlists] = useState<Waitlist[]>([]);
@@ -22,7 +23,7 @@ export default function WaitlistsPage() {
     const load = async () => {
       setLoading(true);
       const [listsResult, membersResult] = await Promise.all([
-        supabase.from("product_waitlists").select("*, courses(title)").order("created_at", { ascending: false }),
+        supabase.from("product_waitlists").select("*, courses(title, product_type)").order("created_at", { ascending: false }),
         supabase.from("product_waitlist_members").select("waitlist_id").eq("status", "active"),
       ]);
       if (listsResult.error || membersResult.error) toast.error("Erro ao carregar listas de espera");
@@ -73,7 +74,7 @@ export default function WaitlistsPage() {
             <thead><tr className="border-b border-border bg-card"><th className="px-4 py-3 text-left font-medium text-muted-foreground">Lista</th><th className="px-4 py-3 text-left font-medium text-muted-foreground">Produto</th><th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th><th className="px-4 py-3 text-left font-medium text-muted-foreground">Interessados</th><th className="px-4 py-3 text-left font-medium text-muted-foreground">Criada em</th><th className="px-4 py-3 text-right font-medium text-muted-foreground">Ações</th></tr></thead>
             <tbody>{filtered.map((waitlist) => <tr key={waitlist.id} className="border-b border-border last:border-0 hover:bg-card/50">
               <td className="px-4 py-3 font-medium">{waitlist.name}</td>
-              <td className="px-4 py-3 text-muted-foreground">{waitlist.courses?.title ?? "—"}</td>
+              <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-muted-foreground">{waitlist.courses?.title ?? "—"}</span>{waitlist.courses && <Badge variant="outline" className="text-[10px]">{PRODUCT_TYPES[waitlist.courses.product_type].label}</Badge>}</div></td>
               <td className="px-4 py-3"><Badge variant={waitlist.status === "active" ? "default" : "secondary"}>{waitlist.status === "active" ? "Ativa" : "Encerrada"}</Badge></td>
               <td className="px-4 py-3 font-mono">{counts[waitlist.id] ?? 0}</td>
               <td className="px-4 py-3 text-muted-foreground">{new Date(waitlist.created_at).toLocaleDateString("pt-BR")}</td>

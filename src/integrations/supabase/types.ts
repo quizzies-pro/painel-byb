@@ -124,6 +124,7 @@ export type Database = {
           language: string
           login_cover_url: string | null
           logo_url: string | null
+          product_type: Database["public"]["Enums"]["product_type"]
           seo_description: string | null
           seo_title: string | null
           short_description: string | null
@@ -156,6 +157,7 @@ export type Database = {
           language?: string
           login_cover_url?: string | null
           logo_url?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"]
           seo_description?: string | null
           seo_title?: string | null
           short_description?: string | null
@@ -188,6 +190,7 @@ export type Database = {
           language?: string
           login_cover_url?: string | null
           logo_url?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"]
           seo_description?: string | null
           seo_title?: string | null
           short_description?: string | null
@@ -1426,6 +1429,7 @@ export type Database = {
         | "chargeback"
         | "expired"
         | "failed"
+      product_type: "course" | "pack"
       release_type: "immediate" | "manual" | "drip"
       student_status: "active" | "blocked" | "pending" | "canceled"
       thread_status: "unresolved" | "resolved" | "awaiting_response"
@@ -1581,6 +1585,7 @@ export const Constants = {
         "expired",
         "failed",
       ],
+      product_type: ["course", "pack"],
       release_type: ["immediate", "manual", "drip"],
       student_status: ["active", "blocked", "pending", "canceled"],
       thread_status: ["unresolved", "resolved", "awaiting_response"],

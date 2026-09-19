@@ -33,6 +33,7 @@ export default function LessonForm() {
   const [moduleName, setModuleName] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isCourseProduct, setIsCourseProduct] = useState(true);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadingCover, setUploadingCover] = useState<string | null>(null);
@@ -79,7 +80,14 @@ export default function LessonForm() {
 
   useEffect(() => {
     if (courseId) {
-      supabase.from("courses").select("title").eq("id", courseId).single().then(({ data }) => setCourseName(data?.title || ""));
+      supabase.from("courses").select("title, product_type").eq("id", courseId).single().then(({ data }) => {
+        setCourseName(data?.title || "");
+        if (data?.product_type !== "course") {
+          setIsCourseProduct(false);
+          toast.error("Aulas estão disponíveis somente para Cursos");
+          navigate(`/admin/courses/${courseId}`);
+        }
+      });
     }
     if (moduleId) {
       supabase.from("course_modules").select("title").eq("id", moduleId).single().then(({ data }) => setModuleName(data?.title || ""));
@@ -105,14 +113,16 @@ export default function LessonForm() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!courseId || !moduleId || !isCourseProduct) { toast.error("Este produto não aceita aulas"); return; }
     if (!form.title || !form.slug) {
       toast.error("Título e slug são obrigatórios");
       return;
     }
     setSaving(true);
-    const payload = { ...form, course_id: courseId!, module_id: moduleId! };
+    const payload = { ...form, course_id: courseId, module_id: moduleId };
     if (isEdit) {
-      const { error } = await supabase.from("lessons").update(payload).eq("id", id!);
+      if (!id) { setSaving(false); return; }
+      const { error } = await supabase.from("lessons").update(payload).eq("id", id);
       if (error) toast.error("Erro: " + error.message);
       else { toast.success("Aula atualizada"); navigate(backUrl); }
     } else {
@@ -148,8 +158,8 @@ export default function LessonForm() {
 
     const { error: insertError } = await supabase.from("lesson_materials").insert({
       lesson_id: id,
-      course_id: courseId!,
-      module_id: moduleId!,
+      course_id: courseId ?? "",
+      module_id: moduleId ?? "",
       title: file.name.replace(".pdf", ""),
       file_url: urlData.publicUrl,
       material_type: "pdf" as const,
