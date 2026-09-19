@@ -5,6 +5,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
@@ -77,11 +78,12 @@ export default function CoursesPage() {
     }
   };
 
-  const filtered = courses.filter(
-    (c) => (typeFilter === "all" || c.product_type === typeFilter) &&
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      (typeFilter === "all" || c.product_type === typeFilter) && Boolean(c.category?.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = courses.filter((course) => {
+    const matchesType = typeFilter === "all" || course.product_type === typeFilter;
+    const term = search.toLowerCase();
+    const matchesSearch = course.title.toLowerCase().includes(term) || Boolean(course.category?.toLowerCase().includes(term));
+    return matchesType && matchesSearch;
+  });
 
   return (
     <div className="space-y-6">

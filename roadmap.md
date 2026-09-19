@@ -19,3 +19,13 @@
 - [ ] Conectar os botões de espera no projeto Dive Club — bloqueado por edição entre projetos
 
 - [x] Documentar o contrato seguro da lista de espera para integração na Members
+- [x] Criar identificação permanente de produtos Curso e Pack
+- [x] Proteger o tipo do produto contra alteração após a criação
+- [x] Preservar módulos e aulas exclusivamente para Cursos
+- [x] Permitir preparação segura de Packs apenas como rascunho
+- [x] Adaptar produtos, matrículas e listas de espera no Hub para Curso e Pack
+- [x] Documentar o contrato de Views para a Members
+- [ ] Definir o modelo de conteúdo do Pack a partir do desenho aprovado
+- [ ] Criar o gerenciador de conteúdo de Packs no Hub — depende do modelo de conteúdo
+- [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
+- [ ] Liberar vitrine e venda de Packs após validação da entrega

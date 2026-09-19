@@ -37,7 +37,6 @@ export default function EnrollmentForm() {
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [accessMode, setAccessMode] = useState<"full" | "custom">("full");
-  const selectedProduct = courses.find((course) => course.id === form.course_id);
 
   const [form, setForm] = useState<TablesInsert<"enrollments">>({
     student_id: "",
@@ -49,6 +48,7 @@ export default function EnrollmentForm() {
     created_by: undefined,
     notes: "",
   });
+  const selectedProduct = courses.find((course) => course.id === form.course_id);
 
   useEffect(() => {
     Promise.all([

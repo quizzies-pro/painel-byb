@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PRODUCT_TYPES } from "@/lib/product-types";
 
-type Enrollment = Tables<"enrollments"> & { students?: { name: string; email: string } | null; courses?: { title: string } | null };
+type Enrollment = Tables<"enrollments"> & { students?: { name: string; email: string } | null; courses?: { title: string; product_type: Tables<"courses">["product_type"] } | null };
 
 const statusColors: Record<string, string> = {
   active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -30,7 +31,7 @@ export default function EnrollmentsPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    let query = supabase.from("enrollments").select("*, students(name, email), courses(title)").order("created_at", { ascending: false });
+    let query = supabase.from("enrollments").select("*, students(name, email), courses(title, product_type)").order("created_at", { ascending: false });
     if (statusFilter !== "all") query = query.eq("status", statusFilter as Enrollment["status"]);
     const { data, error } = await query;
     if (error) toast.error("Erro ao carregar matrículas");
@@ -108,7 +109,7 @@ export default function EnrollmentsPage() {
                     <div className="font-medium text-foreground">{e.students?.name || "—"}</div>
                     <div className="text-xs text-muted-foreground font-mono">{e.students?.email || "—"}</div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.courses?.title || "—"}</td>
+                  <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-muted-foreground">{e.courses?.title || "—"}</span>{e.courses && <Badge variant="outline" className="text-[10px]">{PRODUCT_TYPES[e.courses.product_type].label}</Badge>}</div></td>
                   <td className="px-4 py-3"><Badge variant="outline" className="font-mono text-xs">{e.origin}</Badge></td>
                   <td className="px-4 py-3"><Badge variant="outline" className={statusColors[e.status] || ""}>{statusLabels[e.status] || e.status}</Badge></td>
                   <td className="px-4 py-3 text-muted-foreground">{formatDate(e.expires_at)}</td>
