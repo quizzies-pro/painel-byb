@@ -4,7 +4,6 @@ import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +25,6 @@ type Course = Pick<Tables<"courses">, "id" | "title" | "available_for_sale">;
 export default function WaitlistForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(Boolean(id));
@@ -51,7 +49,7 @@ export default function WaitlistForm() {
     const payload = { ...parsed.data, description: parsed.data.description || null };
     const result = id
       ? await supabase.from("product_waitlists").update(payload).eq("id", id)
-      : await supabase.from("product_waitlists").insert({ ...payload, created_by: user?.id ?? null });
+      : await supabase.from("product_waitlists").insert(payload);
     setSaving(false);
     if (result.error) { toast.error(result.error.message); return; }
     toast.success(id ? "Lista atualizada" : "Lista criada");
