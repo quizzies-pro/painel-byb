@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Edit, Trash2, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
+import { PACK_FORMATS } from "@/lib/pack-formats";
 
 type Course = Tables<"courses">;
 type CategoryLink = Tables<"storefront_category_courses"> & {
@@ -216,7 +217,7 @@ export default function CoursesPage() {
                   <div className="flex flex-wrap gap-1.5">
                     <Badge variant="outline" className={`text-[11px] ${statusColors[course.status] || ""}`}>{statusLabel[course.status] || course.status}</Badge>
                     {visibilityLabels(course).map((label) => <Badge key={label} variant="secondary" className="text-[10px] font-normal">{label}</Badge>)}
-                    {course.product_type === "pack" && <Badge variant="secondary" className="text-[10px] font-normal">Entrega pendente</Badge>}
+                    {course.product_type === "pack" && course.pack_format && <Badge variant="secondary" className="text-[10px] font-normal">{PACK_FORMATS[course.pack_format].label}</Badge>}
                   </div>
                   <Button
                     variant="ghost"

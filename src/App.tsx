@@ -25,6 +25,7 @@ import MessagesPage from "./pages/admin/MessagesPage";
 import WaitlistsPage from "./pages/admin/WaitlistsPage";
 import WaitlistForm from "./pages/admin/WaitlistForm";
 import WaitlistDetail from "./pages/admin/WaitlistDetail";
+import PackContentPage from "./pages/admin/PackContentPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/admin/courses" element={<AdminLayout><CoursesPage /></AdminLayout>} />
             <Route path="/admin/courses/new" element={<AdminLayout><CourseForm /></AdminLayout>} />
             <Route path="/admin/courses/:id" element={<AdminLayout><CourseForm /></AdminLayout>} />
+            <Route path="/admin/courses/:courseId/pack-content" element={<AdminLayout><PackContentPage /></AdminLayout>} />
             {/* Modules nested under courses */}
             <Route path="/admin/courses/:courseId/modules/new" element={<AdminLayout><ModuleForm /></AdminLayout>} />
             <Route path="/admin/courses/:courseId/modules/:id" element={<AdminLayout><ModuleForm /></AdminLayout>} />
