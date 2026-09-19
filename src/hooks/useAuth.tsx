@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   role: string | null;
   avatarUrl: string | null;
+  permissions: Record<string, unknown> | null;
   refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -24,11 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<Record<string, unknown> | null>(null);
 
   const checkAdminRole = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
-      .select("role, avatar_url")
+      .select("role, avatar_url, permissions")
       .eq("user_id", userId)
       .maybeSingle();
     
@@ -36,10 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(true);
       setRole(data.role);
       setAvatarUrl((data as any).avatar_url ?? null);
+      setPermissions((data.permissions as Record<string, unknown>) ?? null);
     } else {
       setIsAdmin(false);
       setRole(null);
       setAvatarUrl(null);
+      setPermissions(null);
     }
   };
 
@@ -60,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           setRole(null);
           setAvatarUrl(null);
+          setPermissions(null);
         }
         setLoading(false);
       }
@@ -94,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, role, avatarUrl, refreshProfile, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, role, avatarUrl, permissions, refreshProfile, signIn, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

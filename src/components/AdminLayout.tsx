@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
-export function AdminLayout({ children }: { children: ReactNode }) {
-  const { user, isAdmin, loading } = useAuth();
+export function AdminLayout({ children, requiredPermission, requireManage = false }: { children: ReactNode; requiredPermission?: string; requireManage?: boolean }) {
+  const { user, isAdmin, loading, permissions } = useAuth();
 
   if (loading) {
     return (
@@ -16,6 +16,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   if (!user || !isAdmin) return <Navigate to="/login" replace />;
+
+  if (requiredPermission) {
+    const permission = permissions?.[requiredPermission] as { view?: boolean; manage?: boolean } | undefined;
+    const allowed = requireManage ? permission?.manage : permission?.view;
+    if (!allowed) return <Navigate to="/admin" replace />;
+  }
 
   return (
     <SidebarProvider>

@@ -71,6 +71,7 @@ export default function ActivityLogsPage() {
             <SelectItem value="student">Alunos</SelectItem>
             <SelectItem value="payment">Pagamentos</SelectItem>
             <SelectItem value="enrollment">Matrículas</SelectItem>
+            <SelectItem value="product_waitlist">Listas de espera</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings, LogOut, ChevronsUpDown, MessageSquare } from "lucide-react";
+import { BookOpen, LayoutDashboard, Users, CreditCard, GraduationCap, Activity, Webhook, Settings, LogOut, ChevronsUpDown, MessageSquare, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +34,7 @@ const managementItems = [
   { title: "Mensagens", url: "/admin/messages", icon: MessageSquare },
   { title: "Pagamentos", url: "/admin/payments", icon: CreditCard },
   { title: "Matrículas", url: "/admin/enrollments", icon: GraduationCap },
+  { title: "Listas de espera", url: "/admin/waitlists", icon: ClipboardList },
 ];
 
 const systemItems = [
@@ -113,7 +114,7 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { user, role, avatarUrl, signOut } = useAuth();
+  const { user, role, avatarUrl, permissions, signOut } = useAuth();
   const unreadCount = useUnreadMessages();
 
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Usuário";
@@ -123,6 +124,8 @@ export function AdminSidebar() {
     path === "/admin"
       ? location.pathname === "/admin"
       : location.pathname.startsWith(path);
+
+  const visibleManagementItems = managementItems.filter((item) => item.title !== "Listas de espera" || Boolean((permissions?.waitlists as { view?: boolean } | undefined)?.view));
 
   const renderGroup = (label: string, items: typeof contentItems) => (
     <SidebarGroup key={label}>
@@ -175,7 +178,7 @@ export function AdminSidebar() {
       <SidebarContent className="bg-sidebar pt-4">
         <LogoSection collapsed={collapsed} />
         {renderGroup("Conteúdo", contentItems)}
-        {renderGroup("Gestão", managementItems)}
+        {renderGroup("Gestão", visibleManagementItems)}
         {renderGroup("Sistema", systemItems)}
       </SidebarContent>
 
