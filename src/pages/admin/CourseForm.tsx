@@ -461,7 +461,7 @@ export default function CourseForm() {
         </TabsContent>
 
 
-        {isEdit && (
+        {id && (
           <TabsContent value="modules" className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[13px] text-muted-foreground">Arraste para reordenar os módulos</p>
@@ -502,7 +502,7 @@ export default function CourseForm() {
                     <SortableContext items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
                       <tbody>
                         {modules.map((m) => (
-                          <SortableModuleRow key={m.id} module={m} courseId={id!} onDelete={handleDeleteModule} />
+                          <SortableModuleRow key={m.id} module={m} courseId={id} onDelete={handleDeleteModule} />
                         ))}
                       </tbody>
                     </SortableContext>
