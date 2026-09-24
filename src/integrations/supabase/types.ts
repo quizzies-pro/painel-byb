@@ -620,6 +620,7 @@ export type Database = {
           id: string
           is_visible: boolean
           sort_order: number
+          tags: string[]
           title: string
           updated_at: string
         }
@@ -631,6 +632,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           sort_order?: number
+          tags?: string[]
           title: string
           updated_at?: string
         }
@@ -642,6 +644,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           sort_order?: number
+          tags?: string[]
           title?: string
           updated_at?: string
         }
