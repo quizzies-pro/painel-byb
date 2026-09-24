@@ -18,10 +18,10 @@ export const PRODUCT_TYPES: Record<ProductType, {
   },
   pack: {
     label: "Pack",
-    description: "Coleção de recursos e arquivos. A estrutura de entrega será configurada na próxima etapa.",
+    description: "Biblioteca de recursos organizada em coleções, itens e vídeos explicativos.",
     supportsLearningContent: false,
     supportsPackContent: true,
-    deliveryReady: false,
+    deliveryReady: true,
   },
 };
 

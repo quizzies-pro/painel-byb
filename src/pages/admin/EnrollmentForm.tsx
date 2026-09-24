@@ -275,7 +275,7 @@ export default function EnrollmentForm() {
         </div>
 
         {/* Granular access control */}
-        {selectedProduct?.product_type === "pack" && <div className="rounded-lg border border-border bg-muted/30 p-4"><p className="text-sm font-medium">Acesso integral ao Pack</p><p className="mt-1 text-xs text-muted-foreground">A organização interna do Pack será definida na próxima etapa.</p></div>}
+        {selectedProduct?.product_type === "pack" && <div className="rounded-lg border border-border bg-muted/30 p-4"><p className="text-sm font-medium">Acesso integral ao Pack</p><p className="mt-1 text-xs text-muted-foreground">O aluno terá acesso a todas as coleções, itens e vídeos publicados deste Pack.</p></div>}
 
         {selectedProduct?.product_type === "course" && modulesWithLessons.length > 0 && (
           <div className="space-y-3">
