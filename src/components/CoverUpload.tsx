@@ -20,7 +20,7 @@ export default function CoverUpload({
   value,
   onChange,
   storagePath,
-  bucket = "materials",
+  bucket = "course-covers",
   label = "Capa",
   hint = "A imagem deve estar no formato JPG, PNG ou GIF. Dimensões ideais: 500×400 pixels. Tamanho máximo: 10 MB.",
   aspectRatio = "aspect-[5/4]",
