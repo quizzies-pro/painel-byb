@@ -201,7 +201,14 @@ export default function CoursesPage() {
                       src={course.cover_url}
                       alt={course.title}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                        event.currentTarget.nextElementSibling?.classList.replace("hidden", "flex");
+                      }}
                     />
+                    <div className="hidden w-full h-full items-center justify-center text-muted-foreground/40">
+                      <LayoutGrid className="h-10 w-10" />
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
                       <LayoutGrid className="h-10 w-10" />
