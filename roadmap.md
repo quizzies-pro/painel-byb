@@ -33,5 +33,6 @@
 - [x] Impedir que itens de coleções ocultas sejam lidos por alunos
 - [x] Preservar a ordenação ao importar novos arquivos do Google Drive
 - [x] Documentar o roteiro obrigatório de implementação e validação na Members
+- [x] Garantir capas públicas dos Packs e sincronização resiliente do Google Drive
 - [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
 - [ ] Liberar vitrine e venda de Packs após validação da entrega
