@@ -16,6 +16,33 @@ type CategoryLink = Tables<"storefront_category_courses"> & {
   storefront_categories: Pick<Tables<"storefront_categories">, "name"> | null;
 };
 
+const LEGACY_MATERIALS_PATH = "/storage/v1/object/public/materials/";
+
+const migrateLegacyCover = async (course: Course): Promise<Course> => {
+  if (!course.cover_url?.includes(LEGACY_MATERIALS_PATH)) return course;
+
+  const sourcePath = decodeURIComponent(course.cover_url.split(LEGACY_MATERIALS_PATH)[1] ?? "");
+  if (!sourcePath) return course;
+
+  const { data: image, error: downloadError } = await supabase.storage.from("materials").download(sourcePath);
+  if (downloadError || !image) return course;
+
+  const extension = sourcePath.split(".").pop() ?? "jpg";
+  const destinationPath = `covers/courses/${course.id}/migrated-cover.${extension}`;
+  const { error: uploadError } = await supabase.storage
+    .from("course-covers")
+    .upload(destinationPath, image, { contentType: image.type, upsert: true });
+  if (uploadError) return course;
+
+  const { data: publicCover } = supabase.storage.from("course-covers").getPublicUrl(destinationPath);
+  const { error: updateError } = await supabase
+    .from("courses")
+    .update({ cover_url: publicCover.publicUrl })
+    .eq("id", course.id);
+
+  return updateError ? course : { ...course, cover_url: publicCover.publicUrl };
+};
+
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   published: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -55,7 +82,9 @@ export default function CoursesPage() {
     ]);
     if (coursesResponse.error || linksResponse.error) toast.error("Erro ao carregar produtos");
     else {
-      setCourses(coursesResponse.data ?? []);
+      const loadedCourses = coursesResponse.data ?? [];
+      const normalizedCourses = await Promise.all(loadedCourses.map(migrateLegacyCover));
+      setCourses(normalizedCourses);
       const grouped = ((linksResponse.data ?? []) as CategoryLink[]).reduce<Record<string, string[]>>((result, link) => {
         const name = link.storefront_categories?.name;
         if (!name) return result;
