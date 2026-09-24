@@ -118,6 +118,17 @@ Deno.serve(async (req) => {
       if (course?.pack_format !== "drive") return json({ error: "Este produto não é um Pack do Google Drive" }, 400);
       if (!course.drive_root_folder_id) return json({ error: "Escolha primeiro a pasta principal deste Pack" }, 400);
 
+      const { data: lastItem, error: orderError } = await admin
+        .from("pack_items")
+        .select("sort_order")
+        .eq("course_id", courseId)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (orderError) throw orderError;
+      const firstSortOrder = (lastItem?.sort_order ?? -1) + 1;
+      let imported = 0;
+
       for (let index = 0; index < fileIds.length; index += 1) {
         const fields = encodeURIComponent("id,name,mimeType,size,modifiedTime,thumbnailLink,iconLink,trashed,parents");
         const response = await driveRequest(`/files/${encodeURIComponent(fileIds[index])}?fields=${fields}`);
@@ -131,7 +142,7 @@ Deno.serve(async (req) => {
           format: "drive",
           title: file.name,
           status: "draft",
-          sort_order: index,
+          sort_order: firstSortOrder + imported,
           drive_file_id: file.id,
           drive_file_name: file.name,
           drive_mime_type: file.mimeType,
@@ -142,8 +153,9 @@ Deno.serve(async (req) => {
           drive_available: true,
         }, { onConflict: "course_id,drive_file_id" });
         if (error) throw error;
+        imported += 1;
       }
-      return json({ success: true, imported: fileIds.length });
+      return json({ success: true, imported });
     }
 
     if (action === "sync") {

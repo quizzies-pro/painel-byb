@@ -32,7 +32,7 @@ Todo Pack possui um `pack_format` permanente:
 
 Cada Pack Drive possui uma pasta principal exclusiva (`drive_root_folder_id`). A seleção percorre somente essa pasta e suas subpastas, incluindo paginação acima de 1.000 arquivos. A pasta não pode ser trocada enquanto houver arquivos importados.
 
-As coleções vêm de `pack_collections`, filtradas por `is_visible` e ordenadas por `sort_order`. Capas e etiquetas podem ser usadas na navegação e nos filtros. Os conteúdos vêm de `pack_items`, filtrados por `status = published` e também ordenados por `sort_order`. A leitura por aluno é permitida apenas com matrícula ativa e não expirada.
+As coleções vêm de `pack_collections`, filtradas por `is_visible` e ordenadas por `sort_order`. Capas e etiquetas podem ser usadas na navegação e nos filtros. Os conteúdos vêm de `pack_items`, filtrados por `status = published` e também ordenados por `sort_order`. Itens vinculados a uma coleção oculta não podem ser exibidos; itens sem coleção continuam válidos. A leitura por aluno é permitida apenas com matrícula ativa e não expirada.
 
 ## Vídeos explicativos dos Packs
 
@@ -53,6 +53,23 @@ Enquanto a View correspondente ainda não estiver ativa na Members:
 - Packs não podem ser colocados à venda;
 - Packs não aceitam módulos ou aulas;
 - o Hub pode preparar seus dados gerais, categorias e lista de espera.
+
+## Implementação obrigatória na Members
+
+1. No carregamento do produto, ler `product_type` e direcionar `course` para a experiência atual e `pack` para a experiência de Pack.
+2. Para Packs, ler `pack_format` e renderizar somente a apresentação correspondente: Canva, Textual ou Google Drive.
+3. Confirmar antes da abertura que existe matrícula `active` e que `expires_at` está vazio ou no futuro. Sem acesso, apresentar compra ou lista de espera conforme os dados do produto.
+4. Consultar `pack_collections`, `pack_items` e `pack_videos` diretamente com a sessão do aluno; as políticas do banco filtram conteúdos ocultos, não publicados e matrículas inválidas.
+5. Ordenar coleções, itens e vídeos por `sort_order` e fornecer estados vazios e de conteúdo indisponível.
+6. No Canva, abrir `canva_template_url` em nova aba pelo botão **Usar no Canva**.
+7. No Textual, exibir `textual_content`, `textual_example` quando preenchido e ações de copiar.
+8. No Drive, nunca usar ou exibir um endereço privado. Chamar `pack-drive` com `{ action: "download", item_id }` usando a sessão autenticada.
+9. Reproduzir somente vídeos publicados e converter links HTTPS do YouTube e Vimeo para seus endereços oficiais de incorporação.
+10. Validar em celular e computador os estados: matrícula ativa, expirada, cancelada, aluno sem matrícula, item oculto, coleção oculta, arquivo removido e formato desconhecido.
+
+## Critério para liberar venda
+
+Somente remover a trava comercial depois que as três apresentações acima estiverem publicadas e os testes de acesso forem concluídos na Members. Nessa etapa, uma nova migração deverá permitir que Packs sejam publicados, exibidos na vitrine e vendidos; não remova a proteção antes disso.
 
 ## Expansão futura
 
