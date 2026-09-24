@@ -19,7 +19,7 @@ import TagInput from "@/components/TagInput";
 type Collection = Tables<"pack_collections">;
 type PackItem = Tables<"pack_items">;
 type PackVideo = Tables<"pack_videos">;
-type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format">;
+type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format" | "cover_url" | "drive_root_folder_id" | "drive_root_folder_name">;
 type DriveFile = { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; thumbnailLink?: string; iconLink?: string };
 
 const EMPTY_COLLECTION = { title: "", description: "", cover_url: "", tags: [] as string[], is_visible: true };
@@ -54,11 +54,14 @@ export default function PackContentPage() {
   const [itemOpen, setItemOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [driveOpen, setDriveOpen] = useState(false);
+  const [folderOpen, setFolderOpen] = useState(false);
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
   const [driveFolderId, setDriveFolderId] = useState("root");
   const [selectedDriveFiles, setSelectedDriveFiles] = useState<Set<string>>(new Set());
   const [driveCollectionId, setDriveCollectionId] = useState("none");
+  const [folderCandidate, setFolderCandidate] = useState({ id: "root", name: "Meu Drive" });
+  const [folderHistory, setFolderHistory] = useState<Array<{ id: string; name: string }>>([]);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [editingItem, setEditingItem] = useState<PackItem | null>(null);
   const [editingVideo, setEditingVideo] = useState<PackVideo | null>(null);
@@ -75,7 +78,7 @@ export default function PackContentPage() {
     if (!courseId) return;
     setLoading(true);
     const [productResult, collectionsResult, itemsResult, videosResult] = await Promise.all([
-      supabase.from("courses").select("id, title, product_type, pack_format").eq("id", courseId).single(),
+      supabase.from("courses").select("id, title, product_type, pack_format, cover_url, drive_root_folder_id, drive_root_folder_name").eq("id", courseId).single(),
       supabase.from("pack_collections").select("*").eq("course_id", courseId).order("sort_order"),
       supabase.from("pack_items").select("*").eq("course_id", courseId).order("sort_order"),
       supabase.from("pack_videos").select("*").eq("course_id", courseId).order("sort_order"),
@@ -270,16 +273,47 @@ export default function PackContentPage() {
     return data;
   };
 
-  const loadDriveFolder = async (folderId = "root") => {
+  const loadDriveFolder = async (folderId = product?.drive_root_folder_id ?? "") => {
+    if (!product?.drive_root_folder_id) return toast.error("Escolha primeiro a pasta principal deste Pack");
     setDriveLoading(true);
     try {
-      const data = await invokeDrive({ action: "list", folder_id: folderId });
+      const data = await invokeDrive({ action: "list", course_id: courseId, folder_id: folderId });
       setDriveFiles(data.files ?? []);
       setDriveFolderId(folderId);
       setSelectedDriveFiles(new Set());
       setDriveOpen(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível abrir o Google Drive");
+    } finally {
+      setDriveLoading(false);
+    }
+  };
+
+  const browseDriveFolders = async (folder = { id: "root", name: "Meu Drive" }, history: Array<{ id: string; name: string }> = []) => {
+    setDriveLoading(true);
+    try {
+      const data = await invokeDrive({ action: "browse-folders", folder_id: folder.id });
+      setDriveFiles(data.files ?? []);
+      setFolderCandidate(folder);
+      setFolderHistory(history);
+      setFolderOpen(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir as pastas do Google Drive");
+    } finally {
+      setDriveLoading(false);
+    }
+  };
+
+  const selectDriveRoot = async () => {
+    if (!courseId || folderCandidate.id === "root") return toast.error("Abra e selecione uma pasta exclusiva para este Pack");
+    setDriveLoading(true);
+    try {
+      await invokeDrive({ action: "set-root", course_id: courseId, folder_id: folderCandidate.id });
+      toast.success("Pasta principal configurada");
+      setFolderOpen(false);
+      loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível configurar a pasta");
     } finally {
       setDriveLoading(false);
     }
@@ -319,7 +353,7 @@ export default function PackContentPage() {
   const publishedItems = items.filter((item) => item.status === "published");
   const incompleteItems = items.filter((item) => !item.cover_url || (format === "drive" && !item.drive_available));
   const readiness = [
-    { label: "Capa do produto", ready: true },
+    { label: "Capa do produto", ready: Boolean(product.cover_url) },
     { label: "Ao menos um conteúdo publicado", ready: publishedItems.length > 0 },
     { label: "Capas e arquivos disponíveis", ready: incompleteItems.length === 0 },
     { label: "Coleções visíveis organizadas", ready: collections.length === 0 || collections.some((collection) => collection.is_visible) },
@@ -376,7 +410,7 @@ export default function PackContentPage() {
         {readiness.map((check) => <div key={check.label} className="flex items-center gap-2 text-sm">{check.ready ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />}<span className={check.ready ? "text-foreground" : "text-muted-foreground"}>{check.label}</span></div>)}
       </section>
 
-      {format === "drive" && <div className="flex items-center justify-between gap-5 rounded-lg border border-border bg-muted/20 p-5"><div><p className="text-sm font-medium">Biblioteca do Google Drive</p><p className="mt-1 text-xs text-muted-foreground">Selecione arquivos da conta da empresa e sincronize alterações quando precisar.</p></div><div className="flex shrink-0 gap-2"><Button variant="outline" size="sm" className="gap-2" onClick={syncDrive} disabled={driveLoading || items.length === 0}><RefreshCw className={`h-3.5 w-3.5 ${driveLoading ? "animate-spin" : ""}`} />Sincronizar agora</Button><Button size="sm" className="gap-2" onClick={() => loadDriveFolder()} disabled={driveLoading}><HardDrive className="h-3.5 w-3.5" />Selecionar arquivos</Button></div></div>}
+      {format === "drive" && <div className="flex items-center justify-between gap-5 rounded-lg border border-border bg-muted/20 p-5"><div><p className="text-sm font-medium">Biblioteca do Google Drive</p><p className="mt-1 text-xs text-muted-foreground">{product.drive_root_folder_name ? `Pasta principal: ${product.drive_root_folder_name}` : "Escolha uma pasta exclusiva antes de importar os arquivos."}</p></div><div className="flex shrink-0 gap-2"><Button variant="outline" size="sm" onClick={() => browseDriveFolders()} disabled={driveLoading}>Configurar pasta</Button><Button variant="outline" size="sm" className="gap-2" onClick={syncDrive} disabled={driveLoading || items.length === 0}><RefreshCw className={`h-3.5 w-3.5 ${driveLoading ? "animate-spin" : ""}`} />Sincronizar agora</Button><Button size="sm" className="gap-2" onClick={() => loadDriveFolder()} disabled={driveLoading || !product.drive_root_folder_id}><HardDrive className="h-3.5 w-3.5" />Selecionar arquivos</Button></div></div>}
 
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-3"><div><h2 className="font-medium">Vídeos explicativos</h2><p className="mt-1 text-xs text-muted-foreground">Orientações sobre como utilizar este Pack.</p></div><Button variant="outline" size="sm" className="gap-2" onClick={() => openVideo()}><Plus className="h-3.5 w-3.5" />Adicionar vídeo</Button></div>
@@ -404,6 +438,8 @@ export default function PackContentPage() {
         const isFolder = file.mimeType === "application/vnd.google-apps.folder";
         return <div key={file.id} className="flex items-center gap-3 p-3">{isFolder ? <Folder className="h-5 w-5 text-muted-foreground" /> : <Checkbox checked={selectedDriveFiles.has(file.id)} onCheckedChange={(checked) => setSelectedDriveFiles((current) => { const next = new Set(current); if (checked) next.add(file.id); else next.delete(file.id); return next; })} />}<div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{file.name}</p><p className="truncate text-xs text-muted-foreground">{isFolder ? "Pasta" : file.mimeType}</p></div>{isFolder && <Button variant="ghost" size="sm" onClick={() => loadDriveFolder(file.id)}>Abrir</Button>}</div>;
       })}</div></div><DialogFooter><Button variant="outline" onClick={() => setDriveOpen(false)}>Cancelar</Button><Button onClick={importDriveFiles} disabled={driveLoading || selectedDriveFiles.size === 0}>{driveLoading ? "Importando..." : `Importar ${selectedDriveFiles.size || ""}`}</Button></DialogFooter></DialogContent></Dialog>
+
+      <Dialog open={folderOpen} onOpenChange={setFolderOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Escolher pasta principal</DialogTitle></DialogHeader><div className="space-y-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">{folderCandidate.name}</p>{folderHistory.length > 0 && <Button variant="outline" size="sm" onClick={() => { const previous = folderHistory[folderHistory.length - 1]; if (previous) browseDriveFolders(previous, folderHistory.slice(0, -1)); }}>Voltar</Button>}</div><div className="max-h-[50vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">{driveFiles.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma subpasta encontrada</p> : driveFiles.map((folder) => <div key={folder.id} className="flex items-center gap-3 p-3"><Folder className="h-5 w-5 text-muted-foreground" /><p className="min-w-0 flex-1 truncate text-sm font-medium">{folder.name}</p><Button variant="ghost" size="sm" onClick={() => browseDriveFolders({ id: folder.id, name: folder.name }, [...folderHistory, folderCandidate])}>Abrir</Button></div>)}</div><p className="text-xs text-muted-foreground">Somente esta pasta e suas subpastas poderão ser usadas neste Pack.</p></div><DialogFooter><Button variant="outline" onClick={() => setFolderOpen(false)}>Cancelar</Button><Button onClick={selectDriveRoot} disabled={driveLoading || folderCandidate.id === "root"}>Usar esta pasta</Button></DialogFooter></DialogContent></Dialog>
     </div>
   );
 }
