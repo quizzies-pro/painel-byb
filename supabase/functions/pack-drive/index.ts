@@ -98,6 +98,11 @@ Deno.serve(async (req) => {
       if (folder.trashed || folder.mimeType !== "application/vnd.google-apps.folder") return json({ error: "A pasta selecionada não está disponível" }, 400);
       const { data: course } = await admin.from("courses").select("pack_format").eq("id", courseId).single();
       if (course?.pack_format !== "drive") return json({ error: "Este produto não é um Pack do Google Drive" }, 400);
+      const { count: importedCount } = await admin.from("pack_items").select("id", { count: "exact", head: true }).eq("course_id", courseId).eq("format", "drive");
+      const { data: currentCourse } = await admin.from("courses").select("drive_root_folder_id").eq("id", courseId).single();
+      if ((importedCount ?? 0) > 0 && currentCourse?.drive_root_folder_id && currentCourse.drive_root_folder_id !== folder.id) {
+        return json({ error: "Remova os arquivos importados antes de trocar a pasta principal" }, 409);
+      }
       const { error } = await admin.from("courses").update({ drive_root_folder_id: folder.id, drive_root_folder_name: folder.name }).eq("id", courseId);
       if (error) throw error;
       return json({ success: true, folder: { id: folder.id, name: folder.name } });

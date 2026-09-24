@@ -30,6 +30,8 @@ Todo Pack possui um `pack_format` permanente:
 - `textual`: exibir coleções e textos publicados, com leitura e cópia de `textual_content`;
 - `drive`: exibir coleções e arquivos publicados. Prévia e download devem chamar a função protegida `pack-drive`, nunca expor links privados do Drive.
 
+Cada Pack Drive possui uma pasta principal exclusiva (`drive_root_folder_id`). A seleção percorre somente essa pasta e suas subpastas, incluindo paginação acima de 1.000 arquivos. A pasta não pode ser trocada enquanto houver arquivos importados.
+
 As coleções vêm de `pack_collections`, filtradas por `is_visible` e ordenadas por `sort_order`. Capas e etiquetas podem ser usadas na navegação e nos filtros. Os conteúdos vêm de `pack_items`, filtrados por `status = published` e também ordenados por `sort_order`. A leitura por aluno é permitida apenas com matrícula ativa e não expirada.
 
 ## Vídeos explicativos dos Packs
