@@ -109,14 +109,17 @@ Deno.serve(async (req) => {
       const collectionId = typeof body.collection_id === "string" ? body.collection_id : null;
       const fileIds = Array.isArray(body.file_ids) ? body.file_ids.filter((id: unknown) => typeof id === "string") : [];
       if (!courseId || fileIds.length === 0) return json({ error: "Selecione pelo menos um arquivo" }, 400);
-      const { data: course } = await admin.from("courses").select("pack_format").eq("id", courseId).single();
+      const { data: course } = await admin.from("courses").select("pack_format, drive_root_folder_id").eq("id", courseId).single();
       if (course?.pack_format !== "drive") return json({ error: "Este produto não é um Pack do Google Drive" }, 400);
+      if (!course.drive_root_folder_id) return json({ error: "Escolha primeiro a pasta principal deste Pack" }, 400);
 
       for (let index = 0; index < fileIds.length; index += 1) {
-        const fields = encodeURIComponent("id,name,mimeType,size,modifiedTime,thumbnailLink,iconLink,trashed");
+        const fields = encodeURIComponent("id,name,mimeType,size,modifiedTime,thumbnailLink,iconLink,trashed,parents");
         const response = await driveRequest(`/files/${encodeURIComponent(fileIds[index])}?fields=${fields}`);
         const file = await response.json();
         if (file.trashed || file.mimeType === "application/vnd.google-apps.folder") continue;
+        const parentId = Array.isArray(file.parents) ? file.parents[0] : "";
+        if (!parentId || !(await isInsideFolder(parentId, course.drive_root_folder_id))) continue;
         const { error } = await admin.from("pack_items").upsert({
           course_id: courseId,
           collection_id: collectionId,
