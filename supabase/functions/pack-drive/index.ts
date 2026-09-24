@@ -3,6 +3,12 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
 
+class DriveRequestError extends Error {
+  constructor(public status: number, details: string) {
+    super(`Google Drive [${status}]: ${details}`);
+  }
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
@@ -16,7 +22,7 @@ async function driveRequest(path: string) {
   });
   if (!response.ok) {
     const details = await response.text();
-    throw new Error(`Google Drive [${response.status}]: ${details}`);
+    throw new DriveRequestError(response.status, details);
   }
   return response;
 }
@@ -181,8 +187,12 @@ Deno.serve(async (req) => {
             drive_available: !file.trashed,
           }).eq("id", item.id);
           synced += 1;
-        } catch {
-          await admin.from("pack_items").update({ drive_available: false, drive_synced_at: new Date().toISOString() }).eq("id", item.id);
+        } catch (syncError) {
+          if (syncError instanceof DriveRequestError && (syncError.status === 403 || syncError.status === 404)) {
+            await admin.from("pack_items").update({ drive_available: false, drive_synced_at: new Date().toISOString() }).eq("id", item.id);
+          } else {
+            console.error(`Falha transitória ao sincronizar ${item.id}`, syncError);
+          }
         }
       }
       return json({ success: true, synced });
@@ -199,17 +209,26 @@ Deno.serve(async (req) => {
         if (!enrollment || (enrollment.expires_at && new Date(enrollment.expires_at) <= new Date())) return json({ error: "Matrícula inativa" }, 403);
         if (item.status !== "published") return json({ error: "Conteúdo indisponível" }, 403);
       }
-      const nativeMime = item.drive_mime_type?.startsWith("application/vnd.google-apps.");
-      const path = nativeMime
-        ? `/files/${encodeURIComponent(item.drive_file_id)}/export?mimeType=${encodeURIComponent("application/pdf")}`
+      const exportTypes: Record<string, { mime: string; extension: string }> = {
+        "application/vnd.google-apps.document": { mime: "application/pdf", extension: ".pdf" },
+        "application/vnd.google-apps.presentation": { mime: "application/pdf", extension: ".pdf" },
+        "application/vnd.google-apps.spreadsheet": { mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", extension: ".xlsx" },
+      };
+      const exportType = item.drive_mime_type ? exportTypes[item.drive_mime_type] : undefined;
+      const path = exportType
+        ? `/files/${encodeURIComponent(item.drive_file_id)}/export?mimeType=${encodeURIComponent(exportType.mime)}`
         : `/files/${encodeURIComponent(item.drive_file_id)}?alt=media`;
       const response = await driveRequest(path);
+      const baseName = (item.drive_file_name ?? "arquivo").replace(/["\r\n]/g, "");
+      const fileName = exportType && !baseName.toLowerCase().endsWith(exportType.extension)
+        ? `${baseName}${exportType.extension}`
+        : baseName;
       return new Response(response.body, {
         status: 200,
         headers: {
           ...corsHeaders,
-          "Content-Type": nativeMime ? "application/pdf" : item.drive_mime_type ?? "application/octet-stream",
-          "Content-Disposition": `inline; filename="${(item.drive_file_name ?? "arquivo").replace(/["\r\n]/g, "")}"`,
+          "Content-Type": exportType?.mime ?? item.drive_mime_type ?? "application/octet-stream",
+          "Content-Disposition": `inline; filename="${fileName}"`,
         },
       });
     }

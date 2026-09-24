@@ -10,6 +10,7 @@ interface CoverUploadProps {
   value: string;
   onChange: (url: string) => void;
   storagePath: string;
+  bucket?: string;
   label?: string;
   hint?: string;
   aspectRatio?: string;
@@ -19,6 +20,7 @@ export default function CoverUpload({
   value,
   onChange,
   storagePath,
+  bucket = "materials",
   label = "Capa",
   hint = "A imagem deve estar no formato JPG, PNG ou GIF. Dimensões ideais: 500×400 pixels. Tamanho máximo: 10 MB.",
   aspectRatio = "aspect-[5/4]",
@@ -42,14 +44,14 @@ export default function CoverUpload({
     const ext = file.name.split(".").pop();
     const filePath = `${storagePath}/${Date.now()}.${ext}`;
 
-    const { error } = await supabase.storage.from("materials").upload(filePath, file);
+    const { error } = await supabase.storage.from(bucket).upload(filePath, file);
     if (error) {
       toast.error("Erro ao enviar imagem: " + error.message);
       setUploading(false);
       return;
     }
 
-    const { data } = supabase.storage.from("materials").getPublicUrl(filePath);
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
     onChange(data.publicUrl);
     toast.success("Capa atualizada");
     setUploading(false);
