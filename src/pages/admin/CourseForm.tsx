@@ -223,7 +223,9 @@ export default function CourseForm() {
       }
     }
     toast.success(isEdit ? "Produto atualizado" : "Produto criado");
-    navigate("/admin/courses");
+    navigate(!isEdit && form.product_type === "pack" && savedCourseId
+      ? `/admin/courses/${savedCourseId}/pack-content`
+      : "/admin/courses");
     setSaving(false);
   };
 
@@ -481,8 +483,8 @@ export default function CourseForm() {
             )}
 
             {!isCourse && <div className="col-span-2 rounded-lg border border-border bg-muted/30 p-4">
-              <p className="text-sm font-medium">Entrega do Pack pendente</p>
-              <p className="mt-1 text-xs text-muted-foreground">O Pack pode ser preparado e associado a categorias ou listas de espera, mas permanece fora da vitrine e de venda até a próxima etapa.</p>
+              <p className="text-sm font-medium">Conteúdo do Pack</p>
+              <p className="mt-1 text-xs text-muted-foreground">Cadastre coleções, itens e vídeos em Gerenciar conteúdo. A venda será liberada após a apresentação correspondente estar ativa na Members.</p>
             </div>}
 
             <div className="col-span-2 border-y border-border divide-y divide-border">
