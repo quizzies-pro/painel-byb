@@ -115,6 +115,8 @@ export type Database = {
           cover_url: string | null
           created_at: string
           display_order: number
+          drive_root_folder_id: string | null
+          drive_root_folder_name: string | null
           featured: boolean
           full_description: string | null
           has_certificate: boolean
@@ -149,6 +151,8 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           display_order?: number
+          drive_root_folder_id?: string | null
+          drive_root_folder_name?: string | null
           featured?: boolean
           full_description?: string | null
           has_certificate?: boolean
@@ -183,6 +187,8 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           display_order?: number
+          drive_root_folder_id?: string | null
+          drive_root_folder_name?: string | null
           featured?: boolean
           full_description?: string | null
           has_certificate?: boolean
