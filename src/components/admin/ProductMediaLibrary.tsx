@@ -54,7 +54,7 @@ function MediaSlot({
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/30">
           {previewUrl ? (
-            <div className={`relative max-h-full max-w-full overflow-hidden ${aspect} ${usingFallback ? "opacity-50" : ""}`}>
+            <div className={`relative h-10 max-w-full overflow-hidden ${aspect} ${usingFallback ? "opacity-50" : ""}`}>
               <img src={previewUrl} alt={`${status} ${ratio}`} className="h-full w-full object-cover" />
             </div>
           ) : (
