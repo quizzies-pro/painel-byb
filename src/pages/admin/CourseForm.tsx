@@ -97,8 +97,6 @@ export default function CourseForm() {
     full_description: "",
     cover_url: "",
     logo_url: "",
-    login_cover_url: "",
-    banner_url: "",
     trailer_url: "",
     category: "",
     instructor_name: "",
@@ -119,6 +117,9 @@ export default function CourseForm() {
     display_order: 0,
     product_type: "course",
     pack_format: null,
+    presentation_button_enabled: false,
+    presentation_button_text: "",
+    presentation_button_url: "",
   });
 
   const fetchModules = async () => {
@@ -175,6 +176,16 @@ export default function CourseForm() {
     if (form.available_for_sale && !form.checkout_url?.trim()) {
       toast.error("Adicione o link de checkout antes de disponibilizar o produto para venda");
       return;
+    }
+    if (form.presentation_button_enabled) {
+      if (!form.presentation_button_text?.trim()) {
+        toast.error("Informe o texto do botão de apresentação");
+        return;
+      }
+      if (!/^https:\/\/\S+$/i.test(form.presentation_button_url?.trim() ?? "")) {
+        toast.error("Informe um endereço HTTPS válido para o botão de apresentação");
+        return;
+      }
     }
     if (form.product_type === "pack" && (form.status !== "draft" || form.storefront_visible || form.available_for_sale)) {
       toast.error("Packs devem permanecer em rascunho até a estrutura de entrega estar pronta");
@@ -358,9 +369,6 @@ export default function CourseForm() {
           <TabsTrigger value="basic" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Informações Básicas
           </TabsTrigger>
-          <TabsTrigger value="media" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
-            Mídia
-          </TabsTrigger>
           <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Configurações
           </TabsTrigger>
@@ -377,12 +385,10 @@ export default function CourseForm() {
         <TabsContent value="basic" className="mt-6">
           <div className="grid grid-cols-[380px_1fr] gap-8">
             <div className="space-y-6">
-              <CoverUpload
-                value={form.cover_url || ""}
-                onChange={(url) => update("cover_url", url)}
-                storagePath={`covers/courses/${id || "new"}`}
-                label="Capa do Produto"
-              />
+              <div className="rounded-lg border border-border bg-muted/20 p-5">
+                <p className="text-sm font-medium">Apresentação do produto</p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">Imagem, logo e botão ficam reunidos na aba Apresentação. Aqui você cadastra os textos principais.</p>
+              </div>
             </div>
             <div className="space-y-6">
               <div className={`grid gap-6 ${isCourse ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -415,39 +421,6 @@ export default function CourseForm() {
               </div>
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="media" className="mt-6">
-          <div className="grid grid-cols-3 gap-4">
-            <CoverUpload
-              value={form.logo_url || ""}
-              onChange={(url) => update("logo_url", url)}
-              storagePath={`logos/courses/${id || "new"}`}
-              label="Logo do Produto"
-              aspectRatio="aspect-square"
-              hint="512×512px, PNG transparente."
-            />
-            <CoverUpload
-              value={form.banner_url || ""}
-              onChange={(url) => update("banner_url", url)}
-              storagePath={`banners/courses/${id || "new"}`}
-              label="Banner"
-              aspectRatio="aspect-[16/9]"
-              hint="1920×1080px. Máx 10 MB."
-            />
-            <CoverUpload
-              value={(form as any).login_cover_url || ""}
-              onChange={(url) => update("login_cover_url" as any, url)}
-              storagePath={`login-covers/courses/${id || "new"}`}
-              label="Capa do Login"
-              aspectRatio="aspect-[9/16]"
-              hint="1080×1920px, vertical."
-            />
-          </div>
-          {isCourse && <div className="mt-4 space-y-2">
-            <Label className="text-[13px] font-medium">URL do Trailer (Vimeo)</Label>
-            <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border h-8 text-xs" />
-          </div>}
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">
@@ -540,8 +513,60 @@ export default function CourseForm() {
         </TabsContent>
 
         <TabsContent value="presentation" className="mt-6">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl space-y-8">
+            <div>
+              <h2 className="text-base font-semibold">Identidade visual</h2>
+              <p className="mt-1 text-xs text-muted-foreground">A mesma imagem principal será adaptada para banners e cards na Members.</p>
+              <div className="mt-5 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+                <CoverUpload
+                  value={form.cover_url || ""}
+                  onChange={(url) => update("cover_url", url)}
+                  storagePath={`covers/courses/${id || "new"}`}
+                  label="Imagem principal"
+                  aspectRatio="aspect-video"
+                  showResponsivePreviews
+                  hint="JPG, PNG ou WebP. Recomendado: 1600×900 px, com o conteúdo importante no centro. Máx. 10 MB."
+                />
+                <CoverUpload
+                  value={form.logo_url || ""}
+                  onChange={(url) => update("logo_url", url)}
+                  storagePath={`logos/courses/${id || "new"}`}
+                  label="Logo do produto (opcional)"
+                  aspectRatio="aspect-square"
+                  hint="Se não houver logo, a Members exibirá o título do produto."
+                />
+              </div>
+            </div>
+
+            {isCourse && <div className="space-y-2 border-t border-border pt-6">
+              <Label className="text-[13px] font-medium">Vídeo de apresentação (Vimeo)</Label>
+              <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
+            </div>}
+
+            <div className="space-y-5 border-t border-border pt-6">
+              <div className="flex items-center justify-between gap-8">
+                <div>
+                  <Label className="text-[13px] font-medium">Botão personalizado</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">Exibe uma ação adicional na apresentação sem substituir as regras de acesso.</p>
+                </div>
+                <Switch checked={form.presentation_button_enabled ?? false} onCheckedChange={(value) => update("presentation_button_enabled", value)} />
+              </div>
+              {form.presentation_button_enabled && <div className="grid gap-5 sm:grid-cols-[0.8fr_1.2fr]">
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Texto do botão</Label>
+                  <Input maxLength={60} value={form.presentation_button_text || ""} onChange={(event) => update("presentation_button_text", event.target.value)} placeholder="Saiba mais" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-medium">Endereço HTTPS</Label>
+                  <Input type="url" value={form.presentation_button_url || ""} onChange={(event) => update("presentation_button_url", event.target.value)} placeholder="https://..." />
+                </div>
+              </div>}
+            </div>
+
+            <div className="border-t border-border pt-6">
+              <h2 className="mb-4 text-base font-semibold">Categorias da vitrine</h2>
             <ProductCategoriesEditor value={categorySelections} onChange={setCategorySelections} />
+            </div>
           </div>
         </TabsContent>
 

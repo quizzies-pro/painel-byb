@@ -37,3 +37,5 @@
 - [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
 - [ ] Liberar vitrine e venda de Packs após validação da entrega
 - [x] Corrigir a falha de compilação na listagem de produtos e validar a publicação
+- [x] Unificar no Hub a apresentação de Cursos e Packs com imagem principal, logo opcional e botão personalizado
+- [ ] Aplicar na Members a apresentação unificada e responsiva dos produtos — bloqueado por edição entre projetos
