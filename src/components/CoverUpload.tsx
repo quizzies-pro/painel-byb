@@ -17,6 +17,7 @@ interface CoverUploadProps {
   aspectRatio?: string;
   showResponsivePreviews?: boolean;
   showImagePreview?: boolean;
+  layout?: "default" | "compact";
 }
 
 const MAX_IMAGE_DIMENSION = 2000;
@@ -62,6 +63,7 @@ export default function CoverUpload({
   aspectRatio = "aspect-[5/4]",
   showResponsivePreviews = false,
   showImagePreview = true,
+  layout = "default",
 }: CoverUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -106,6 +108,72 @@ export default function CoverUpload({
   const handleRemove = () => {
     onChange("");
   };
+
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      className="hidden"
+      onChange={handleUpload}
+    />
+  );
+
+  if (layout === "compact") {
+    return (
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="URL da imagem"
+          aria-label={label}
+          className="h-9 min-w-0 flex-1 bg-background text-xs"
+        />
+        {fileInput}
+        {value && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-9 w-9 shrink-0 text-muted-foreground"
+            onClick={() => window.open(value, "_blank")}
+            aria-label={`Visualizar ${label}`}
+            title="Visualizar imagem"
+          >
+            <Search className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant={value ? "outline" : "default"}
+          className="h-9 shrink-0 gap-1.5 px-3 text-xs"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {uploading ? (
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <Upload className="h-3.5 w-3.5" />
+          )}
+          {value ? "Trocar" : "Upload"}
+        </Button>
+        {value && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={handleRemove}
+            aria-label={`Remover ${label}`}
+            title="Remover imagem"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -176,13 +244,7 @@ export default function CoverUpload({
             placeholder="URL da imagem"
             className="bg-background border-border text-[11px] h-7 flex-1"
           />
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleUpload}
-          />
+          {fileInput}
           <Button
             type="button"
             size="sm"
