@@ -11,6 +11,7 @@ import { Plus, Search, Edit, Trash2, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 import { PACK_FORMATS } from "@/lib/pack-formats";
+import { resolveProductCover } from "@/lib/product-presentation-media";
 
 type Course = Tables<"courses">;
 type CategoryLink = Tables<"storefront_category_courses"> & {
@@ -198,10 +199,10 @@ export default function CoursesPage() {
             <div key={course.id} className="group rounded-lg border border-border bg-card overflow-hidden transition-colors hover:border-muted-foreground/30">
               <Link to={`/admin/courses/${course.id}`}>
                 <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                  {course.cover_url ? (
+                  {resolveProductCover(course, "4:3").url ? (
                     <>
                       <img
-                        src={course.cover_url}
+                        src={resolveProductCover(course, "4:3").url}
                         alt={course.title}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         onError={(event) => {
