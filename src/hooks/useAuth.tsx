@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<Record<string, unknown> | null>(null);
 
   const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role, avatar_url, permissions")
       .eq("user_id", userId)
@@ -45,6 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAvatarUrl(null);
       setPermissions(null);
     }
+
+    return { isAdmin: Boolean(data), error };
   };
 
   const refreshProfile = async () => {
@@ -83,8 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) return { error: error as Error | null };
+
+    const adminCheck = await checkAdminRole(data.user.id);
+    if (adminCheck.error || !adminCheck.isAdmin) {
+      await supabase.auth.signOut();
+      return { error: new Error("Acesso administrativo não autorizado.") };
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
