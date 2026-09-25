@@ -127,6 +127,9 @@ export type Database = {
           login_cover_url: string | null
           logo_url: string | null
           pack_format: Database["public"]["Enums"]["pack_format"] | null
+          presentation_button_enabled: boolean
+          presentation_button_text: string | null
+          presentation_button_url: string | null
           product_type: Database["public"]["Enums"]["product_type"]
           seo_description: string | null
           seo_title: string | null
@@ -163,6 +166,9 @@ export type Database = {
           login_cover_url?: string | null
           logo_url?: string | null
           pack_format?: Database["public"]["Enums"]["pack_format"] | null
+          presentation_button_enabled?: boolean
+          presentation_button_text?: string | null
+          presentation_button_url?: string | null
           product_type?: Database["public"]["Enums"]["product_type"]
           seo_description?: string | null
           seo_title?: string | null
@@ -199,6 +205,9 @@ export type Database = {
           login_cover_url?: string | null
           logo_url?: string | null
           pack_format?: Database["public"]["Enums"]["pack_format"] | null
+          presentation_button_enabled?: boolean
+          presentation_button_text?: string | null
+          presentation_button_url?: string | null
           product_type?: Database["public"]["Enums"]["product_type"]
           seo_description?: string | null
           seo_title?: string | null

@@ -22,6 +22,19 @@ Curso e Pack utilizam o mesmo produto-base para:
 
 A View define somente a organização e a entrega do conteúdo.
 
+## Apresentação unificada
+
+Curso e Pack compartilham o mesmo contrato visual, cadastrado exclusivamente no Hub:
+
+- `cover_url`: única imagem principal do produto, em proporção recomendada 16:9; deve ser usada com recorte responsivo em banners e cards;
+- `logo_url`: logo opcional; quando estiver vazia, apresentar `title` em texto;
+- `short_description`: chamada curta da vitrine;
+- `full_description`: descrição da página do produto;
+- `presentation_button_enabled`: controla a exibição do botão personalizado;
+- `presentation_button_text` e `presentation_button_url`: texto e destino HTTPS do botão quando ativo.
+
+`banner_url` e `login_cover_url` são campos legados preservados somente para transição e não devem ser usados em novas telas. A autenticação usa a identidade única da Members. O botão personalizado é apenas de apresentação e nunca substitui a validação de matrícula ou as regras comerciais.
+
 ## Formatos de Pack
 
 Todo Pack possui um `pack_format` permanente:
@@ -65,7 +78,8 @@ Enquanto a View correspondente ainda não estiver ativa na Members:
 7. No Textual, exibir `textual_content`, `textual_example` quando preenchido e ações de copiar.
 8. No Drive, nunca usar ou exibir um endereço privado. Chamar `pack-drive` com `{ action: "download", item_id }` usando a sessão autenticada.
 9. Reproduzir somente vídeos publicados e converter links HTTPS do YouTube e Vimeo para seus endereços oficiais de incorporação.
-10. Validar em celular e computador os estados: matrícula ativa, expirada, cancelada, aluno sem matrícula, item oculto, coleção oculta, arquivo removido e formato desconhecido.
+10. Aplicar o contrato de apresentação unificada, incluindo imagem responsiva, logo opcional e botão personalizado válido.
+11. Validar em celular e computador os estados: matrícula ativa, expirada, cancelada, aluno sem matrícula, item oculto, coleção oculta, arquivo removido e formato desconhecido.
 
 ## Critério para liberar venda
 
