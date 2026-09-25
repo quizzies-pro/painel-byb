@@ -27,6 +27,25 @@ function jsonRes(body: unknown, status = 200) {
   });
 }
 
+async function findAuthUserByEmail(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  email: string,
+) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const perPage = 1000;
+
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const match = data.users.find(
+      (user) => user.email?.toLowerCase() === normalizedEmail,
+    );
+    if (match) return match;
+    if (data.users.length < perPage) return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -97,10 +116,7 @@ Deno.serve(async (req) => {
         return jsonRes({ error: "Papel inválido" }, 400);
       }
 
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers?.users?.find(
-        (u) => u.email?.toLowerCase() === email.toLowerCase()
-      );
+      const existingUser = await findAuthUserByEmail(supabaseAdmin, email);
 
       let userId: string;
       if (existingUser) {
