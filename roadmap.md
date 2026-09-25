@@ -39,4 +39,5 @@
 - [x] Corrigir a falha de compilação na listagem de produtos e validar a publicação
 - [x] Unificar no Hub a apresentação de Cursos e Packs com imagem principal, logo opcional e botão personalizado
 - [x] Reorganizar a apresentação de Cursos e Packs em editor horizontal com prévia responsiva ao vivo
+- [x] Padronizar popups, confirmações e painéis do Hub com experiência minimalista e responsiva
 - [ ] Aplicar na Members a apresentação unificada e responsiva dos produtos — bloqueado por edição entre projetos
