@@ -112,6 +112,11 @@ export type Database = {
           banner_url: string | null
           category: string | null
           checkout_url: string | null
+          cover_1_1_url: string | null
+          cover_16_9_url: string | null
+          cover_3_4_url: string | null
+          cover_4_3_url: string | null
+          cover_9_16_url: string | null
           cover_url: string | null
           created_at: string
           display_order: number
@@ -120,6 +125,8 @@ export type Database = {
           featured: boolean
           full_description: string | null
           has_certificate: boolean
+          hero_16_9_url: string | null
+          hero_4_3_url: string | null
           id: string
           instructor_name: string | null
           is_free: boolean
@@ -151,6 +158,11 @@ export type Database = {
           banner_url?: string | null
           category?: string | null
           checkout_url?: string | null
+          cover_1_1_url?: string | null
+          cover_16_9_url?: string | null
+          cover_3_4_url?: string | null
+          cover_4_3_url?: string | null
+          cover_9_16_url?: string | null
           cover_url?: string | null
           created_at?: string
           display_order?: number
@@ -159,6 +171,8 @@ export type Database = {
           featured?: boolean
           full_description?: string | null
           has_certificate?: boolean
+          hero_16_9_url?: string | null
+          hero_4_3_url?: string | null
           id?: string
           instructor_name?: string | null
           is_free?: boolean
@@ -190,6 +204,11 @@ export type Database = {
           banner_url?: string | null
           category?: string | null
           checkout_url?: string | null
+          cover_1_1_url?: string | null
+          cover_16_9_url?: string | null
+          cover_3_4_url?: string | null
+          cover_4_3_url?: string | null
+          cover_9_16_url?: string | null
           cover_url?: string | null
           created_at?: string
           display_order?: number
@@ -198,6 +217,8 @@ export type Database = {
           featured?: boolean
           full_description?: string | null
           has_certificate?: boolean
+          hero_16_9_url?: string | null
+          hero_4_3_url?: string | null
           id?: string
           instructor_name?: string | null
           is_free?: boolean
