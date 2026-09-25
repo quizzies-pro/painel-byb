@@ -39,8 +39,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ConfirmDialogProvider>
-          <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Routes>
+              <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
@@ -71,7 +71,7 @@ const App = () => (
             <Route path="/admin/webhooks" element={<AdminLayout><WebhookLogsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
           </ConfirmDialogProvider>
         </AuthProvider>
       </BrowserRouter>
