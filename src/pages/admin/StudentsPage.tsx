@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +27,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function StudentsPage() {
+  const confirmAction = useConfirmDialog();
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -44,7 +46,7 @@ export default function StudentsPage() {
   useEffect(() => { fetchStudents(); }, [statusFilter]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este aluno e todos os dados relacionados?")) return;
+    if (!await confirmAction({ description: "Excluir este aluno e todos os dados relacionados?" })) return;
     const { error } = await supabase.from("students").delete().eq("id", id);
     if (error) toast.error("Erro ao excluir");
     else { toast.success("Aluno excluído"); fetchStudents(); }

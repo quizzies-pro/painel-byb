@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +14,7 @@ type Lesson = Tables<"lessons"> & { course_modules?: { title: string } | null; c
 type CourseOption = Pick<Tables<"courses">, "id" | "title">;
 
 export default function LessonsPage() {
+  const confirmAction = useConfirmDialog();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
@@ -33,7 +35,7 @@ export default function LessonsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta aula?")) return;
+    if (!await confirmAction({ description: "Excluir esta aula?" })) return;
     const { error } = await supabase.from("lessons").delete().eq("id", id);
     if (error) toast.error("Erro ao excluir");
     else { toast.success("Aula excluída"); fetchData(); }
