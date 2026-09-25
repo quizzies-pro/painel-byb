@@ -27,6 +27,7 @@ import WaitlistForm from "./pages/admin/WaitlistForm";
 import WaitlistDetail from "./pages/admin/WaitlistDetail";
 import PackContentPage from "./pages/admin/PackContentPage";
 import NotFound from "./pages/NotFound";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ConfirmDialogProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
@@ -70,6 +72,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ConfirmDialogProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
