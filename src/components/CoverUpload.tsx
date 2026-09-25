@@ -15,6 +15,7 @@ interface CoverUploadProps {
   hint?: string;
   aspectRatio?: string;
   showResponsivePreviews?: boolean;
+  showImagePreview?: boolean;
 }
 
 const MAX_IMAGE_DIMENSION = 2000;
@@ -59,6 +60,7 @@ export default function CoverUpload({
   hint = "A imagem deve estar no formato JPG, PNG ou GIF. Dimensões ideais: 500×400 pixels. Tamanho máximo: 10 MB.",
   aspectRatio = "aspect-[5/4]",
   showResponsivePreviews = false,
+  showImagePreview = true,
 }: CoverUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -110,7 +112,7 @@ export default function CoverUpload({
 
       <div className="rounded-md border border-border overflow-hidden">
         {/* Preview area */}
-        <div className={`relative bg-muted/20 flex items-center justify-center group overflow-hidden ${aspectRatio}`}>
+        {showImagePreview && <div className={`relative bg-muted/20 flex items-center justify-center group overflow-hidden ${aspectRatio}`}>
           {value ? (
             <>
               <img
@@ -163,10 +165,10 @@ export default function CoverUpload({
               <span className="text-[11px]">Nenhuma imagem</span>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Actions */}
-        <div className="p-2 border-t border-border flex items-center gap-2">
+        <div className={cn("p-2 flex items-center gap-2", showImagePreview && "border-t border-border")}>
           <Input
             value={value}
             onChange={(e) => onChange(e.target.value)}
