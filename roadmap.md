@@ -36,4 +36,4 @@
 - [x] Garantir capas públicas dos Packs e sincronização resiliente do Google Drive
 - [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
 - [ ] Liberar vitrine e venda de Packs após validação da entrega
-- [ ] Corrigir a falha de compilação na listagem de produtos e validar a publicação
+- [x] Corrigir a falha de compilação na listagem de produtos e validar a publicação
