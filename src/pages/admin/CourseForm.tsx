@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +81,7 @@ const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export default function CourseForm() {
+  const confirmAction = useConfirmDialog();
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -242,7 +244,7 @@ export default function CourseForm() {
   };
 
   const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm("Excluir este módulo e todas as suas aulas?")) return;
+    if (!await confirmAction({ description: "Excluir este módulo e todas as suas aulas?" })) return;
     const { error } = await supabase.from("course_modules").delete().eq("id", moduleId);
     if (error) toast.error("Erro ao excluir módulo");
     else { toast.success("Módulo excluído"); fetchModules(); }

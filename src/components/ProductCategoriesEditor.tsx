@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -27,6 +28,7 @@ const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export default function ProductCategoriesEditor({ value, onChange }: ProductCategoriesEditorProps) {
+  const confirmAction = useConfirmDialog();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -127,7 +129,7 @@ export default function ProductCategoriesEditor({ value, onChange }: ProductCate
   };
 
   const deleteCategory = async (category: Category) => {
-    if (!confirm(`Excluir a categoria “${category.name}”? Os produtos não serão excluídos.`)) return;
+    if (!await confirmAction({ description: `Excluir a categoria “${category.name}”? Os produtos não serão excluídos.` })) return;
     const { error } = await supabase.from("storefront_categories").delete().eq("id", category.id);
     if (error) toast.error("Erro ao excluir categoria");
     else {
@@ -207,9 +209,9 @@ export default function ProductCategoriesEditor({ value, onChange }: ProductCate
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent size="default">
           <DialogHeader><DialogTitle>{editing ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-2">
+          <DialogBody className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="category-name">Nome</Label>
               <Input id="category-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Comece por aqui" />
@@ -225,7 +227,7 @@ export default function ProductCategoriesEditor({ value, onChange }: ProductCate
               </div>
               <Switch id="category-active" checked={isActive} onCheckedChange={setIsActive} />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button type="button" onClick={saveCategory} disabled={saving}>{saving ? "Salvando..." : "Salvar categoria"}</Button>

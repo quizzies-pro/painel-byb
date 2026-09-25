@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type Payment = Tables<"payments"> & { students?: { name: string; email: string } | null; courses?: { title: string } | null };
 
@@ -117,9 +117,9 @@ export default function PaymentsPage() {
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSelectedPayload(JSON.stringify(p.raw_payload, null, 2))}><Eye className="h-3.5 w-3.5" /></Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-lg bg-card border-border">
+                        <DialogContent size="reading">
                           <DialogHeader><DialogTitle>Detalhes do Pagamento</DialogTitle></DialogHeader>
-                          <div className="space-y-3 text-sm">
+                          <DialogBody className="space-y-3 text-sm">
                             <div className="grid grid-cols-2 gap-2">
                               <div><span className="text-muted-foreground">ID Externo:</span> <span className="font-mono text-xs">{p.external_payment_id || "—"}</span></div>
                               <div><span className="text-muted-foreground">Order ID:</span> <span className="font-mono text-xs">{p.external_order_id || "—"}</span></div>
@@ -135,7 +135,7 @@ export default function PaymentsPage() {
                                 <pre className="mt-1 p-3 bg-background rounded text-xs font-mono overflow-auto max-h-60">{JSON.stringify(p.raw_payload, null, 2)}</pre>
                               </div>
                             )}
-                          </div>
+                          </DialogBody>
                         </DialogContent>
                       </Dialog>
                     </div>

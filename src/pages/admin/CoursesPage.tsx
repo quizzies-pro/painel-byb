@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +41,7 @@ const visibilityLabels = (course: Course) => {
 };
 
 export default function CoursesPage() {
+  const confirmAction = useConfirmDialog();
   const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function CoursesPage() {
   useEffect(() => { fetchCourses(); }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+    if (!await confirmAction({ description: "Tem certeza que deseja excluir este produto?" })) return;
     const { error } = await supabase.from("courses").delete().eq("id", id);
     if (error) toast.error("Erro ao excluir produto");
     else {

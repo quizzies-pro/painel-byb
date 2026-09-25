@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ interface Material {
 }
 
 export default function LessonForm() {
+  const confirmAction = useConfirmDialog();
   const { courseId, moduleId, id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
@@ -214,7 +216,7 @@ export default function LessonForm() {
   };
 
   const handleDeleteMaterial = async (materialId: string, fileUrl: string | null) => {
-    if (!confirm("Excluir este material?")) return;
+    if (!await confirmAction({ description: "Excluir este material?" })) return;
 
     if (fileUrl) {
       const path = fileUrl.split("/materials/")[1];

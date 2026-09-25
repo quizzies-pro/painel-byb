@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,6 +83,7 @@ function SortableLessonRow({
 }
 
 export default function ModuleForm() {
+  const confirmAction = useConfirmDialog();
   const { courseId, id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -167,7 +169,7 @@ export default function ModuleForm() {
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm("Excluir esta aula?")) return;
+    if (!await confirmAction({ description: "Excluir esta aula?" })) return;
     const { error } = await supabase.from("lessons").delete().eq("id", lessonId);
     if (error) toast.error("Erro ao excluir aula");
     else { toast.success("Aula excluída"); fetchLessons(); }

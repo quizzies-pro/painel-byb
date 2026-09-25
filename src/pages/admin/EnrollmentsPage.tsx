@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +25,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function EnrollmentsPage() {
+  const confirmAction = useConfirmDialog();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -42,7 +44,7 @@ export default function EnrollmentsPage() {
   useEffect(() => { fetchData(); }, [statusFilter]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta matrícula?")) return;
+    if (!await confirmAction({ description: "Excluir esta matrícula?" })) return;
     const { error } = await supabase.from("enrollments").delete().eq("id", id);
     if (error) toast.error("Erro ao excluir");
     else { toast.success("Matrícula excluída"); fetchData(); }
