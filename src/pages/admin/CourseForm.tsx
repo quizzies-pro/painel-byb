@@ -32,6 +32,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 import ProductCategoriesEditor, { CategorySelection } from "@/components/ProductCategoriesEditor";
+import ProductMediaLibrary from "@/components/admin/ProductMediaLibrary";
 import ProductPresentationPreview from "@/components/admin/ProductPresentationPreview";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 import { PACK_FORMATS, PackFormat } from "@/lib/pack-formats";
@@ -99,6 +100,13 @@ export default function CourseForm() {
     short_description: "",
     full_description: "",
     cover_url: "",
+    cover_16_9_url: "",
+    cover_4_3_url: "",
+    cover_1_1_url: "",
+    cover_3_4_url: "",
+    cover_9_16_url: "",
+    hero_16_9_url: "",
+    hero_4_3_url: "",
     logo_url: "",
     trailer_url: "",
     category: "",
@@ -520,16 +528,12 @@ export default function CourseForm() {
             <div className="min-w-0 p-5 sm:p-6 lg:p-8">
               <section className="pb-8">
                 <h2 className="text-base font-semibold">Identidade visual</h2>
-                <p className="mt-1 text-xs text-muted-foreground">A mesma imagem principal será adaptada para banners e cards na Members.</p>
-                <div className="mt-5 space-y-5">
-                  <CoverUpload
-                    value={form.cover_url || ""}
-                    onChange={(url) => update("cover_url", url)}
-                    storagePath={`covers/courses/${id || "new"}`}
-                    label="Imagem principal"
-                    aspectRatio="aspect-video"
-                    showImagePreview={false}
-                    hint="JPG, PNG ou WebP. Recomendado: 1600×900 px, com o conteúdo importante no centro. Máx. 10 MB."
+                <p className="mt-1 text-xs text-muted-foreground">Envie artes próprias para cada formato usado na Members.</p>
+                <div className="mt-5 space-y-8">
+                  <ProductMediaLibrary
+                    media={form}
+                    productId={id || "new"}
+                    onChange={(field, url) => update(field, url)}
                   />
                   <CoverUpload
                     value={form.logo_url || ""}
@@ -576,7 +580,7 @@ export default function CourseForm() {
             </div>
 
             <ProductPresentationPreview
-              coverUrl={form.cover_url || ""}
+              media={form}
               logoUrl={form.logo_url || ""}
               title={form.title || ""}
               description={form.short_description || ""}

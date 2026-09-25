@@ -16,11 +16,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import CoverUpload from "@/components/CoverUpload";
 import TagInput from "@/components/TagInput";
+import { resolveProductCover } from "@/lib/product-presentation-media";
 
 type Collection = Tables<"pack_collections">;
 type PackItem = Tables<"pack_items">;
 type PackVideo = Tables<"pack_videos">;
-type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format" | "cover_url" | "drive_root_folder_id" | "drive_root_folder_name">;
+type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format" | "cover_url" | "cover_16_9_url" | "cover_4_3_url" | "cover_1_1_url" | "cover_3_4_url" | "cover_9_16_url" | "drive_root_folder_id" | "drive_root_folder_name">;
 type DriveFile = { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; thumbnailLink?: string; iconLink?: string };
 
 const EMPTY_COLLECTION = { title: "", description: "", cover_url: "", tags: [] as string[], is_visible: true };
@@ -80,7 +81,7 @@ export default function PackContentPage() {
     if (!courseId) return;
     setLoading(true);
     const [productResult, collectionsResult, itemsResult, videosResult] = await Promise.all([
-      supabase.from("courses").select("id, title, product_type, pack_format, cover_url, drive_root_folder_id, drive_root_folder_name").eq("id", courseId).single(),
+      supabase.from("courses").select("id, title, product_type, pack_format, cover_url, cover_16_9_url, cover_4_3_url, cover_1_1_url, cover_3_4_url, cover_9_16_url, drive_root_folder_id, drive_root_folder_name").eq("id", courseId).single(),
       supabase.from("pack_collections").select("*").eq("course_id", courseId).order("sort_order"),
       supabase.from("pack_items").select("*").eq("course_id", courseId).order("sort_order"),
       supabase.from("pack_videos").select("*").eq("course_id", courseId).order("sort_order"),
@@ -355,7 +356,7 @@ export default function PackContentPage() {
   const publishedItems = items.filter((item) => item.status === "published");
   const incompleteItems = items.filter((item) => !item.cover_url || (format === "drive" && !item.drive_available));
   const readiness = [
-    { label: "Capa do produto", ready: Boolean(product.cover_url) },
+    { label: "Capa do produto", ready: Boolean(resolveProductCover(product, "16:9").url) },
     { label: "Ao menos um conteúdo publicado", ready: publishedItems.length > 0 },
     { label: "Capas e arquivos disponíveis", ready: incompleteItems.length === 0 },
     { label: "Coleções visíveis organizadas", ready: collections.length === 0 || collections.some((collection) => collection.is_visible) },
