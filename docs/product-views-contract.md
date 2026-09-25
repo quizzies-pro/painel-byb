@@ -41,6 +41,8 @@ Cada campo de imagem representa um arquivo independente; a Members não deve der
 
 `cover_url` e `banner_url` são fallbacks legados preservados durante a transição. `login_cover_url` permanece legado e não deve ser usado. A autenticação usa a identidade única da Members. O botão personalizado é apenas de apresentação e nunca substitui a validação de matrícula ou as regras comerciais.
 
+Durante a compatibilidade, o Hub espelha `cover_16_9_url` em `cover_url` e `hero_16_9_url` em `banner_url`. Novas telas devem consumir os campos específicos e aplicar o fallback; os campos legados existem apenas para clientes ainda não migrados.
+
 ## Formatos de Pack
 
 Todo Pack possui um `pack_format` permanente:

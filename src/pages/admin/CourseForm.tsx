@@ -173,6 +173,18 @@ export default function CourseForm() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updatePresentationMedia = (
+    key: "cover_16_9_url" | "cover_4_3_url" | "cover_1_1_url" | "cover_3_4_url" | "cover_9_16_url" | "hero_16_9_url" | "hero_4_3_url",
+    value: string,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === "cover_16_9_url" ? { cover_url: value } : {}),
+      ...(key === "hero_16_9_url" ? { banner_url: value } : {}),
+    }));
+  };
+
   const handleTitleChange = (title: string) => {
     update("title", title);
     if (!isEdit) update("slug", slugify(title));
@@ -533,7 +545,7 @@ export default function CourseForm() {
                   <ProductMediaLibrary
                     media={form}
                     productId={id || "new"}
-                    onChange={(field, url) => update(field, url)}
+                    onChange={updatePresentationMedia}
                   />
                   <CoverUpload
                     value={form.logo_url || ""}
