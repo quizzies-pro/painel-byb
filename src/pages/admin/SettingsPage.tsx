@@ -17,10 +17,12 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Save,
   Shield,
@@ -71,6 +73,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function SettingsPage() {
+  const confirmAction = useConfirmDialog();
   const { user, role, avatarUrl, refreshProfile } = useAuth();
   const isSuperAdmin = role === "super_admin";
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -247,7 +250,7 @@ export default function SettingsPage() {
   };
 
   const handleRemoveUser = async (userId: string, email: string) => {
-    if (!confirm(`Remover acesso de ${email}?`)) return;
+    if (!await confirmAction({ title: "Remover acesso", description: `Remover acesso de ${email}?`, confirmLabel: "Remover" })) return;
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
         method: "DELETE",
@@ -608,11 +611,11 @@ export default function SettingsPage() {
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+        <DialogContent size="wide">
+          <DialogHeader>
             <DialogTitle>Convidar Usuário</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <DialogBody className="space-y-4">
             <SettingField label="Email" description="O usuário receberá um convite por email">
               <Input
                 type="email"
@@ -648,8 +651,8 @@ export default function SettingsPage() {
                 </div>
               </>
             )}
-          </div>
-          <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
+          </DialogBody>
+          <DialogFooter>
             <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
               Cancelar
             </Button>

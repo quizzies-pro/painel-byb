@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Copy, Trash2, Eye, Search, Link2, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -88,6 +89,7 @@ const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export default function WebhookLogsPage() {
+  const confirmAction = useConfirmDialog();
   const { role } = useAuth();
   const isSuperAdmin = role === "super_admin";
   const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
@@ -206,7 +208,7 @@ export default function WebhookLogsPage() {
   };
 
   const handleDeleteMapping = async (id: string) => {
-    if (!confirm("Remover esta conexão de produto?")) return;
+    if (!await confirmAction({ title: "Remover conexão", description: "Remover esta conexão de produto?", confirmLabel: "Remover" })) return;
     const { error } = await supabase.from("webhook_product_mappings").delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Conexão removida"); fetchMappingData(); }
@@ -257,7 +259,7 @@ export default function WebhookLogsPage() {
   };
 
   const handleDeleteEndpoint = async (id: string) => {
-    if (!confirm("Excluir este webhook endpoint?")) return;
+    if (!await confirmAction({ description: "Excluir este webhook endpoint?" })) return;
     const { error } = await supabase.from("webhook_endpoints").delete().eq("id", id);
     if (error) toast.error("Erro ao excluir");
     else { toast.success("Webhook excluído"); fetchEndpoints(); }
@@ -305,9 +307,9 @@ export default function WebhookLogsPage() {
                   <Plus className="h-4 w-4" /> Novo Webhook
                 </Button>
               </DialogTrigger>}
-              <DialogContent className="max-h-[85vh] overflow-y-auto bg-card border-border">
+              <DialogContent size="wide">
                 <DialogHeader><DialogTitle>Novo Webhook Endpoint</DialogTitle></DialogHeader>
-                <div className="space-y-4">
+                <DialogBody className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[13px] font-medium">Nome *</Label>
@@ -375,11 +377,11 @@ export default function WebhookLogsPage() {
                        <div className="space-y-1"><Label className="text-xs">Eventos de chargeback</Label><Input value={newEndpoint.chargeback_events} onChange={(e) => setNewEndpoint((p) => ({ ...p, chargeback_events: e.target.value }))} className="font-mono text-xs" /></div>
                      </div>
                    </div>
-                  <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
-                    <Button onClick={handleCreateEndpoint}>Criar Webhook</Button>
-                  </div>
-                </div>
+                </DialogBody>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
+                  <Button onClick={handleCreateEndpoint}>Criar Webhook</Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
@@ -492,9 +494,9 @@ export default function WebhookLogsPage() {
           )}
 
           <Dialog open={showMapping} onOpenChange={setShowMapping}>
-            <DialogContent className="max-w-xl bg-card border-border">
+            <DialogContent size="wide">
               <DialogHeader><DialogTitle>{editingMappingId ? "Editar conexão" : "Conectar produto"}</DialogTitle></DialogHeader>
-              <div className="space-y-4">
+              <DialogBody className="space-y-4">
                 <div className="space-y-2">
                   <Label>Webhook *</Label>
                   <Select value={mappingForm.webhook_endpoint_id} onValueChange={(value) => setMappingForm((current) => ({ ...current, webhook_endpoint_id: value }))}>
@@ -528,11 +530,11 @@ export default function WebhookLogsPage() {
                   <div className="flex items-center justify-between gap-4"><Label htmlFor="mapping-chargeback">Bloquear acesso em caso de chargeback</Label><Switch id="mapping-chargeback" checked={mappingForm.revoke_on_chargeback} onCheckedChange={(checked) => setMappingForm((current) => ({ ...current, revoke_on_chargeback: checked }))} /></div>
                   <div className="flex items-center justify-between gap-4"><Label htmlFor="mapping-active">Conexão ativa</Label><Switch id="mapping-active" checked={mappingForm.is_active} onCheckedChange={(checked) => setMappingForm((current) => ({ ...current, is_active: checked }))} /></div>
                 </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setShowMapping(false)}>Cancelar</Button>
-                  <Button onClick={handleSaveMapping} disabled={savingMapping}>{savingMapping ? "Salvando..." : "Salvar conexão"}</Button>
-                </div>
-              </div>
+              </DialogBody>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowMapping(false)}>Cancelar</Button>
+                <Button onClick={handleSaveMapping} disabled={savingMapping}>{savingMapping ? "Salvando..." : "Salvar conexão"}</Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </TabsContent>
@@ -591,12 +593,12 @@ export default function WebhookLogsPage() {
                             <DialogTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Eye className="h-3.5 w-3.5" /></Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-lg bg-card border-border">
+                            <DialogContent size="reading">
                               <DialogHeader><DialogTitle>Webhook #{l.id.slice(0, 8)}</DialogTitle></DialogHeader>
-                              <div className="space-y-3 text-sm">
+                              <DialogBody className="space-y-3 text-sm">
                                 {l.error_message && <div className="text-red-400 bg-red-500/10 p-2 rounded text-xs">{l.error_message}</div>}
                                 <pre className="p-3 bg-background rounded text-xs font-mono overflow-auto max-h-80">{JSON.stringify(l.payload, null, 2)}</pre>
-                              </div>
+                              </DialogBody>
                             </DialogContent>
                           </Dialog>
                         </div>
