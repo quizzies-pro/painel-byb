@@ -22,24 +22,30 @@ Curso e Pack utilizam o mesmo produto-base para:
 
 A View define somente a organização e a entrega do conteúdo.
 
-## Apresentação unificada
+## Apresentação por contexto e proporção
 
-Curso e Pack compartilham o mesmo contrato visual, cadastrado exclusivamente no Hub:
+Curso e Pack compartilham o mesmo contrato visual, cadastrado exclusivamente no Hub. A Members deve informar o uso e a proporção desejados para escolher a imagem:
 
-- `cover_url`: única imagem principal do produto, em proporção recomendada 16:9; deve ser usada com recorte responsivo em banners e cards;
+- capas: `cover_16_9_url`, `cover_4_3_url`, `cover_1_1_url`, `cover_3_4_url` e `cover_9_16_url`;
+- banners da hero: `hero_16_9_url` e `hero_4_3_url`;
 - `logo_url`: logo opcional; quando estiver vazia, apresentar `title` em texto;
 - `short_description`: chamada curta da vitrine;
 - `full_description`: descrição da página do produto;
 - `presentation_button_enabled`: controla a exibição do botão personalizado;
 - `presentation_button_text` e `presentation_button_url`: texto e destino HTTPS do botão quando ativo.
 
-`banner_url` e `login_cover_url` são campos legados preservados somente para transição e não devem ser usados em novas telas. A autenticação usa a identidade única da Members. O botão personalizado é apenas de apresentação e nunca substitui a validação de matrícula ou as regras comerciais.
+Cada campo de imagem representa um arquivo independente; a Members não deve derivar os formatos por recorte quando houver uma arte específica. Enquanto a biblioteca estiver incompleta, usar a seguinte resolução:
+
+- capa: formato exato, depois a capa de proporção mais próxima, depois a capa 16:9 e, por último, `cover_url`;
+- hero: formato exato, depois o outro banner, depois `banner_url`, depois a capa equivalente, a capa 16:9 e `cover_url`.
+
+`cover_url` e `banner_url` são fallbacks legados preservados durante a transição. `login_cover_url` permanece legado e não deve ser usado. A autenticação usa a identidade única da Members. O botão personalizado é apenas de apresentação e nunca substitui a validação de matrícula ou as regras comerciais.
 
 ## Formatos de Pack
 
 Todo Pack possui um `pack_format` permanente:
 
-- `canva`: exibir coleções e designs publicados, usando `cover_url` como capa e `canva_template_url` no botão **Usar no Canva**;
+- `canva`: exibir coleções e designs publicados, usando a capa de apresentação resolvida para o contexto e `canva_template_url` no botão **Usar no Canva**;
 - `textual`: exibir coleções e textos publicados, com leitura e cópia de `textual_content`;
 - `drive`: exibir coleções e arquivos publicados. Prévia e download devem chamar a função protegida `pack-drive`, nunca expor links privados do Drive.
 
@@ -78,7 +84,7 @@ Enquanto a View correspondente ainda não estiver ativa na Members:
 7. No Textual, exibir `textual_content`, `textual_example` quando preenchido e ações de copiar.
 8. No Drive, nunca usar ou exibir um endereço privado. Chamar `pack-drive` com `{ action: "download", item_id }` usando a sessão autenticada.
 9. Reproduzir somente vídeos publicados e converter links HTTPS do YouTube e Vimeo para seus endereços oficiais de incorporação.
-10. Aplicar o contrato de apresentação unificada, incluindo imagem responsiva, logo opcional e botão personalizado válido.
+10. Aplicar o contrato de apresentação por uso e proporção, incluindo fallbacks, logo opcional e botão personalizado válido.
 11. Validar em celular e computador os estados: matrícula ativa, expirada, cancelada, aluno sem matrícula, item oculto, coleção oculta, arquivo removido e formato desconhecido.
 
 ## Critério para liberar venda
