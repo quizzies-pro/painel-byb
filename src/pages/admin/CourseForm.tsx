@@ -31,6 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 import ProductCategoriesEditor, { CategorySelection } from "@/components/ProductCategoriesEditor";
+import ProductPresentationPreview from "@/components/admin/ProductPresentationPreview";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 import { PACK_FORMATS, PackFormat } from "@/lib/pack-formats";
 
@@ -512,61 +513,75 @@ export default function CourseForm() {
           </div>
         </TabsContent>
 
-        <TabsContent value="presentation" className="mt-6">
-          <div className="max-w-5xl space-y-8">
-            <div>
-              <h2 className="text-base font-semibold">Identidade visual</h2>
-              <p className="mt-1 text-xs text-muted-foreground">A mesma imagem principal será adaptada para banners e cards na Members.</p>
-              <div className="mt-5 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-                <CoverUpload
-                  value={form.cover_url || ""}
-                  onChange={(url) => update("cover_url", url)}
-                  storagePath={`covers/courses/${id || "new"}`}
-                  label="Imagem principal"
-                  aspectRatio="aspect-video"
-                  showResponsivePreviews
-                  hint="JPG, PNG ou WebP. Recomendado: 1600×900 px, com o conteúdo importante no centro. Máx. 10 MB."
-                />
-                <CoverUpload
-                  value={form.logo_url || ""}
-                  onChange={(url) => update("logo_url", url)}
-                  storagePath={`logos/courses/${id || "new"}`}
-                  label="Logo do produto (opcional)"
-                  aspectRatio="aspect-square"
-                  hint="Se não houver logo, a Members exibirá o título do produto."
-                />
-              </div>
+        <TabsContent value="presentation" className="mt-6 overflow-hidden rounded-md border border-border bg-card">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="min-w-0 p-5 sm:p-6 lg:p-8">
+              <section className="pb-8">
+                <h2 className="text-base font-semibold">Identidade visual</h2>
+                <p className="mt-1 text-xs text-muted-foreground">A mesma imagem principal será adaptada para banners e cards na Members.</p>
+                <div className="mt-5 space-y-5">
+                  <CoverUpload
+                    value={form.cover_url || ""}
+                    onChange={(url) => update("cover_url", url)}
+                    storagePath={`covers/courses/${id || "new"}`}
+                    label="Imagem principal"
+                    aspectRatio="aspect-video"
+                    showImagePreview={false}
+                    hint="JPG, PNG ou WebP. Recomendado: 1600×900 px, com o conteúdo importante no centro. Máx. 10 MB."
+                  />
+                  <CoverUpload
+                    value={form.logo_url || ""}
+                    onChange={(url) => update("logo_url", url)}
+                    storagePath={`logos/courses/${id || "new"}`}
+                    label="Logo do produto (opcional)"
+                    aspectRatio="aspect-square"
+                    showImagePreview={false}
+                    hint="Se não houver logo, a Members exibirá o título do produto."
+                  />
+                </div>
+              </section>
+
+              {isCourse && <section className="space-y-2 border-t border-border py-8">
+                <Label className="text-[13px] font-medium">Vídeo de apresentação (Vimeo)</Label>
+                <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
+                <p className="text-xs text-muted-foreground">Exibido na apresentação do Curso na Members.</p>
+              </section>}
+
+              <section className="space-y-5 border-t border-border py-8">
+                <div className="flex items-center justify-between gap-8">
+                  <div>
+                    <Label className="text-[13px] font-medium">Botão personalizado</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">Exibe uma ação adicional na apresentação sem substituir as regras de acesso.</p>
+                  </div>
+                  <Switch checked={form.presentation_button_enabled ?? false} onCheckedChange={(value) => update("presentation_button_enabled", value)} />
+                </div>
+                {form.presentation_button_enabled && <div className="grid gap-5 sm:grid-cols-[0.8fr_1.2fr]">
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-medium">Texto do botão</Label>
+                    <Input maxLength={60} value={form.presentation_button_text || ""} onChange={(event) => update("presentation_button_text", event.target.value)} placeholder="Saiba mais" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-medium">Endereço HTTPS</Label>
+                    <Input type="url" value={form.presentation_button_url || ""} onChange={(event) => update("presentation_button_url", event.target.value)} placeholder="https://..." />
+                  </div>
+                </div>}
+              </section>
+
+              <section className="border-t border-border pt-8">
+                <h2 className="mb-4 text-base font-semibold">Categorias da vitrine</h2>
+                <ProductCategoriesEditor value={categorySelections} onChange={setCategorySelections} />
+              </section>
             </div>
 
-            {isCourse && <div className="space-y-2 border-t border-border pt-6">
-              <Label className="text-[13px] font-medium">Vídeo de apresentação (Vimeo)</Label>
-              <Input value={form.trailer_url || ""} onChange={(e) => update("trailer_url", e.target.value)} placeholder="https://vimeo.com/..." className="bg-background border-border" />
-            </div>}
-
-            <div className="space-y-5 border-t border-border pt-6">
-              <div className="flex items-center justify-between gap-8">
-                <div>
-                  <Label className="text-[13px] font-medium">Botão personalizado</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">Exibe uma ação adicional na apresentação sem substituir as regras de acesso.</p>
-                </div>
-                <Switch checked={form.presentation_button_enabled ?? false} onCheckedChange={(value) => update("presentation_button_enabled", value)} />
-              </div>
-              {form.presentation_button_enabled && <div className="grid gap-5 sm:grid-cols-[0.8fr_1.2fr]">
-                <div className="space-y-2">
-                  <Label className="text-[13px] font-medium">Texto do botão</Label>
-                  <Input maxLength={60} value={form.presentation_button_text || ""} onChange={(event) => update("presentation_button_text", event.target.value)} placeholder="Saiba mais" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[13px] font-medium">Endereço HTTPS</Label>
-                  <Input type="url" value={form.presentation_button_url || ""} onChange={(event) => update("presentation_button_url", event.target.value)} placeholder="https://..." />
-                </div>
-              </div>}
-            </div>
-
-            <div className="border-t border-border pt-6">
-              <h2 className="mb-4 text-base font-semibold">Categorias da vitrine</h2>
-            <ProductCategoriesEditor value={categorySelections} onChange={setCategorySelections} />
-            </div>
+            <ProductPresentationPreview
+              coverUrl={form.cover_url || ""}
+              logoUrl={form.logo_url || ""}
+              title={form.title || ""}
+              description={form.short_description || ""}
+              productLabel={PRODUCT_TYPES[productType].label}
+              buttonEnabled={form.presentation_button_enabled ?? false}
+              buttonText={form.presentation_button_text || ""}
+            />
           </div>
         </TabsContent>
 
