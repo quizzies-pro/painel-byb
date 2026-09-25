@@ -5,7 +5,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export function AdminLayout({ children, requiredPermission, requireManage = false }: { children: ReactNode; requiredPermission?: string; requireManage?: boolean }) {
-  const { user, isAdmin, loading, permissions } = useAuth();
+  const { user, isAdmin, loading, role, permissions } = useAuth();
 
   if (loading) {
     return (
@@ -17,7 +17,7 @@ export function AdminLayout({ children, requiredPermission, requireManage = fals
 
   if (!user || !isAdmin) return <Navigate to="/login" replace />;
 
-  if (requiredPermission) {
+  if (requiredPermission && role !== "super_admin") {
     const permission = permissions?.[requiredPermission] as { view?: boolean; manage?: boolean } | undefined;
     const allowed = requireManage ? permission?.manage : permission?.view;
     if (!allowed) return <Navigate to="/admin" replace />;

@@ -125,7 +125,9 @@ export function AdminSidebar() {
       ? location.pathname === "/admin"
       : location.pathname.startsWith(path);
 
-  const visibleManagementItems = managementItems.filter((item) => item.title !== "Listas de espera" || Boolean((permissions?.waitlists as { view?: boolean } | undefined)?.view));
+  const visibleManagementItems = managementItems.filter(
+    (item) => item.title !== "Listas de espera" || role === "super_admin" || Boolean((permissions?.waitlists as { view?: boolean } | undefined)?.view),
+  );
 
   const renderGroup = (label: string, items: typeof contentItems) => (
     <SidebarGroup key={label}>
