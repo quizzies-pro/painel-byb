@@ -310,7 +310,7 @@ export default function WebhookLogsPage() {
               <DialogContent size="wide">
                 <DialogHeader><DialogTitle>Novo Webhook Endpoint</DialogTitle></DialogHeader>
                 <DialogBody className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label className="text-[13px] font-medium">Nome *</Label>
                       <Input
@@ -504,7 +504,7 @@ export default function WebhookLogsPage() {
                     <SelectContent>{endpoints.map((endpoint) => <SelectItem key={endpoint.id} value={endpoint.id}>{endpoint.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>ID do produto externo *</Label>
                     <Input value={mappingForm.external_product_id} onChange={(event) => setMappingForm((current) => ({ ...current, external_product_id: event.target.value }))} placeholder="Ex: prod_12345" className="font-mono" />
