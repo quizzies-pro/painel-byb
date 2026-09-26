@@ -56,7 +56,7 @@ export default function WaitlistForm() {
     setSaving(false);
     if (result.error) { toast.error(result.error.message); return; }
     toast.success(id ? "Lista atualizada" : "Lista criada");
-    if (!id && result.data) navigate(`/admin/waitlists/${result.data.id}`, { replace: true });
+    if (!id && result.data) navigate(`/admin/waitlists/${result.data.id}/edit`, { replace: true });
   };
 
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
