@@ -91,13 +91,6 @@ export default function AdminDashboard() {
       }
 
       const alertList: string[] = [];
-      const { data: coursesNoModules } = await supabase.from("courses").select("id, title").eq("status", "published");
-      if (coursesNoModules) {
-        for (const course of coursesNoModules) {
-          const { count } = await supabase.from("course_modules").select("id", { count: "exact", head: true }).eq("course_id", course.id);
-          if (!count || count === 0) alertList.push(`Produto "${course.title}" não tem módulos`);
-        }
-      }
       const { count: pendingPayments } = await supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending");
       if (pendingPayments && pendingPayments > 0) alertList.push(`${pendingPayments} pagamento(s) pendente(s)`);
       setAlerts(alertList);
