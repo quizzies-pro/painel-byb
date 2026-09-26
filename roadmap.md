@@ -45,3 +45,5 @@
 - [x] Manter rota e seção atuais após salvar ou atualizar formulários administrativos, sem flash de login
 - [x] Fazer os botões Voltar respeitarem a página ou etapa anterior, com destino seguro para acessos diretos
 - [x] Reformular exclusivamente o popup de itens Canva com formulário horizontal e capa compacta
+- [x] Adicionar proporção dinâmica às capas dos itens de Pack e lista editorial no Hub
+- [ ] Consumir `cover_ratio` no visual próprio dos itens de Pack na Members — bloqueado por edição entre projetos
