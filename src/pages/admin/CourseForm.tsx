@@ -36,6 +36,7 @@ import ProductMediaLibrary from "@/components/admin/ProductMediaLibrary";
 import ProductPresentationPreview from "@/components/admin/ProductPresentationPreview";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
 import { PACK_FORMATS, PackFormat } from "@/lib/pack-formats";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 type CourseInsert = TablesInsert<"courses">;
 type Module = Tables<"course_modules">;
@@ -85,6 +86,7 @@ export default function CourseForm() {
   const confirmAction = useConfirmDialog();
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage("/admin/courses");
   const [searchParams, setSearchParams] = useSearchParams();
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(false);
@@ -308,7 +310,7 @@ export default function CourseForm() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/courses")} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -368,7 +370,7 @@ export default function CourseForm() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/courses")} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

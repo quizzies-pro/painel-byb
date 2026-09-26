@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PRODUCT_TYPES } from "@/lib/product-types";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 const waitlistSchema = z.object({
   course_id: z.string().uuid("Selecione um produto"),
@@ -26,6 +27,7 @@ type Course = Pick<Tables<"courses">, "id" | "title" | "available_for_sale" | "p
 export default function WaitlistForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage("/admin/waitlists");
   const [courses, setCourses] = useState<Course[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(Boolean(id));
@@ -62,7 +64,7 @@ export default function WaitlistForm() {
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
 
   return <form onSubmit={submit} className="space-y-6">
-    <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><Button type="button" variant="ghost" size="icon" onClick={() => navigate("/admin/waitlists")}><ArrowLeft /></Button><div><h1 className="text-2xl font-semibold">{id ? "Editar lista" : "Nova lista de espera"}</h1><p className="mt-1 text-sm text-muted-foreground">Vincule a campanha a um produto ainda não liberado.</p></div></div><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => navigate("/admin/waitlists")}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar lista"}</Button></div></div>
+    <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><Button type="button" variant="ghost" size="icon" onClick={goBack}><ArrowLeft /></Button><div><h1 className="text-2xl font-semibold">{id ? "Editar lista" : "Nova lista de espera"}</h1><p className="mt-1 text-sm text-muted-foreground">Vincule a campanha a um produto ainda não liberado.</p></div></div><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => navigate("/admin/waitlists")}>Cancelar</Button><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar lista"}</Button></div></div>
     <div className="max-w-2xl space-y-5">
       <div className="space-y-2"><Label>Produto *</Label><Select value={form.course_id} onValueChange={(value) => setForm((current) => ({ ...current, course_id: value }))}><SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger><SelectContent>{courses.map((course) => <SelectItem key={course.id} value={course.id} disabled={course.available_for_sale}>{course.title} · {PRODUCT_TYPES[course.product_type].label}{course.available_for_sale ? " — à venda" : ""}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-2"><Label htmlFor="name">Nome interno *</Label><Input id="name" maxLength={160} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Ex.: Lançamento — Turma 2" /></div>

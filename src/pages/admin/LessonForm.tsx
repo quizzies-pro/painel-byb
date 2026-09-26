@@ -14,6 +14,7 @@ import { ArrowLeft, Upload, FileText, Trash2, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
 import TagInput from "@/components/TagInput";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 const slugify = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -69,6 +70,7 @@ export default function LessonForm() {
   });
 
   const backUrl = `/admin/courses/${courseId}/modules/${moduleId}?tab=lessons`;
+  const goBack = usePreviousPage(backUrl);
 
   const fetchMaterials = async () => {
     if (!id) return;
@@ -239,7 +241,7 @@ export default function LessonForm() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(backUrl)} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

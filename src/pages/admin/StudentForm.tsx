@@ -10,10 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
 import CoverUpload from "@/components/CoverUpload";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 export default function StudentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage("/admin/students");
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -87,7 +89,7 @@ export default function StudentForm() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/students")} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Aluno" : "Novo Aluno"}</h1>

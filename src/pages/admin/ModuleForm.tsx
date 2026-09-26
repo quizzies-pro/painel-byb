@@ -32,6 +32,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 type Lesson = Tables<"lessons">;
 
@@ -108,6 +109,7 @@ export default function ModuleForm() {
   });
 
   const backUrl = `/admin/courses/${courseId}`;
+  const goBack = usePreviousPage(backUrl);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -208,7 +210,7 @@ export default function ModuleForm() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(backUrl)} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

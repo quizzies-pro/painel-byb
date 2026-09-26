@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Edit, BookOpen, CreditCard, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 type Student = Tables<"students">;
 type Enrollment = Tables<"enrollments"> & { courses?: { title: string } | null };
@@ -27,6 +28,7 @@ const statusColors: Record<string, string> = {
 export default function StudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage("/admin/students");
   const [student, setStudent] = useState<Student | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -57,7 +59,7 @@ export default function StudentDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/students")}><ArrowLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={goBack}><ArrowLeft className="h-4 w-4" /></Button>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{student.name}</h1>
             <p className="text-sm text-muted-foreground font-mono">{student.email}</p>
