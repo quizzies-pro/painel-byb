@@ -67,13 +67,10 @@ Todos os formatos de Pack podem ter uma lista complementar de vídeos em `pack_v
 
 ## Liberação comercial
 
-Enquanto a View correspondente ainda não estiver ativa na Members:
-
-- Packs permanecem em rascunho;
-- Packs não aparecem na vitrine;
-- Packs não podem ser colocados à venda;
-- Packs não aceitam módulos ou aulas;
-- o Hub pode preparar seus dados gerais, categorias e lista de espera.
+- O Hub permite publicar, ocultar, arquivar e exibir Packs na vitrine.
+- O Hub permite colocar um Pack à venda quando houver um link de checkout válido.
+- Packs não aceitam módulos ou aulas; seu conteúdo permanece em coleções, itens e vídeos.
+- A Members deve tratar formatos ainda não implementados com um estado de conteúdo indisponível, sem tentar abrir a experiência de Curso.
 
 ## Implementação obrigatória na Members
 
@@ -91,7 +88,7 @@ Enquanto a View correspondente ainda não estiver ativa na Members:
 
 ## Critério para liberar venda
 
-Somente remover a trava comercial depois que as três apresentações acima estiverem publicadas e os testes de acesso forem concluídos na Members. Nessa etapa, uma nova migração deverá permitir que Packs sejam publicados, exibidos na vitrine e vendidos; não remova a proteção antes disso.
+A trava temporária do Hub foi removida. Antes de ativar comercialmente um Pack, confirme manualmente que sua apresentação e seu formato de entrega correspondente já estão disponíveis na Members. O link de checkout continua obrigatório quando `available_for_sale = true`.
 
 ## Expansão futura
 

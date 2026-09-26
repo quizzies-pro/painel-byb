@@ -35,7 +35,7 @@
 - [x] Documentar o roteiro obrigatório de implementação e validação na Members
 - [x] Garantir capas públicas dos Packs e sincronização resiliente do Google Drive
 - [ ] Criar e integrar a View de Pack no projeto Dive Club — depende do desenho e de edição entre projetos
-- [ ] Liberar vitrine e venda de Packs após validação da entrega
+- [x] Liberar publicação, vitrine e venda de Packs no Hub, mantendo a validação do checkout
 - [x] Corrigir a falha de compilação na listagem de produtos e validar a publicação
 - [x] Unificar no Hub a apresentação de Cursos e Packs com imagem principal, logo opcional e botão personalizado
 - [x] Reorganizar a apresentação de Cursos e Packs em editor horizontal com prévia responsiva ao vivo

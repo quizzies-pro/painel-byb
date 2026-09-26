@@ -213,10 +213,6 @@ export default function CourseForm() {
         return;
       }
     }
-    if (form.product_type === "pack" && (form.status !== "draft" || form.storefront_visible || form.available_for_sale)) {
-      toast.error("Packs devem permanecer em rascunho até a estrutura de entrega estar pronta");
-      return;
-    }
     setSaving(true);
 
     let savedCourseId = id;
@@ -462,7 +458,7 @@ export default function CourseForm() {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-[13px] font-medium">Status</Label>
-              <Select value={form.status || "draft"} onValueChange={(v) => update("status", v)} disabled={!isCourse}>
+              <Select value={form.status || "draft"} onValueChange={(v) => update("status", v)}>
                 <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Rascunho</SelectItem>
@@ -492,7 +488,7 @@ export default function CourseForm() {
 
             {!isCourse && <div className="col-span-2 rounded-lg border border-border bg-muted/30 p-4">
               <p className="text-sm font-medium">Conteúdo do Pack</p>
-              <p className="mt-1 text-xs text-muted-foreground">Cadastre coleções, itens e vídeos em Gerenciar conteúdo. A venda será liberada após a apresentação correspondente estar ativa na Members.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Cadastre e revise coleções, itens e vídeos em Gerenciar conteúdo antes de publicar o Pack.</p>
             </div>}
 
             <div className="col-span-2 border-y border-border divide-y divide-border">
@@ -501,7 +497,7 @@ export default function CourseForm() {
                   <Label className="text-[13px] font-medium">Exibir na vitrine</Label>
                   <p className="text-xs text-muted-foreground">Alunos sem acesso poderão ver este produto na tela principal.</p>
                 </div>
-                <Switch checked={form.storefront_visible ?? false} disabled={!isCourse} onCheckedChange={(value) => update("storefront_visible", value)} />
+                <Switch checked={form.storefront_visible ?? false} onCheckedChange={(value) => update("storefront_visible", value)} />
               </div>
 
               <div className="space-y-4 py-5">
@@ -510,7 +506,7 @@ export default function CourseForm() {
                     <Label className="text-[13px] font-medium">Disponível para venda</Label>
                     <p className="text-xs text-muted-foreground">Mostra o botão de compra para quem ainda não possui este produto.</p>
                   </div>
-                  <Switch checked={form.available_for_sale ?? false} disabled={!isCourse} onCheckedChange={(value) => update("available_for_sale", value)} />
+                  <Switch checked={form.available_for_sale ?? false} onCheckedChange={(value) => update("available_for_sale", value)} />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[13px] font-medium">Link de checkout</Label>
