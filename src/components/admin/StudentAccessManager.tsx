@@ -91,6 +91,9 @@ export default function StudentAccessManager({ studentId, initialProductId, onCh
   const selectProduct = (productId: string) => {
     const product = products.find((item) => item.id === productId);
     if (!product) return;
+    setSearch("");
+    setStatusFilter("all");
+    setTypeFilter("all");
     setPendingProductId(productId);
     setAddingProduct(false);
     openProduct(product, true);
