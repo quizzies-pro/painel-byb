@@ -42,4 +42,4 @@
 - [x] Padronizar popups, confirmações e painéis do Hub com experiência minimalista e responsiva
 - [x] Criar biblioteca de capas e banners por proporção no Hub com fallback para produtos existentes
 - [ ] Aplicar na Members a apresentação unificada e responsiva dos produtos — bloqueado por edição entre projetos
-- [ ] Manter rota e seção atuais após salvar ou atualizar formulários administrativos, sem flash de login
+- [x] Manter rota e seção atuais após salvar ou atualizar formulários administrativos, sem flash de login

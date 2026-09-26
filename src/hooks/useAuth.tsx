@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<Record<string, unknown> | null>(null);
+  const authCheckRef = useRef(0);
 
   const checkAdminRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -56,32 +57,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let active = true;
+
+    const applySession = async (nextSession: Session | null) => {
+      const checkId = ++authCheckRef.current;
+      setLoading(true);
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await checkAdminRole(nextSession.user.id);
+      } else {
+        setIsAdmin(false);
+        setRole(null);
+        setAvatarUrl(null);
+        setPermissions(null);
+      }
+
+      if (active && checkId === authCheckRef.current) setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => checkAdminRole(session.user.id), 0);
-        } else {
-          setIsAdmin(false);
-          setRole(null);
-          setAvatarUrl(null);
-          setPermissions(null);
-        }
-        setLoading(false);
+      (_event, nextSession) => {
+        window.setTimeout(() => void applySession(nextSession), 0);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-      }
-      setLoading(false);
-    });
+    void supabase.auth.getSession().then(({ data: { session: currentSession } }) => applySession(currentSession));
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

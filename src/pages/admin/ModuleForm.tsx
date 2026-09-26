@@ -85,7 +85,7 @@ function SortableLessonRow({
 export default function ModuleForm() {
   const confirmAction = useConfirmDialog();
   const { courseId, id } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
   const [courseName, setCourseName] = useState("");
@@ -159,11 +159,15 @@ export default function ModuleForm() {
       if (!id) { setSaving(false); return; }
       const { error } = await supabase.from("course_modules").update(payload).eq("id", id);
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Módulo atualizado"); navigate(backUrl); }
+      else toast.success("Módulo atualizado");
     } else {
-      const { error } = await supabase.from("course_modules").insert(payload);
+      const { data, error } = await supabase.from("course_modules").insert(payload).select("id").single();
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Módulo criado"); navigate(backUrl); }
+      else if (data) {
+        toast.success("Módulo criado");
+        const query = searchParams.toString();
+        navigate(`/admin/courses/${courseId}/modules/${data.id}${query ? `?${query}` : ""}`, { replace: true });
+      }
     }
     setSaving(false);
   };
@@ -220,7 +224,15 @@ export default function ModuleForm() {
         </div>
       </div>
 
-      <Tabs defaultValue={searchParams.get("tab") || "info"} className="w-full">
+      <Tabs
+        value={searchParams.get("tab") || "info"}
+        onValueChange={(tab) => {
+          const next = new URLSearchParams(searchParams);
+          next.set("tab", tab);
+          setSearchParams(next, { replace: true });
+        }}
+        className="w-full"
+      >
         <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
           <TabsTrigger value="info" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Informações

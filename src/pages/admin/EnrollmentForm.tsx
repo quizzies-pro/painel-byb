@@ -197,7 +197,7 @@ export default function EnrollmentForm() {
     }
 
     toast.success(isEdit ? "Matrícula atualizada" : "Matrícula criada");
-    navigate("/admin/enrollments");
+    if (!isEdit && enrollmentId) navigate(`/admin/enrollments/${enrollmentId}`, { replace: true });
     setSaving(false);
   };
 
