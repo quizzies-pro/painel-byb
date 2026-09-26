@@ -650,6 +650,7 @@ export type Database = {
       pack_collections: {
         Row: {
           course_id: string
+          cover_ratio: Database["public"]["Enums"]["pack_item_cover_ratio"]
           cover_url: string | null
           created_at: string
           description: string | null
@@ -662,6 +663,7 @@ export type Database = {
         }
         Insert: {
           course_id: string
+          cover_ratio?: Database["public"]["Enums"]["pack_item_cover_ratio"]
           cover_url?: string | null
           created_at?: string
           description?: string | null
@@ -674,6 +676,7 @@ export type Database = {
         }
         Update: {
           course_id?: string
+          cover_ratio?: Database["public"]["Enums"]["pack_item_cover_ratio"]
           cover_url?: string | null
           created_at?: string
           description?: string | null
