@@ -45,11 +45,11 @@ export default function EnrollmentForm() {
     <div className="flex items-center gap-3"><Button variant="ghost" size="icon" onClick={goBack}><ArrowLeft /></Button><div><h1 className="workspace-title text-2xl font-semibold">Liberar produto para aluno</h1><p className="mt-1 text-sm text-muted-foreground">Primeiro selecione o aluno que receberá o acesso.</p></div></div>
     <section className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="border-b border-border p-5"><div className="relative max-w-xl"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome, e-mail ou telefone..." className="pl-9" /></div></div>
-      {filtered.length === 0 ? <div className="p-10 text-center text-sm text-muted-foreground">Nenhum aluno encontrado</div> : filtered.map((student) => <button key={student.id} type="button" onClick={() => navigate(`/admin/students/${student.id}/view`)} className="flex w-full items-center gap-4 border-b border-border px-5 py-3 text-left transition-colors last:border-0 hover:bg-workspace-accent-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-workspace-accent">
+      {filtered.length === 0 ? <div className="p-10 text-center text-sm text-muted-foreground">Nenhum aluno encontrado</div> : filtered.map((student) => <Button key={student.id} type="button" variant="ghost" onClick={() => navigate(`/admin/students/${student.id}/view`)} className="flex h-auto w-full items-center justify-start gap-4 rounded-none border-b border-border px-5 py-3 text-left last:border-0 hover:bg-workspace-accent-subtle">
         <Avatar className="h-10 w-10 border border-border"><AvatarImage src={student.avatar_url || undefined} alt="" /><AvatarFallback><UserRound className="h-4 w-4" /></AvatarFallback></Avatar>
         <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{student.name}</p><p className="truncate text-xs text-muted-foreground">{student.email}{student.phone ? ` · ${student.phone}` : ""}</p></div>
         <span className="text-xs capitalize text-muted-foreground">{student.status}</span><ChevronRight className="h-4 w-4 text-muted-foreground" />
-      </button>)}
+      </Button>)}
     </section>
   </div>;
 }

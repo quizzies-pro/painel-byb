@@ -52,15 +52,15 @@ export default function StudentAccessManager({ studentId, initialProductId, onCh
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [accessMode, setAccessMode] = useState<"full" | "custom">("full");
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     const [productsResult, enrollmentsResult] = await Promise.all([
       supabase.from("courses").select("*").order("display_order").order("title"),
       supabase.from("enrollments").select("*").eq("student_id", studentId).order("created_at", { ascending: false }),
     ]);
     if (productsResult.error || enrollmentsResult.error) toast.error("Não foi possível carregar os acessos do aluno");
     else { setProducts(productsResult.data ?? []); setEnrollments(enrollmentsResult.data ?? []); }
-    setLoading(false);
+    if (showLoading) setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, [studentId]);
@@ -144,7 +144,7 @@ export default function StudentAccessManager({ studentId, initialProductId, onCh
       if (inserts.some((item) => item.error)) { toast.error("A matrícula foi salva, mas não foi possível concluir as permissões personalizadas"); setSaving(false); return; }
     }
     toast.success(existing ? "Acesso atualizado" : "Acesso liberado");
-    await fetchData(); onChanged?.(); setExpandedProductId(product.id); setSaving(false);
+    await fetchData(false); onChanged?.(); setExpandedProductId(product.id); setSaving(false);
   };
 
   if (loading) return <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>;

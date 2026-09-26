@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, UserRound } from "lucide-react";
+import { ArrowLeft, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { usePreviousPage } from "@/hooks/usePreviousPage";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -85,7 +85,6 @@ export default function StudentDetail() {
         <Avatar className="h-12 w-12 border border-border"><AvatarImage src={student.avatar_url || undefined} alt="" /><AvatarFallback><UserRound className="h-5 w-5" /></AvatarFallback></Avatar>
         <div><h1 className="workspace-title text-2xl font-semibold">{student.name}</h1><p className="text-sm text-muted-foreground">{student.email}</p></div>
       </div>
-      <Button asChild variant="outline" size="sm"><Link to={`/admin/students/${id}`}><Edit />Editar cadastro</Link></Button>
     </div>
 
     <div className="grid overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-4">
