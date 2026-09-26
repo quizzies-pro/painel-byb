@@ -24,8 +24,24 @@ type PackItem = Tables<"pack_items">;
 type PackVideo = Tables<"pack_videos">;
 type Product = Pick<Tables<"courses">, "id" | "title" | "product_type" | "pack_format" | "cover_url" | "cover_16_9_url" | "cover_4_3_url" | "cover_1_1_url" | "cover_3_4_url" | "cover_9_16_url" | "drive_root_folder_id" | "drive_root_folder_name">;
 type DriveFile = { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; thumbnailLink?: string; iconLink?: string };
+type PackItemCoverRatio = PackItem["cover_ratio"];
 
 const EMPTY_COLLECTION = { title: "", description: "", cover_url: "", tags: [] as string[], is_visible: true };
+const COVER_RATIOS: PackItemCoverRatio[] = ["1:1", "16:9", "4:3", "3:4", "9:16"];
+const COVER_RATIO_CLASSES: Record<PackItemCoverRatio, string> = {
+  "1:1": "aspect-square",
+  "16:9": "aspect-video",
+  "4:3": "aspect-[4/3]",
+  "3:4": "aspect-[3/4]",
+  "9:16": "aspect-[9/16]",
+};
+const COVER_RATIO_PREVIEW_CLASSES: Record<PackItemCoverRatio, string> = {
+  "1:1": "h-24 w-24",
+  "16:9": "w-28 aspect-video",
+  "4:3": "w-24 aspect-[4/3]",
+  "3:4": "h-24 aspect-[3/4]",
+  "9:16": "h-24 aspect-[9/16]",
+};
 
 const getVideoProvider = (url: string) => url.includes("youtu") ? "YouTube" : "Vimeo";
 
@@ -72,7 +88,7 @@ export default function PackContentPage() {
   const [editingVideo, setEditingVideo] = useState<PackVideo | null>(null);
   const [collectionForm, setCollectionForm] = useState(EMPTY_COLLECTION);
   const [itemForm, setItemForm] = useState({
-    title: "", description: "", cover_url: "", collection_id: "none", status: "draft",
+    title: "", description: "", cover_url: "", cover_ratio: "16:9" as PackItemCoverRatio, collection_id: "none", status: "draft",
     canva_template_url: "", textual_content: "", textual_example: "", tags: [] as string[],
   });
   const [videoForm, setVideoForm] = useState({ title: "", description: "", video_url: "", status: "draft" });
@@ -143,6 +159,7 @@ export default function PackContentPage() {
       title: item.title,
       description: item.description ?? "",
       cover_url: item.cover_url ?? "",
+      cover_ratio: item.cover_ratio,
       collection_id: item.collection_id ?? "none",
       status: item.status,
       canva_template_url: item.canva_template_url ?? "",
@@ -150,7 +167,7 @@ export default function PackContentPage() {
       textual_example: item.textual_example ?? "",
       tags: item.tags ?? [],
     } : {
-      title: "", description: "", cover_url: "", collection_id: collectionId ?? "none", status: "draft",
+      title: "", description: "", cover_url: "", cover_ratio: "16:9", collection_id: collectionId ?? "none", status: "draft",
       canva_template_url: "", textual_content: "", textual_example: "", tags: [],
     });
     setItemOpen(true);
@@ -167,6 +184,7 @@ export default function PackContentPage() {
       title: itemForm.title.trim(),
       description: itemForm.description.trim() || null,
       cover_url: itemForm.cover_url.trim() || null,
+      cover_ratio: itemForm.cover_ratio,
       status: itemForm.status as TablesInsert<"pack_items">["status"],
       tags: itemForm.tags,
       canva_template_url: format === "canva" ? itemForm.canva_template_url.trim() : null,
@@ -365,28 +383,28 @@ export default function PackContentPage() {
   ];
 
   const renderItems = (collectionItems: PackItem[], collectionId?: string) => (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <div className="space-y-2">
       {collectionItems.map((item) => (
-        <div key={item.id} className="overflow-hidden rounded-lg border border-border bg-card">
-          {(item.cover_url || format === "canva") && <div className="flex aspect-[16/10] items-center justify-center overflow-hidden bg-muted/30">
-            {item.cover_url ? <img src={item.cover_url} alt={item.title} className="h-full w-full object-cover" /> : <Image className="h-8 w-8 text-muted-foreground" />}
-          </div>}
-          <div className="space-y-3 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div><p className="text-sm font-medium">{item.title}</p><Badge variant="outline" className="mt-1 text-[10px]">{item.status === "published" ? "Publicado" : item.status === "hidden" ? "Oculto" : "Rascunho"}</Badge></div>
-               <div className="flex gap-1">
-                 <Button size="icon" variant="ghost" className="h-7 w-7" disabled={collectionItems.indexOf(item) === 0} onClick={() => moveRecord("item", collectionItems, collectionItems.indexOf(item), -1)} title="Mover item para cima"><ArrowUp className="h-3.5 w-3.5" /></Button>
-                 <Button size="icon" variant="ghost" className="h-7 w-7" disabled={collectionItems.indexOf(item) === collectionItems.length - 1} onClick={() => moveRecord("item", collectionItems, collectionItems.indexOf(item), 1)} title="Mover item para baixo"><ArrowDown className="h-3.5 w-3.5" /></Button>
-                 {format !== "drive" && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => duplicateItem(item)} title="Duplicar item"><Copy className="h-3.5 w-3.5" /></Button>}
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openItem(item)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteItem(item)}><Trash2 className="h-3.5 w-3.5" /></Button>
-              </div>
+        <div key={item.id} className="flex flex-col gap-4 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center">
+          {(item.cover_url || format === "canva") && <div className="flex h-28 w-full shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/30 sm:w-32">
+            <div className={`flex max-h-24 max-w-28 items-center justify-center overflow-hidden rounded border border-border bg-background ${COVER_RATIO_PREVIEW_CLASSES[item.cover_ratio]}`}>
+              {item.cover_url ? <img src={item.cover_url} alt={item.title} className="h-full w-full object-contain" /> : <Image className="h-7 w-7 text-muted-foreground" />}
             </div>
+          </div>}
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium">{item.title}</p><Badge variant="outline" className="text-[10px]">{item.status === "published" ? "Publicado" : item.status === "hidden" ? "Oculto" : "Rascunho"}</Badge><Badge variant="secondary" className="text-[10px] font-normal">{item.cover_ratio}</Badge></div>
             {item.description && <p className="line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
             {item.tags.length > 0 && <div className="flex flex-wrap gap-1">{item.tags.map((tag) => <Badge key={tag} variant="secondary" className="text-[10px] font-normal">{tag}</Badge>)}</div>}
-            {format === "canva" && item.canva_template_url && <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => window.open(item.canva_template_url ?? "", "_blank")}><ExternalLink className="h-3.5 w-3.5" />Ver template</Button>}
-            {format === "textual" && <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigator.clipboard.writeText(item.textual_content ?? "")}><Copy className="h-3.5 w-3.5" />Copiar texto</Button>}
-            {format === "drive" && <Button variant="outline" size="sm" className="w-full gap-2" onClick={async () => {
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-1 sm:justify-end">
+            <Button size="icon" variant="ghost" className="h-8 w-8" disabled={collectionItems.indexOf(item) === 0} onClick={() => moveRecord("item", collectionItems, collectionItems.indexOf(item), -1)} title="Mover item para cima"><ArrowUp className="h-3.5 w-3.5" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8" disabled={collectionItems.indexOf(item) === collectionItems.length - 1} onClick={() => moveRecord("item", collectionItems, collectionItems.indexOf(item), 1)} title="Mover item para baixo"><ArrowDown className="h-3.5 w-3.5" /></Button>
+            {format !== "drive" && <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateItem(item)} title="Duplicar item"><Copy className="h-3.5 w-3.5" /></Button>}
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openItem(item)} title="Editar item"><Pencil className="h-3.5 w-3.5" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteItem(item)} title="Excluir item"><Trash2 className="h-3.5 w-3.5" /></Button>
+            {format === "canva" && item.canva_template_url && <Button variant="outline" size="sm" className="ml-1 gap-2" onClick={() => window.open(item.canva_template_url ?? "", "_blank")}><ExternalLink className="h-3.5 w-3.5" />Ver template</Button>}
+            {format === "textual" && <Button variant="outline" size="sm" className="ml-1 gap-2" onClick={() => navigator.clipboard.writeText(item.textual_content ?? "")}><Copy className="h-3.5 w-3.5" />Copiar texto</Button>}
+            {format === "drive" && <Button variant="outline" size="sm" className="ml-1 gap-2" onClick={async () => {
               try {
                 const { data, error } = await supabase.functions.invoke("pack-drive", { body: { action: "download", item_id: item.id } });
                 if (error) throw error;
@@ -397,7 +415,7 @@ export default function PackContentPage() {
           </div>
         </div>
       ))}
-      <Button variant="outline" className="min-h-36 border-dashed" onClick={() => openItem(undefined, collectionId)}><Plus className="mr-2 h-4 w-4" />Novo item</Button>
+      <Button variant="outline" className="h-14 w-full border-dashed" onClick={() => openItem(undefined, collectionId)}><Plus className="mr-2 h-4 w-4" />Novo item</Button>
     </div>
   );
 
@@ -465,6 +483,14 @@ export default function PackContentPage() {
                     <Label>Link de duplicação do Canva</Label>
                     <Input type="url" value={itemForm.canva_template_url} onChange={(event) => setItemForm((current) => ({ ...current, canva_template_url: event.target.value }))} placeholder="https://www.canva.com/design/..." />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Proporção da capa</Label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {COVER_RATIOS.map((ratio) => (
+                        <Button key={ratio} type="button" size="sm" variant={itemForm.cover_ratio === ratio ? "default" : "outline"} className="px-2" onClick={() => setItemForm((current) => ({ ...current, cover_ratio: ratio }))}>{ratio}</Button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
                     <div className="space-y-2">
                       <Label>Etiquetas</Label>
@@ -486,7 +512,7 @@ export default function PackContentPage() {
                     storagePath={`packs/${courseId}/items/${editingItem?.id ?? "new"}`}
                     bucket="course-covers"
                     label="Capa do item"
-                    aspectRatio="aspect-video"
+                    aspectRatio={COVER_RATIO_CLASSES[itemForm.cover_ratio]}
                     hint="JPG, PNG ou WebP. Tamanho máximo: 10 MB."
                   />
                 </div>
@@ -496,7 +522,8 @@ export default function PackContentPage() {
             <DialogBody className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Título</Label><Input value={itemForm.title} onChange={(event) => setItemForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Coleção</Label><Select value={itemForm.collection_id} onValueChange={(value) => setItemForm((current) => ({ ...current, collection_id: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select></div></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={itemForm.description} onChange={(event) => setItemForm((current) => ({ ...current, description: event.target.value }))} /></div>
-              <CoverUpload value={itemForm.cover_url} onChange={(cover_url) => setItemForm((current) => ({ ...current, cover_url }))} storagePath={`packs/${courseId}/items/${editingItem?.id ?? "new"}`} bucket="course-covers" label="Capa do item" />
+              <div className="space-y-2"><Label>Proporção da capa</Label><div className="grid grid-cols-5 gap-2">{COVER_RATIOS.map((ratio) => <Button key={ratio} type="button" size="sm" variant={itemForm.cover_ratio === ratio ? "default" : "outline"} className="px-2" onClick={() => setItemForm((current) => ({ ...current, cover_ratio: ratio }))}>{ratio}</Button>)}</div></div>
+              <CoverUpload value={itemForm.cover_url} onChange={(cover_url) => setItemForm((current) => ({ ...current, cover_url }))} storagePath={`packs/${courseId}/items/${editingItem?.id ?? "new"}`} bucket="course-covers" label="Capa do item" aspectRatio={COVER_RATIO_CLASSES[itemForm.cover_ratio]} />
               {format === "textual" && <><div className="space-y-2"><Label>Conteúdo</Label><Textarea rows={16} value={itemForm.textual_content} onChange={(event) => setItemForm((current) => ({ ...current, textual_content: event.target.value }))} placeholder="Escreva o conteúdo completo preservando parágrafos e listas." /></div><div className="space-y-2"><Label>Exemplo ou orientação adicional</Label><Textarea rows={5} value={itemForm.textual_example} onChange={(event) => setItemForm((current) => ({ ...current, textual_example: event.target.value }))} /></div></>}
               <div className="space-y-2"><Label>Etiquetas</Label><TagInput value={itemForm.tags} onChange={(tags) => setItemForm((current) => ({ ...current, tags }))} placeholder="Ex.: reels, vendas, lançamento" /></div>
               <div className="space-y-2"><Label>Estado</Label><Select value={itemForm.status} onValueChange={(value) => setItemForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div>

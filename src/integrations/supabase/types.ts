@@ -699,6 +699,7 @@ export type Database = {
           canva_template_url: string | null
           collection_id: string | null
           course_id: string
+          cover_ratio: Database["public"]["Enums"]["pack_item_cover_ratio"]
           cover_url: string | null
           created_at: string
           description: string | null
@@ -724,6 +725,7 @@ export type Database = {
           canva_template_url?: string | null
           collection_id?: string | null
           course_id: string
+          cover_ratio?: Database["public"]["Enums"]["pack_item_cover_ratio"]
           cover_url?: string | null
           created_at?: string
           description?: string | null
@@ -749,6 +751,7 @@ export type Database = {
           canva_template_url?: string | null
           collection_id?: string | null
           course_id?: string
+          cover_ratio?: Database["public"]["Enums"]["pack_item_cover_ratio"]
           cover_url?: string | null
           created_at?: string
           description?: string | null
@@ -1645,6 +1648,7 @@ export type Database = {
         | "other"
       module_status: "draft" | "published" | "hidden"
       pack_format: "canva" | "textual" | "drive"
+      pack_item_cover_ratio: "1:1" | "16:9" | "4:3" | "3:4" | "9:16"
       pack_item_status: "draft" | "published" | "hidden"
       payment_status:
         | "pending"
@@ -1802,6 +1806,7 @@ export const Constants = {
       ],
       module_status: ["draft", "published", "hidden"],
       pack_format: ["canva", "textual", "drive"],
+      pack_item_cover_ratio: ["1:1", "16:9", "4:3", "3:4", "9:16"],
       pack_item_status: ["draft", "published", "hidden"],
       payment_status: [
         "pending",
