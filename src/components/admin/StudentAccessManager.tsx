@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Package, Plus, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -53,6 +53,7 @@ export default function StudentAccessManager({ studentId, initialProductId, onCh
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [accessMode, setAccessMode] = useState<"full" | "custom">("full");
+  const initialProductOpened = useRef(false);
 
   const fetchData = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -129,11 +130,14 @@ export default function StudentAccessManager({ studentId, initialProductId, onCh
   };
 
   useEffect(() => {
-    if (!loading && initialProductId && !expandedProductId) {
+    if (!loading && initialProductId && !initialProductOpened.current) {
       const product = products.find((item) => item.id === initialProductId);
-      if (product) openProduct(product, true);
+      if (product) {
+        initialProductOpened.current = true;
+        openProduct(product, true);
+      }
     }
-  }, [loading, initialProductId, products, expandedProductId]);
+  }, [loading, initialProductId, products]);
 
   const toggleModule = (module: ModuleWithLessons) => {
     const nextModules = new Set(selectedModules); const nextLessons = new Set(selectedLessons);
