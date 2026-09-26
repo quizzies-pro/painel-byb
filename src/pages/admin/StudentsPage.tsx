@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 
-type Student = Tables<"students">;
+type Student = Tables<"students"> & { enrollments?: { status: Tables<"enrollments">["status"] }[] };
 
 const statusColors: Record<string, string> = {
   active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -35,7 +35,7 @@ export default function StudentsPage() {
 
   const fetchStudents = async () => {
     setLoading(true);
-    let query = supabase.from("students").select("*").order("created_at", { ascending: false });
+    let query = supabase.from("students").select("*, enrollments(status)").order("created_at", { ascending: false });
     if (statusFilter !== "all") query = query.eq("status", statusFilter as Student["status"]);
     const { data, error } = await query;
     if (error) toast.error("Erro ao carregar alunos");
@@ -71,7 +71,7 @@ export default function StudentsPage() {
         </Link>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por nome, email, telefone ou CPF..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
@@ -101,23 +101,25 @@ export default function StudentsPage() {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Telefone</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Acessos ativos</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((s) => (
-                <tr key={s.id} className="border-b border-border last:border-0 hover:bg-card/50 transition-colors">
+                <tr key={s.id} className="border-b border-border last:border-0 hover:bg-card/50 transition-colors cursor-pointer" onClick={() => window.location.assign(`/admin/students/${s.id}/view`)}>
                   <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{s.email}</td>
                   <td className="px-4 py-3 text-muted-foreground">{s.phone || "—"}</td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className={statusColors[s.status] || ""}>{statusLabels[s.status] || s.status}</Badge>
                   </td>
+                  <td className="px-4 py-3 text-muted-foreground">{s.enrollments?.filter((enrollment) => enrollment.status === "active").length ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Link to={`/admin/students/${s.id}/view`}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Eye className="h-3.5 w-3.5" /></Button></Link>
-                      <Link to={`/admin/students/${s.id}`}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Edit className="h-3.5 w-3.5" /></Button></Link>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(s.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Link to={`/admin/students/${s.id}/view`} onClick={(event) => event.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Eye className="h-3.5 w-3.5" /></Button></Link>
+                      <Link to={`/admin/students/${s.id}`} onClick={(event) => event.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Edit className="h-3.5 w-3.5" /></Button></Link>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(event) => { event.stopPropagation(); handleDelete(s.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </td>
                 </tr>

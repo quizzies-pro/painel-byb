@@ -70,7 +70,7 @@ export default function EnrollmentsPage() {
         </Link>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por aluno ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
@@ -117,7 +117,7 @@ export default function EnrollmentsPage() {
                   <td className="px-4 py-3 text-muted-foreground">{formatDate(e.expires_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Link to={`/admin/enrollments/${e.id}`}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Edit className="h-3.5 w-3.5" /></Button></Link>
+                      <Link to={`/admin/students/${e.student_id}/view?product=${e.course_id}`}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Gerenciar acesso"><Edit className="h-3.5 w-3.5" /></Button></Link>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(e.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </td>
