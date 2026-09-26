@@ -435,7 +435,76 @@ export default function PackContentPage() {
 
       <Dialog open={collectionOpen} onOpenChange={setCollectionOpen}><DialogContent size="media"><DialogHeader><DialogTitle>{editingCollection ? "Editar coleção" : "Nova coleção"}</DialogTitle></DialogHeader><DialogBody><div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_20rem]"><div className="space-y-4"><div className="space-y-2"><Label>Nome</Label><Input value={collectionForm.title} onChange={(event) => setCollectionForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={collectionForm.description} onChange={(event) => setCollectionForm((current) => ({ ...current, description: event.target.value }))} /></div><div className="space-y-2"><Label>Etiquetas</Label><TagInput value={collectionForm.tags} onChange={(tags) => setCollectionForm((current) => ({ ...current, tags }))} placeholder="Digite e pressione Enter" /></div><div className="flex items-center justify-between rounded-md border border-border p-3"><div><Label>Coleção visível</Label><p className="mt-1 text-xs text-muted-foreground">Coleções ocultas não aparecem para alunos.</p></div><Checkbox checked={collectionForm.is_visible} onCheckedChange={(checked) => setCollectionForm((current) => ({ ...current, is_visible: checked === true }))} /></div></div><CoverUpload value={collectionForm.cover_url} onChange={(cover_url) => setCollectionForm((current) => ({ ...current, cover_url }))} storagePath={`packs/${courseId}/collections/${editingCollection?.id ?? "new"}`} bucket="course-covers" label="Capa da coleção" aspectRatio="aspect-video" /></div></DialogBody><DialogFooter><Button variant="outline" onClick={() => setCollectionOpen(false)}>Cancelar</Button><Button onClick={saveCollection}>Salvar</Button></DialogFooter></DialogContent></Dialog>
 
-      <Dialog open={itemOpen} onOpenChange={setItemOpen}><DialogContent size="media"><DialogHeader><DialogTitle>{editingItem ? "Editar item" : `Novo item ${PACK_FORMATS[format].label}`}</DialogTitle></DialogHeader><DialogBody className="space-y-4"><div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Título</Label><Input value={itemForm.title} onChange={(event) => setItemForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Coleção</Label><Select value={itemForm.collection_id} onValueChange={(value) => setItemForm((current) => ({ ...current, collection_id: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select></div></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={itemForm.description} onChange={(event) => setItemForm((current) => ({ ...current, description: event.target.value }))} /></div><CoverUpload value={itemForm.cover_url} onChange={(cover_url) => setItemForm((current) => ({ ...current, cover_url }))} storagePath={`packs/${courseId}/items/${editingItem?.id ?? "new"}`} bucket="course-covers" label="Capa do item" />{format === "canva" && <div className="space-y-2"><Label>Link de duplicação do Canva</Label><Input type="url" value={itemForm.canva_template_url} onChange={(event) => setItemForm((current) => ({ ...current, canva_template_url: event.target.value }))} placeholder="https://www.canva.com/design/..." /></div>}{format === "textual" && <><div className="space-y-2"><Label>Conteúdo</Label><Textarea rows={16} value={itemForm.textual_content} onChange={(event) => setItemForm((current) => ({ ...current, textual_content: event.target.value }))} placeholder="Escreva o conteúdo completo preservando parágrafos e listas." /></div><div className="space-y-2"><Label>Exemplo ou orientação adicional</Label><Textarea rows={5} value={itemForm.textual_example} onChange={(event) => setItemForm((current) => ({ ...current, textual_example: event.target.value }))} /></div></>}<div className="space-y-2"><Label>Etiquetas</Label><TagInput value={itemForm.tags} onChange={(tags) => setItemForm((current) => ({ ...current, tags }))} placeholder="Ex.: reels, vendas, lançamento" /></div><div className="space-y-2"><Label>Estado</Label><Select value={itemForm.status} onValueChange={(value) => setItemForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div></DialogBody><DialogFooter><Button variant="outline" onClick={() => setItemOpen(false)}>Cancelar</Button><Button onClick={saveItem}>Salvar item</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={itemOpen} onOpenChange={setItemOpen}>
+        <DialogContent size="media" className={format === "canva" ? "lg:max-w-5xl" : undefined}>
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Editar item" : `Novo item ${PACK_FORMATS[format].label}`}</DialogTitle>
+          </DialogHeader>
+          {format === "canva" ? (
+            <DialogBody className="p-0">
+              <div className="grid min-h-0 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="space-y-5 px-6 py-5 lg:border-r lg:border-border">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Título</Label>
+                      <Input value={itemForm.title} onChange={(event) => setItemForm((current) => ({ ...current, title: event.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Coleção</Label>
+                      <Select value={itemForm.collection_id} onValueChange={(value) => setItemForm((current) => ({ ...current, collection_id: value }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Descrição</Label>
+                    <Textarea rows={4} value={itemForm.description} onChange={(event) => setItemForm((current) => ({ ...current, description: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Link de duplicação do Canva</Label>
+                    <Input type="url" value={itemForm.canva_template_url} onChange={(event) => setItemForm((current) => ({ ...current, canva_template_url: event.target.value }))} placeholder="https://www.canva.com/design/..." />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                    <div className="space-y-2">
+                      <Label>Etiquetas</Label>
+                      <TagInput value={itemForm.tags} onChange={(tags) => setItemForm((current) => ({ ...current, tags }))} placeholder="Ex.: reels, vendas, lançamento" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Estado</Label>
+                      <Select value={itemForm.status} onValueChange={(value) => setItemForm((current) => ({ ...current, status: value }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t border-border bg-muted/20 px-6 py-5 lg:border-t-0">
+                  <CoverUpload
+                    value={itemForm.cover_url}
+                    onChange={(cover_url) => setItemForm((current) => ({ ...current, cover_url }))}
+                    storagePath={`packs/${courseId}/items/${editingItem?.id ?? "new"}`}
+                    bucket="course-covers"
+                    label="Capa do item"
+                    aspectRatio="aspect-video"
+                    hint="JPG, PNG ou WebP. Tamanho máximo: 10 MB."
+                  />
+                </div>
+              </div>
+            </DialogBody>
+          ) : (
+            <DialogBody className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Título</Label><Input value={itemForm.title} onChange={(event) => setItemForm((current) => ({ ...current, title: event.target.value }))} /></div><div className="space-y-2"><Label>Coleção</Label><Select value={itemForm.collection_id} onValueChange={(value) => setItemForm((current) => ({ ...current, collection_id: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sem coleção</SelectItem>{collections.map((collection) => <SelectItem key={collection.id} value={collection.id}>{collection.title}</SelectItem>)}</SelectContent></Select></div></div>
+              <div className="space-y-2"><Label>Descrição</Label><Textarea value={itemForm.description} onChange={(event) => setItemForm((current) => ({ ...current, description: event.target.value }))} /></div>
+              <CoverUpload value={itemForm.cover_url} onChange={(cover_url) => setItemForm((current) => ({ ...current, cover_url }))} storagePath={`packs/${courseId}/items/${editingItem?.id ?? "new"}`} bucket="course-covers" label="Capa do item" />
+              {format === "textual" && <><div className="space-y-2"><Label>Conteúdo</Label><Textarea rows={16} value={itemForm.textual_content} onChange={(event) => setItemForm((current) => ({ ...current, textual_content: event.target.value }))} placeholder="Escreva o conteúdo completo preservando parágrafos e listas." /></div><div className="space-y-2"><Label>Exemplo ou orientação adicional</Label><Textarea rows={5} value={itemForm.textual_example} onChange={(event) => setItemForm((current) => ({ ...current, textual_example: event.target.value }))} /></div></>}
+              <div className="space-y-2"><Label>Etiquetas</Label><TagInput value={itemForm.tags} onChange={(tags) => setItemForm((current) => ({ ...current, tags }))} placeholder="Ex.: reels, vendas, lançamento" /></div>
+              <div className="space-y-2"><Label>Estado</Label><Select value={itemForm.status} onValueChange={(value) => setItemForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div>
+            </DialogBody>
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => setItemOpen(false)}>Cancelar</Button><Button onClick={saveItem}>Salvar item</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={videoOpen} onOpenChange={setVideoOpen}><DialogContent size="wide"><DialogHeader><DialogTitle>{editingVideo ? "Editar vídeo" : "Adicionar vídeo"}</DialogTitle></DialogHeader><DialogBody className="space-y-4"><div className="space-y-2"><Label>Título</Label><Input value={videoForm.title} onChange={(event) => setVideoForm((current) => ({ ...current, title: event.target.value }))} placeholder="Ex.: Como personalizar os materiais" /></div><div className="space-y-2"><Label>Link do YouTube ou Vimeo</Label><Input type="url" value={videoForm.video_url} onChange={(event) => setVideoForm((current) => ({ ...current, video_url: event.target.value }))} placeholder="https://youtube.com/watch?v=..." /></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={videoForm.description} onChange={(event) => setVideoForm((current) => ({ ...current, description: event.target.value }))} placeholder="Resumo opcional do vídeo" /></div><div className="space-y-2"><Label>Estado</Label><Select value={videoForm.status} onValueChange={(value) => setVideoForm((current) => ({ ...current, status: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="published">Publicado</SelectItem><SelectItem value="hidden">Oculto</SelectItem></SelectContent></Select></div>{getVideoEmbedUrl(videoForm.video_url) && <div className="overflow-hidden rounded-lg border border-border bg-muted"><iframe src={getVideoEmbedUrl(videoForm.video_url) ?? undefined} title="Prévia do vídeo" className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>}</DialogBody><DialogFooter><Button variant="outline" onClick={() => setVideoOpen(false)}>Cancelar</Button><Button onClick={saveVideo}>Salvar vídeo</Button></DialogFooter></DialogContent></Dialog>
 
