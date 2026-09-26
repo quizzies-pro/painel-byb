@@ -5,7 +5,7 @@
 - Product presentation uses distinct `courses` cover assets (16:9, 4:3, 1:1, 3:4, 9:16) and hero assets (16:9, 4:3); `cover_url` and `banner_url` remain transition fallbacks and `login_cover_url` remains legacy-only, allowing the Members app to choose artwork by context without breaking existing products.
 - Product presentation previews live in a reusable admin component fed by unsaved form state, keeping Course and Pack editing visually consistent without duplicating business rules.
 - Administrative overlays use shared size variants, fixed headers and footers, scrollable bodies, and a promise-based confirmation provider, keeping popup UX consistent without changing business flows.
-- Administrative full-page forms keep the current route and tab after saves; first creation replaces `/new` with the edit URL, preventing duplicate records without interrupting the workflow.
+- Admin forms stay in context after saves; student profiles own inline product enrollment management, avoiding duplicate records and navigation interruptions.
 - Administrative back arrows use browser history with a safe section fallback, preserving the user's actual editing path instead of forcing fixed destinations.
 - Authentication uses the full-page loading state only during initial session resolution; later auth refreshes update permissions without unmounting active admin forms, preserving unsaved work.
 - Pack item and collection covers store an explicit ratio (`1:1`, `16:9`, `4:3`, `3:4`, or `9:16`); Hub and Members independently preserve each asset without a forced crop.
