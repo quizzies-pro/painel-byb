@@ -29,6 +29,8 @@ export default function EnrollmentsPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [originFilter, setOriginFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -50,11 +52,15 @@ export default function EnrollmentsPage() {
     else { toast.success("Matrícula excluída"); fetchData(); }
   };
 
-  const filtered = enrollments.filter((e) =>
-    e.students?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    e.students?.email?.toLowerCase().includes(search.toLowerCase()) ||
-    e.courses?.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = enrollments.filter((e) => {
+    const term = search.toLowerCase();
+    const matchesSearch = e.students?.name?.toLowerCase().includes(term)
+      || e.students?.email?.toLowerCase().includes(term)
+      || e.courses?.title?.toLowerCase().includes(term);
+    return matchesSearch
+      && (typeFilter === "all" || e.courses?.product_type === typeFilter)
+      && (originFilter === "all" || e.origin === originFilter);
+  });
 
   const formatDate = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
 
@@ -70,7 +76,7 @@ export default function EnrollmentsPage() {
         </Link>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por aluno ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-card border-border" />
@@ -85,6 +91,14 @@ export default function EnrollmentsPage() {
             <SelectItem value="blocked">Bloqueadas</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-full bg-card border-border sm:w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="all">Todos os tipos</SelectItem><SelectItem value="course">Cursos</SelectItem><SelectItem value="pack">Packs</SelectItem></SelectContent>
+        </Select>
+        <Select value={originFilter} onValueChange={setOriginFilter}>
+          <SelectTrigger className="w-full bg-card border-border sm:w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="all">Todas as origens</SelectItem><SelectItem value="purchase">Compra</SelectItem><SelectItem value="manual">Manual</SelectItem><SelectItem value="bonus">Bônus</SelectItem><SelectItem value="test">Teste</SelectItem></SelectContent>
+        </Select>
       </div>
 
       {loading ? (
@@ -92,8 +106,8 @@ export default function EnrollmentsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma matrícula encontrada</div>
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[860px] text-sm">
             <thead>
               <tr className="border-b border-border bg-card">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Aluno</th>
@@ -117,7 +131,7 @@ export default function EnrollmentsPage() {
                   <td className="px-4 py-3 text-muted-foreground">{formatDate(e.expires_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Link to={`/admin/enrollments/${e.id}`}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><Edit className="h-3.5 w-3.5" /></Button></Link>
+                      <Link to={`/admin/students/${e.student_id}/view?product=${e.course_id}`}><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Gerenciar acesso"><Edit className="h-3.5 w-3.5" /></Button></Link>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(e.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </td>

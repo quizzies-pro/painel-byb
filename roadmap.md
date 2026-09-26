@@ -49,3 +49,4 @@
 - [ ] Consumir `cover_ratio` no visual próprio dos itens de Pack na Members — bloqueado por edição entre projetos
 - [x] Adicionar proporção dinâmica às capas das coleções de Pack no Hub
 - [ ] Consumir `cover_ratio` das coleções de Pack na Members — bloqueado por edição entre projetos
+- [x] Reestruturar Alunos e Matrículas com gestão de produtos em lista expandida por aluno

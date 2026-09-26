@@ -67,6 +67,8 @@
     --success-foreground: 0 0% 100%;
     --warning: 25 95% 53%;
     --warning-foreground: 0 0% 0%;
+    --workspace-accent: 217 91% 60%;
+    --workspace-accent-subtle: 214 100% 97%;
   }
 }
 
@@ -86,5 +88,13 @@
 
   .font-mono {
     font-family: 'Geist Mono', 'Menlo', 'Monaco', monospace;
+  }
+
+  .student-workspace {
+    font-family: 'Figtree Variable', 'Geist Sans', sans-serif;
+  }
+
+  .student-workspace .workspace-title {
+    font-family: 'Outfit Variable', 'Geist Sans', sans-serif;
   }
 }
