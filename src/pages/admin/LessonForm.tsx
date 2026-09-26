@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function LessonForm() {
   const confirmAction = useConfirmDialog();
   const { courseId, moduleId, id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isEdit = Boolean(id);
   const [courseName, setCourseName] = useState("");
   const [moduleName, setModuleName] = useState("");
@@ -126,11 +127,15 @@ export default function LessonForm() {
       if (!id) { setSaving(false); return; }
       const { error } = await supabase.from("lessons").update(payload).eq("id", id);
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Aula atualizada"); navigate(backUrl); }
+      else toast.success("Aula atualizada");
     } else {
-      const { error } = await supabase.from("lessons").insert(payload);
+      const { data, error } = await supabase.from("lessons").insert(payload).select("id").single();
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Aula criada"); navigate(backUrl); }
+      else if (data) {
+        toast.success("Aula criada");
+        const query = searchParams.toString();
+        navigate(`/admin/courses/${courseId}/modules/${moduleId}/lessons/${data.id}${query ? `?${query}` : ""}`, { replace: true });
+      }
     }
     setSaving(false);
   };
@@ -250,7 +255,15 @@ export default function LessonForm() {
         </div>
       </div>
 
-      <Tabs defaultValue="info" className="w-full">
+      <Tabs
+        value={searchParams.get("tab") || "info"}
+        onValueChange={(tab) => {
+          const next = new URLSearchParams(searchParams);
+          next.set("tab", tab);
+          setSearchParams(next, { replace: true });
+        }}
+        className="w-full"
+      >
         <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
           <TabsTrigger value="info" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Informações

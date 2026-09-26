@@ -51,7 +51,7 @@ export default function StudentForm() {
       if (!id) return;
       const { error } = await supabase.from("students").update(form).eq("id", id);
       if (error) toast.error("Erro: " + error.message);
-      else { toast.success("Aluno atualizado"); navigate("/admin/students"); }
+      else toast.success("Aluno atualizado");
     } else {
       const { data, error } = await supabase.functions.invoke("student-invitations", {
         body: { ...form, send_invite: sendInvite },
@@ -60,7 +60,7 @@ export default function StudentForm() {
         toast.error("Erro: " + (data?.error || error?.message || "Não foi possível criar o aluno"));
       } else {
         toast.success(sendInvite ? "Aluno criado e convite enviado por e-mail" : "Aluno criado");
-        navigate("/admin/students");
+        if (data?.student_id) navigate(`/admin/students/${data.student_id}`, { replace: true });
       }
     }
     setSaving(false);

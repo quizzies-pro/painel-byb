@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,7 @@ export default function CourseForm() {
   const confirmAction = useConfirmDialog();
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -257,9 +258,10 @@ export default function CourseForm() {
       }
     }
     toast.success(isEdit ? "Produto atualizado" : "Produto criado");
-    navigate(!isEdit && form.product_type === "pack" && savedCourseId
-      ? `/admin/courses/${savedCourseId}/pack-content`
-      : "/admin/courses");
+    if (!isEdit && savedCourseId) {
+      const query = searchParams.toString();
+      navigate(`/admin/courses/${savedCourseId}${query ? `?${query}` : ""}`, { replace: true });
+    }
     setSaving(false);
   };
 
@@ -387,7 +389,15 @@ export default function CourseForm() {
         </div>
       </div>
 
-      <Tabs defaultValue="basic" className="w-full">
+      <Tabs
+        value={searchParams.get("tab") || "basic"}
+        onValueChange={(tab) => {
+          const next = new URLSearchParams(searchParams);
+          next.set("tab", tab);
+          setSearchParams(next, { replace: true });
+        }}
+        className="w-full"
+      >
         <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
           <TabsTrigger value="basic" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-[13px]">
             Informações Básicas

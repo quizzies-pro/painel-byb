@@ -51,12 +51,12 @@ export default function WaitlistForm() {
     setSaving(true);
     const payload = { course_id, name, consent_text, consent_version, privacy_policy_url, description: description || null };
     const result = id
-      ? await supabase.from("product_waitlists").update(payload).eq("id", id)
-      : await supabase.from("product_waitlists").insert(payload);
+      ? await supabase.from("product_waitlists").update(payload).eq("id", id).select("id").single()
+      : await supabase.from("product_waitlists").insert(payload).select("id").single();
     setSaving(false);
     if (result.error) { toast.error(result.error.message); return; }
     toast.success(id ? "Lista atualizada" : "Lista criada");
-    navigate("/admin/waitlists");
+    if (!id && result.data) navigate(`/admin/waitlists/${result.data.id}`, { replace: true });
   };
 
   if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
