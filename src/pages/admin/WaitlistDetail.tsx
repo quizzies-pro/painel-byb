@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 type Waitlist = Tables<"product_waitlists"> & { courses: Pick<Tables<"courses">, "title" | "available_for_sale"> | null };
 type Member = Tables<"product_waitlist_members">;
@@ -18,6 +19,7 @@ const csvCell = (value: string) => `"${value.replace(/"/g, '""')}"`;
 export default function WaitlistDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage("/admin/waitlists");
   const { permissions } = useAuth();
   const canManage = Boolean((permissions?.waitlists as { manage?: boolean } | undefined)?.manage);
   const [waitlist, setWaitlist] = useState<Waitlist | null>(null);
@@ -69,7 +71,7 @@ export default function WaitlistDetail() {
   if (loading || !waitlist) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" /></div>;
 
   return <div className="space-y-6">
-    <div className="flex items-start justify-between gap-4"><div className="flex items-start gap-3"><Button variant="ghost" size="icon" onClick={() => navigate("/admin/waitlists")}><ArrowLeft /></Button><div><div className="flex items-center gap-2"><h1 className="text-2xl font-semibold">{waitlist.name}</h1><Badge variant={waitlist.status === "active" ? "default" : "secondary"}>{waitlist.status === "active" ? "Ativa" : "Encerrada"}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{waitlist.courses?.title ?? "Produto não encontrado"} · {members.filter((member) => member.status === "active").length} interessados ativos</p></div></div><div className="flex gap-2">{canManage && <><Button variant="outline" onClick={changeStatus}>{waitlist.status === "active" ? "Encerrar lista" : "Reabrir lista"}</Button><Button asChild variant="outline"><Link to={`/admin/waitlists/${waitlist.id}/edit`}><Pencil />Editar</Link></Button></>}<Button onClick={exportCsv} disabled={filtered.length === 0}><Download />Exportar CSV</Button></div></div>
+    <div className="flex items-start justify-between gap-4"><div className="flex items-start gap-3"><Button variant="ghost" size="icon" onClick={goBack}><ArrowLeft /></Button><div><div className="flex items-center gap-2"><h1 className="text-2xl font-semibold">{waitlist.name}</h1><Badge variant={waitlist.status === "active" ? "default" : "secondary"}>{waitlist.status === "active" ? "Ativa" : "Encerrada"}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{waitlist.courses?.title ?? "Produto não encontrado"} · {members.filter((member) => member.status === "active").length} interessados ativos</p></div></div><div className="flex gap-2">{canManage && <><Button variant="outline" onClick={changeStatus}>{waitlist.status === "active" ? "Encerrar lista" : "Reabrir lista"}</Button><Button asChild variant="outline"><Link to={`/admin/waitlists/${waitlist.id}/edit`}><Pencil />Editar</Link></Button></>}<Button onClick={exportCsv} disabled={filtered.length === 0}><Download />Exportar CSV</Button></div></div>
 
     <div className="grid max-w-4xl grid-cols-3 gap-4 border-y border-border py-5"><div><p className="text-xs text-muted-foreground">Criada em</p><p className="mt-1 text-sm font-medium">{new Date(waitlist.created_at).toLocaleDateString("pt-BR")}</p></div><div><p className="text-xs text-muted-foreground">Consentimento</p><p className="mt-1 text-sm font-medium">E-mail e WhatsApp · v{waitlist.consent_version}</p></div><div><p className="text-xs text-muted-foreground">Encerrada em</p><p className="mt-1 text-sm font-medium">{waitlist.closed_at ? new Date(waitlist.closed_at).toLocaleDateString("pt-BR") : "—"}</p></div></div>
 

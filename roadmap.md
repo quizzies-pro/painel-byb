@@ -43,3 +43,4 @@
 - [x] Criar biblioteca de capas e banners por proporção no Hub com fallback para produtos existentes
 - [ ] Aplicar na Members a apresentação unificada e responsiva dos produtos — bloqueado por edição entre projetos
 - [x] Manter rota e seção atuais após salvar ou atualizar formulários administrativos, sem flash de login
+- [x] Fazer os botões Voltar respeitarem a página ou etapa anterior, com destino seguro para acessos diretos

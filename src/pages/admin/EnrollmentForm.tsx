@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PRODUCT_TYPES, ProductType } from "@/lib/product-types";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 type StudentOption = Pick<Tables<"students">, "id" | "name" | "email">;
 type CourseOption = Pick<Tables<"courses">, "id" | "title" | "product_type">;
@@ -25,6 +26,7 @@ interface ModuleWithLessons extends Module {
 export default function EnrollmentForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage("/admin/enrollments");
   const { user } = useAuth();
   const isEdit = Boolean(id);
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -207,7 +209,7 @@ export default function EnrollmentForm() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/enrollments")} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" onClick={goBack} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Editar Matrícula" : "Nova Matrícula"}</h1>

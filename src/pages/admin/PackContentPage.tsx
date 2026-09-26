@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, Copy, ExternalLink, FileText, Folder, FolderPlus, HardDrive, Image, Pencil, PlayCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import CoverUpload from "@/components/CoverUpload";
 import TagInput from "@/components/TagInput";
 import { resolveProductCover } from "@/lib/product-presentation-media";
+import { usePreviousPage } from "@/hooks/usePreviousPage";
 
 type Collection = Tables<"pack_collections">;
 type PackItem = Tables<"pack_items">;
@@ -48,6 +49,7 @@ export default function PackContentPage() {
   const confirmAction = useConfirmDialog();
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const goBack = usePreviousPage(`/admin/courses/${courseId}`);
   const [product, setProduct] = useState<Product | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [items, setItems] = useState<PackItem[]>([]);
@@ -403,7 +405,7 @@ export default function PackContentPage() {
     <div className="space-y-7">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild><Link to={`/admin/courses/${courseId}`}><ArrowLeft className="h-4 w-4" /></Link></Button>
+          <Button variant="ghost" size="icon" onClick={goBack}><ArrowLeft className="h-4 w-4" /></Button>
           <div><div className="flex items-center gap-2"><h1 className="text-2xl font-semibold tracking-tight">{product.title}</h1><Badge variant="outline">{PACK_FORMATS[format].label}</Badge></div><p className="mt-1 text-sm text-muted-foreground">Conteúdo e coleções do Pack</p></div>
         </div>
         <Button variant="outline" className="gap-2" onClick={() => openCollection()}><FolderPlus className="h-4 w-4" />Nova coleção</Button>

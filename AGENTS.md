@@ -6,3 +6,4 @@
 - Product presentation previews live in a reusable admin component fed by unsaved form state, keeping Course and Pack editing visually consistent without duplicating business rules.
 - Administrative overlays use shared size variants, fixed headers and footers, scrollable bodies, and a promise-based confirmation provider, keeping popup UX consistent without changing business flows.
 - Administrative full-page forms keep the current route and tab after saves; first creation replaces `/new` with the edit URL, preventing duplicate records without interrupting the workflow.
+- Administrative back arrows use browser history with a safe section fallback, preserving the user's actual editing path instead of forcing fixed destinations.
