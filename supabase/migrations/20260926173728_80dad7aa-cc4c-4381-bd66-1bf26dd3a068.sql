@@ -1,0 +1,1 @@
+COMMENT ON COLUMN public.pack_collections.cover_ratio IS 'Selected cover aspect ratio for Hub previews and Members presentation.';
