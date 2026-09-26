@@ -10,6 +10,9 @@ import { usePreviousPage } from "@/hooks/usePreviousPage";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StudentAccessManager from "@/components/admin/StudentAccessManager";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Student = Tables<"students">;
 type Payment = Tables<"payments"> & { courses?: { title: string } | null };
@@ -35,6 +38,8 @@ export default function StudentDetail() {
   const [activeEnrollments, setActiveEnrollments] = useState(0);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profile, setProfile] = useState({ name: "", email: "", phone: "", cpf: "", origin: "", status: "active" as Student["status"] });
 
   const fetchSummary = async () => {
     if (!id) return;
@@ -45,6 +50,7 @@ export default function StudentDetail() {
     ]);
     if (studentResult.error || !studentResult.data) { toast.error("Aluno não encontrado"); navigate("/admin/students"); return; }
     setStudent(studentResult.data);
+    setProfile({ name: studentResult.data.name, email: studentResult.data.email, phone: studentResult.data.phone || "", cpf: studentResult.data.cpf || "", origin: studentResult.data.origin || "", status: studentResult.data.status });
     setActiveEnrollments(enrollmentsResult.count ?? 0);
     setPayments((paymentsResult.data as Payment[]) ?? []);
     setLoading(false);
@@ -57,6 +63,14 @@ export default function StudentDetail() {
   const formatDate = (date: string | null) => date ? new Date(date).toLocaleDateString("pt-BR") : "—";
   const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   const currentTab = searchParams.get("tab") || "access";
+  const saveProfile = async () => {
+    if (!profile.name.trim() || !profile.email.trim()) { toast.error("Nome e e-mail são obrigatórios"); return; }
+    setSavingProfile(true);
+    const { error } = await supabase.from("students").update({ ...profile, phone: profile.phone || null, cpf: profile.cpf || null, origin: profile.origin || null }).eq("id", student.id);
+    if (error) toast.error("Não foi possível salvar os dados do aluno");
+    else { setStudent((current) => current ? { ...current, ...profile, phone: profile.phone || null, cpf: profile.cpf || null, origin: profile.origin || null } : current); toast.success("Dados do aluno salvos"); }
+    setSavingProfile(false);
+  };
   const changeTab = (tab: string) => {
     const next = new URLSearchParams(searchParams);
     if (tab === "access") next.delete("tab"); else next.set("tab", tab);
@@ -88,7 +102,7 @@ export default function StudentDetail() {
         <TabsTrigger value="payments" className="rounded-none border-b-2 border-transparent px-0 py-3 shadow-none data-[state=active]:border-workspace-accent data-[state=active]:text-workspace-accent data-[state=active]:shadow-none">Pagamentos</TabsTrigger>
       </TabsList>
       <TabsContent value="access" className="mt-5"><StudentAccessManager studentId={student.id} initialProductId={searchParams.get("product")} onChanged={fetchSummary} /></TabsContent>
-      <TabsContent value="profile" className="mt-5"><div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2"><div className="bg-card p-5"><p className="text-xs text-muted-foreground">Nome</p><p className="mt-1 text-sm font-medium">{student.name}</p></div><div className="bg-card p-5"><p className="text-xs text-muted-foreground">E-mail</p><p className="mt-1 text-sm font-medium">{student.email}</p></div><div className="bg-card p-5"><p className="text-xs text-muted-foreground">Telefone</p><p className="mt-1 text-sm font-medium">{student.phone || "—"}</p></div><div className="bg-card p-5"><p className="text-xs text-muted-foreground">CPF</p><p className="mt-1 text-sm font-medium">{student.cpf || "—"}</p></div></div></TabsContent>
+      <TabsContent value="profile" className="mt-5"><section className="overflow-hidden rounded-lg border border-border bg-card"><div className="border-b border-border p-5"><h2 className="workspace-title text-lg font-semibold">Dados do aluno</h2><p className="mt-1 text-sm text-muted-foreground">Informações pessoais e situação do cadastro.</p></div><div className="grid gap-5 p-5 sm:grid-cols-2"><div className="space-y-2"><Label>Nome *</Label><Input value={profile.name} onChange={(event) => setProfile((current) => ({ ...current, name: event.target.value }))} /></div><div className="space-y-2"><Label>E-mail *</Label><Input type="email" value={profile.email} onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))} /></div><div className="space-y-2"><Label>Telefone</Label><Input value={profile.phone} onChange={(event) => setProfile((current) => ({ ...current, phone: event.target.value }))} /></div><div className="space-y-2"><Label>CPF</Label><Input value={profile.cpf} onChange={(event) => setProfile((current) => ({ ...current, cpf: event.target.value }))} /></div><div className="space-y-2"><Label>Origem</Label><Input value={profile.origin} onChange={(event) => setProfile((current) => ({ ...current, origin: event.target.value }))} /></div><div className="space-y-2"><Label>Status</Label><Select value={profile.status} onValueChange={(value) => setProfile((current) => ({ ...current, status: value as Student["status"] }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Ativo</SelectItem><SelectItem value="blocked">Bloqueado</SelectItem><SelectItem value="pending">Pendente</SelectItem><SelectItem value="canceled">Cancelado</SelectItem></SelectContent></Select></div></div><div className="flex justify-end border-t border-border p-4"><Button onClick={saveProfile} disabled={savingProfile}>{savingProfile ? "Salvando..." : "Salvar dados"}</Button></div></section></TabsContent>
       <TabsContent value="payments" className="mt-5"><section className="overflow-hidden rounded-lg border border-border bg-card"><div className="border-b border-border p-5"><h2 className="workspace-title text-lg font-semibold">Histórico de pagamentos</h2><p className="mt-1 text-sm text-muted-foreground">{payments.length} registros</p></div>{payments.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">Nenhum pagamento</p> : <div>{payments.map((payment) => <div key={payment.id} className="flex items-center justify-between gap-4 border-b border-border px-5 py-3 last:border-0"><div><div className="text-sm font-medium">{payment.product_name || payment.courses?.title || "—"}</div><div className="text-xs text-muted-foreground">{formatCurrency(Number(payment.amount))} · {payment.payment_method || "—"} · {formatDate(payment.purchased_at)}</div></div><Badge variant="outline" className={statusColors[payment.status] || ""}>{payment.status}</Badge></div>)}</div>}</section></TabsContent>
     </Tabs>
   </div>;
