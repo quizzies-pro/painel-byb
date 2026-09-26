@@ -47,3 +47,5 @@
 - [x] Reformular exclusivamente o popup de itens Canva com formulário horizontal e capa compacta
 - [x] Adicionar proporção dinâmica às capas dos itens de Pack e lista editorial no Hub
 - [ ] Consumir `cover_ratio` no visual próprio dos itens de Pack na Members — bloqueado por edição entre projetos
+- [x] Adicionar proporção dinâmica às capas das coleções de Pack no Hub
+- [ ] Consumir `cover_ratio` das coleções de Pack na Members — bloqueado por edição entre projetos

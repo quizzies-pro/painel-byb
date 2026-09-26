@@ -8,4 +8,4 @@
 - Administrative full-page forms keep the current route and tab after saves; first creation replaces `/new` with the edit URL, preventing duplicate records without interrupting the workflow.
 - Administrative back arrows use browser history with a safe section fallback, preserving the user's actual editing path instead of forcing fixed destinations.
 - Authentication uses the full-page loading state only during initial session resolution; later auth refreshes update permissions without unmounting active admin forms, preserving unsaved work.
-- Pack item covers store an explicit ratio (`1:1`, `16:9`, `4:3`, `3:4`, or `9:16`); the Hub uses an editorial admin list while Members independently renders each item using that contract, preserving artwork without a forced universal crop.
+- Pack item and collection covers store an explicit ratio (`1:1`, `16:9`, `4:3`, `3:4`, or `9:16`); Hub and Members independently preserve each asset without a forced crop.
